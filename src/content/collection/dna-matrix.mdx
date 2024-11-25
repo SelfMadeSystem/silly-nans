@@ -11,6 +11,14 @@ darkMode: true
 
 import MatrixHelix from '../../components/MatrixHelix';
 
+<div class="w-fit p-4 mx-auto rounded-xl max-w-xl text-white backdrop-blur-sm">
+  I made this DNA matrix effect for an initial version of the UdeMHacks website.
+  We ended up not using it, but I still think it looks cool. It uses two layers of
+  matrix effects, one for the darker "behind" part and one for the lighter "in front" part.
+  The helix shape is set as the clip path, and the matrix effect is applied to the whole thing.
+  I add some moving offset to the matrix effect to make it look like the helix is spinning.
+</div>
+
 <div class="absolute inset-0 -z-10 bg-black">
   <MatrixHelix client:load />
 </div>

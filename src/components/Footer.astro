@@ -10,7 +10,9 @@ let footerClasses = '';
 if (darkMode) {
   footerClasses += 'dark ';
 
-  if (!noBg) {
+  if (noBg) {
+    footerClasses += 'backdrop-blur-sm ';
+  } else {
     footerClasses += 'bg-gradient-to-b from-black to-slate-900 ';
   }
 } else if (noBg) {
