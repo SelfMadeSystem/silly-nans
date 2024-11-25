@@ -5,9 +5,9 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
 
-type Props = CollectionEntry<'blog'>['data'];
+type Props = CollectionEntry<'collection'>['data'];
 
-const { title, description, pubDate, updatedDate, heroImage, fullWidth } = Astro.props;
+const { title, description, pubDate, updatedDate, source, fullWidth } = Astro.props;
 ---
 
 <html lang="en">
@@ -17,7 +17,7 @@ const { title, description, pubDate, updatedDate, heroImage, fullWidth } = Astro
 
   <body class="bg-white text-gray-900">
     <Header />
-    <main class="w-full max-w-full m-0">
+    <main class="m-0 w-full max-w-full">
       <article>
         <div class={`pt-8 ${fullWidth ? '' : 'max-w-screen-md mx-auto p-4'}`}>
           <div class="mb-4 py-4 text-center leading-none">
@@ -32,7 +32,7 @@ const { title, description, pubDate, updatedDate, heroImage, fullWidth } = Astro
               }
             </div>
             <h1 class="m-0 mb-2">{title}</h1>
-            <hr />
+            <a href={source} class="text-blue-500 hover:underline">Get this effect</a>
           </div>
           <slot />
         </div>

@@ -16,18 +16,19 @@ const posts = (await getCollection('collection')).sort((a, b) => b.data.pubDate.
   </head>
   <body>
     <Header />
-    <main class="max-w-6xl mx-auto">
+    <main class="mx-auto max-w-6xl">
       <section>
-        <ul class="flex flex-row flex-wrap justify-around p-8 gap-8">
+        <ul class="flex flex-row flex-wrap justify-around gap-8 p-8">
           {
             posts.map(post => (
               <li class="max-w-md shrink grow md:max-w-lg">
                 <a href={`/collection/${post.slug}/`}>
                   <img width={720} height={360} src={post.data.heroImage} alt="" />
-                  <h4 class="title">{post.data.title}</h4>
-                  <p class="date">
-                    <FormattedDate date={post.data.pubDate} />
-                  </p>
+                  <h4>{post.data.title}</h4>
+                  <FormattedDate date={post.data.pubDate} />
+                </a>
+                <a href={post.data.source} class="source">
+                  Get this effect
                 </a>
               </li>
             ))
