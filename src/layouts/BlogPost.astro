@@ -7,7 +7,7 @@ import FormattedDate from '../components/FormattedDate.astro';
 
 type Props = CollectionEntry<'collection'>['data'];
 
-const { title, description, pubDate, updatedDate, source, fullWidth } = Astro.props;
+const { title, description, pubDate, updatedDate, source, fullWidth, isBackground, darkMode } = Astro.props;
 ---
 
 <html lang="en">
@@ -17,27 +17,29 @@ const { title, description, pubDate, updatedDate, source, fullWidth } = Astro.pr
 
   <body class="bg-white text-gray-900">
     <Header />
-    <main class="m-0 w-full max-w-full">
-      <article>
-        <div class={`pt-8 ${fullWidth ? '' : 'max-w-screen-md mx-auto p-4'}`}>
-          <div class="mb-4 py-4 text-center leading-none">
-            <div class="mb-2 text-gray-500">
-              <FormattedDate date={pubDate} />
-              {
-                updatedDate && (
-                  <div class="italic">
-                    Last updated on <FormattedDate date={updatedDate} />
-                  </div>
-                )
-              }
+    <div class="isolate relative">
+      <main class="m-0 w-full max-w-full">
+        <article>
+          <div class={`pt-8 min-h-screen ${fullWidth ? '' : 'max-w-screen-md mx-auto p-4'}`}>
+            <div class="mb-4 mx-auto py-4 px-4 rounded-lg backdrop-blur-sm w-fit text-center leading-none">
+              <div class={`mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                <FormattedDate date={pubDate} />
+                {
+                  updatedDate && (
+                    <div class="italic">
+                      Last updated on <FormattedDate date={updatedDate} />
+                    </div>
+                  )
+                }
+              </div>
+              <h1 class={`m-0 mb-2 ${darkMode ? 'text-white' : ''}`}>{title}</h1>
+              <a href={source} class="text-blue-500 hover:underline">Get this effect</a>
             </div>
-            <h1 class="m-0 mb-2">{title}</h1>
-            <a href={source} class="text-blue-500 hover:underline">Get this effect</a>
+            <slot />
           </div>
-          <slot />
-        </div>
-      </article>
-    </main>
-    <Footer />
+        </article>
+      </main>
+      <Footer noBg={isBackground} darkMode={darkMode} />
+    </div>
   </body>
 </html>

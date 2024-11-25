@@ -25,9 +25,11 @@ const posts = (await getCollection('collection')).sort((a, b) => b.data.pubDate.
                 <a href={`/collection/${post.slug}/`}>
                   <img width={720} height={360} src={post.data.heroImage} alt="" />
                   <h4>{post.data.title}</h4>
-                  <FormattedDate date={post.data.pubDate} />
+                  <div class="text-gray-500">
+                    <FormattedDate date={post.data.pubDate} />
+                  </div>
                 </a>
-                <a href={post.data.source} class="source">
+                <a href={post.data.source} class="block">
                   Get this effect
                 </a>
               </li>

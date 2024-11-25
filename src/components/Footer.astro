@@ -1,8 +1,13 @@
 ---
+type Props = {
+  noBg?: boolean;
+  darkMode?: boolean;
+};
 const today = new Date();
+const { noBg, darkMode } = Astro.props;
 ---
 
-<footer class="bg-gradient-to-b from-slate-100 to-white">
+<footer class={`${darkMode ? 'dark' : ''} ${noBg ? 'backdrop-blur-sm' : 'bg-gradient-to-b from-slate-100 to-white'}`}>
   &copy; {today.getFullYear()} Shoghi Simon. All rights reserved.
   <div class="social-links">
     <a href="https://m.webtoo.ls/@astro" target="_blank">
@@ -39,6 +44,9 @@ const today = new Date();
     padding: 2em 1em 6em 1em;
     color: rgb(var(--gray));
     text-align: center;
+  }
+  footer.dark {
+    color: white;
   }
   .social-links {
     display: flex;

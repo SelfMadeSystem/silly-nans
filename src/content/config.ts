@@ -12,6 +12,8 @@ const collection = defineCollection({
     heroImage: z.string().optional(),
     fullWidth: z.boolean().optional(),
     source: z.string().optional(),
+    isBackground: z.boolean().optional(),
+    darkMode: z.boolean().optional(),
   }),
 });
 
