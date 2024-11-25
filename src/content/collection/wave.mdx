@@ -1,0 +1,31 @@
+---
+prerender: true
+title: 'Wave'
+description: 'The wave effect I made for my portfolio.'
+pubDate: '2024-11-25'
+heroImage: '/wave.png'
+source: 'https://github.com/SelfMadeSystem/silly-nans/blob/main/src/components/Wave.tsx'
+fullWidth: true
+---
+
+import Wave from '../../components/Wave';
+
+<div class="w-full h-48 relative">
+  <Wave fill='#fde68a' client:load />
+</div>
+
+<div class="bg-amber-200 h-64 text-center flex justify-center items-center">
+  This is a wave effect I made for my portfolio.
+</div>
+
+<div class="bg-lime-200 w-full h-48 relative -scale-100">
+  <Wave fill='#fde68a' neon client:load />
+</div>
+
+<div class="bg-lime-200 h-64 text-center flex justify-center items-center">
+  It's very customizable and can be used in many ways.
+</div>
+
+<div class="bg-lime-200 w-full h-48 relative">
+  <Wave fill='#f1f5f9' neon neonClipped client:load />
+</div>
