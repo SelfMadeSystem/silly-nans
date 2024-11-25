@@ -5,9 +5,22 @@ type Props = {
 };
 const today = new Date();
 const { noBg, darkMode } = Astro.props;
+let footerClasses = '';
+
+if (darkMode) {
+  footerClasses += 'dark ';
+
+  if (!noBg) {
+    footerClasses += 'bg-gradient-to-b from-black to-slate-900 ';
+  }
+} else if (noBg) {
+  footerClasses += 'backdrop-blur-sm ';
+} else {
+  footerClasses += 'bg-gradient-to-b from-slate-100 to-white ';
+}
 ---
 
-<footer class={`${darkMode ? 'dark' : ''} ${noBg ? 'backdrop-blur-sm' : 'bg-gradient-to-b from-slate-100 to-white'}`}>
+<footer class={footerClasses}>
   &copy; {today.getFullYear()} Shoghi Simon. All rights reserved.
   <div class="social-links">
     <a href="https://m.webtoo.ls/@astro" target="_blank">

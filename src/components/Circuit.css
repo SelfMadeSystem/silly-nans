@@ -1,0 +1,35 @@
+.svg path {
+  stroke: #0f0;
+  opacity: 0.1;
+  stroke-width: 4;
+  fill: none;
+}
+
+.svg {
+  transform: translate(-50%, 0%);
+}
+
+path.animated {
+  animation: var(--timing) -10s dash linear infinite;
+  stroke-dashoffset: calc(var(--start-dist) * 15);
+  transition: opacity 2s;
+  opacity: 1;
+}
+
+.not-animated1 {
+  opacity: 0.1;
+  filter: blur(2px);
+}
+
+.not-animated2 {
+  opacity: 0.05;
+}
+
+@keyframes dash {
+  from {
+    stroke-dasharray: 0 0 0 9900;
+  }
+  to {
+    stroke-dasharray: 0 600 700 9900;
+  }
+}
