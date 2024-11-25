@@ -128,3 +128,17 @@ hr {
     padding: 1em;
   }
 }
+
+.bg-dots {
+  width: 100%;
+  height: 100%;
+  --s: 50px;
+  --d: 5%;
+  --bg: #0000;
+  --fg: rgb(90, 92, 102);
+  background-image: radial-gradient(circle at 75% 25%, var(--fg) var(--d), transparent var(--d)),
+    radial-gradient(circle at 25% 75%, var(--fg) var(--d), transparent var(--d));
+  background-size: calc(var(--s) * 1.5) calc(var(--s) * 0.866025404);
+  background-position: 7px 12px;
+  /* background-position: calc(var(--s) * -0.25) calc(var(--s) * -0.25); */
+}

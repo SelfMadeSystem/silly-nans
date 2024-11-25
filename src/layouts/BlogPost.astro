@@ -15,31 +15,29 @@ const { title, description, pubDate, updatedDate, source, fullWidth, isBackgroun
     <BaseHead title={title} description={description} />
   </head>
 
-  <body class="bg-white text-gray-900">
+  <body class="bg-white text-gray-900 isolate relative">
     <Header />
-    <div class="isolate relative">
-      <main class="m-0 w-full max-w-full">
-        <article>
-          <div class={`pt-8 min-h-screen ${fullWidth ? '' : 'max-w-screen-md mx-auto p-4'}`}>
-            <div class="mb-4 mx-auto py-4 px-4 rounded-lg backdrop-blur-sm w-fit text-center leading-none">
-              <div class={`mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                <FormattedDate date={pubDate} />
-                {
-                  updatedDate && (
-                    <div class="italic">
-                      Last updated on <FormattedDate date={updatedDate} />
-                    </div>
-                  )
-                }
-              </div>
-              <h1 class={`m-0 mb-2 ${darkMode ? 'text-white' : ''}`}>{title}</h1>
-              <a href={source} class="text-blue-500 hover:underline">Get this effect</a>
+    <main class="m-0 w-full max-w-full">
+      <article>
+        <div class={`pt-8 min-h-screen ${fullWidth ? '' : 'max-w-screen-md mx-auto p-4'}`}>
+          <div class="mb-4 mx-auto py-4 px-4 rounded-lg backdrop-blur-sm w-fit text-center leading-none">
+            <div class={`mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+              <FormattedDate date={pubDate} />
+              {
+                updatedDate && (
+                  <div class="italic">
+                    Last updated on <FormattedDate date={updatedDate} />
+                  </div>
+                )
+              }
             </div>
-            <slot />
+            <h1 class={`m-0 mb-2 ${darkMode ? 'text-white' : ''}`}>{title}</h1>
+            <a href={source} class="text-blue-500 hover:underline">Get this effect</a>
           </div>
-        </article>
-      </main>
-      <Footer noBg={isBackground} darkMode={darkMode} />
-    </div>
+          <slot />
+        </div>
+      </article>
+    </main>
+    <Footer noBg={isBackground} darkMode={darkMode} />
   </body>
 </html>
