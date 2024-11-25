@@ -4,7 +4,7 @@
  * @author SelfMadeSystem (Shoghi Simon) 2024-11-07
  */
 import { useEffect, useRef } from "react";
-import { clamp, isInView, mod, randomBool, randomInt, randomLog } from "../utils/mathUtils";
+import { clamp, isInView, mod, randomInt, randomLog } from "../utils/mathUtils";
 
 /**
  * A column in the matrix.
