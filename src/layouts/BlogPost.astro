@@ -16,7 +16,7 @@ const { title, description, pubDate, updatedDate, source, fullWidth, isBackgroun
   </head>
 
   <body class="bg-white text-gray-900 isolate relative">
-    <Header />
+    <Header darkMode={darkMode} />
     <main class={`${darkMode && !isBackground ? 'bg-black' : ''} m-0 w-full max-w-full`}>
       <article>
         <div class={`pt-8 min-h-screen ${fullWidth ? '' : 'max-w-screen-md mx-auto p-4'}`}>
