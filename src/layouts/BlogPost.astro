@@ -10,13 +10,13 @@ type Props = CollectionEntry<'collection'>['data'];
 const { title, description, pubDate, updatedDate, source, fullWidth, isBackground, darkMode } = Astro.props;
 ---
 
-<html lang="en">
+<html lang="en" class={`${darkMode ? 'dark' : ''}`}>
   <head>
     <BaseHead title={title} description={description} />
   </head>
 
   <body class="bg-white text-gray-900 isolate relative">
-    <Header darkMode={darkMode} />
+    <Header darkMode={darkMode} noBg={isBackground} />
     <main class={`${darkMode && !isBackground ? 'bg-black' : ''} m-0 w-full max-w-full`}>
       <article>
         <div class={`pt-8 min-h-screen ${fullWidth ? '' : 'max-w-screen-md mx-auto p-4'}`}>
@@ -34,7 +34,9 @@ const { title, description, pubDate, updatedDate, source, fullWidth, isBackgroun
             <h1 class={`m-0 mb-2 ${darkMode ? 'text-white' : ''}`}>{title}</h1>
             <a href={source} class="text-blue-500 hover:underline">Get this effect</a>
           </div>
-          <slot />
+          <div class="content">
+            <slot />
+          </div>
         </div>
       </article>
     </main>
