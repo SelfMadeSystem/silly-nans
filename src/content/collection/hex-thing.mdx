@@ -11,18 +11,21 @@ isBackground: true
 
 import HexThing from '../../components/ShaderCanvas';
 
-<div class="w-fit p-4 pl-8 mr-auto rounded-xl max-w-lg text-white backdrop-blur-sm">
-  I made this neon animated hexagonal effect thing for the <a href="https://udemhacks.com/">UdeMHacks</a> website.
-  I got the initial design from 
-  <a href="https://codepen.io/towc/pen/mJzOWJ" class="underline">this CodePen</a>,
-  but I rewrote it in TypeScript and added some extra features. I tried
-  really hard to make it run only in a fragment shader instead of a 2d canvas,
-  but I couldn't get it to work. The original pen had a black background and
-  just fills the screen with low opacity black to have the fading effect, but to
-  make it have a transparent background, I had to do some `globalCompositeOperation`
-  shenanigans and some GLSL magic. Just doing `globalCompositeOperation` doesn't
-  fully work because leftover pixels from the previous frame will still be there.
-  I use the shader to not render any pixels that are too transparent.
+<div class="mr-auto w-fit max-w-lg rounded-xl p-4 pl-8 text-white backdrop-blur-sm">
+  I made this neon animated hexagonal effect thing for the{' '}
+  <a href="https://udemhacks.com/" class="text-blue-400">
+    UdeMHacks
+  </a>{' '}
+  website. I got the initial design from
+  <a href="https://codepen.io/towc/pen/mJzOWJ" class="text-blue-400">
+    this CodePen
+  </a>
+  , but I rewrote it in TypeScript and added some extra features. I tried really hard to make it run only in a fragment
+  shader instead of a 2d canvas, but I couldn't get it to work. The original pen had a black background and just fills
+  the screen with low opacity black to have the fading effect, but to make it have a transparent background, I had to do
+  some `globalCompositeOperation` shenanigans and some GLSL magic. Just doing `globalCompositeOperation` doesn't fully
+  work because leftover pixels from the previous frame will still be there. I use the shader to not render any pixels
+  that are too transparent.
 </div>
 
 <div class="bg-dots absolute inset-0 -z-10 bg-slate-900">
