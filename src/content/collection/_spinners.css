@@ -1,0 +1,27 @@
+.width-animate {
+  animation: w-anim 2s var(--easing) infinite;
+}
+
+@keyframes w-anim {
+  0%,
+  to {
+    stroke-width: 32px;
+  }
+  50% {
+    stroke-width: 8px;
+  }
+}
+
+.spin-yay {
+  animation: spin-yay 2s linear infinite;
+}
+
+@keyframes spin-yay {
+  0% {
+    rotate: 360deg;
+  }
+
+  to {
+    rotate: 0deg;
+  }
+}

@@ -1,0 +1,34 @@
+.spinner-better svg {
+}
+
+.spinner-better .dash {
+  animation:
+    spinner-better-dashArray var(--duration) var(--easing) infinite,
+    spinner-better-dashOffset var(--duration) var(--easing) infinite;
+  animation-play-state: inherit;
+}
+
+@keyframes spinner-better-dashArray {
+  0% {
+    stroke-dasharray: calc(var(--path-length) * var(--dash-min-len))
+      calc(var(--path-length) * (1 - var(--dash-min-len)));
+  }
+  50% {
+    stroke-dasharray: calc(var(--path-length) * var(--dash-max-len))
+      calc(var(--path-length) * (1 - var(--dash-max-len)));
+  }
+  100% {
+    stroke-dasharray: calc(var(--path-length) * var(--dash-min-len))
+      calc(var(--path-length) * (1 - var(--dash-min-len)));
+  }
+}
+
+@keyframes spinner-better-dashOffset {
+  0%,
+  50% {
+    stroke-dashoffset: var(--dash-offset);
+  }
+  100% {
+    stroke-dashoffset: calc(var(--dash-offset) - var(--path-length) * var(--dash-diff-len));
+  }
+}
