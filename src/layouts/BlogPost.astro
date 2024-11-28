@@ -7,12 +7,12 @@ import FormattedDate from '../components/FormattedDate.astro';
 
 type Props = CollectionEntry<'collection'>['data'];
 
-const { title, description, pubDate, updatedDate, source, fullWidth, isBackground, darkMode } = Astro.props;
+const { title, description, pubDate, updatedDate, source, heroImage, fullWidth, isBackground, darkMode } = Astro.props;
 ---
 
 <html lang="en" class={`${darkMode ? 'dark' : ''}`}>
   <head>
-    <BaseHead title={title} description={description} />
+    <BaseHead title={title} description={description} image={heroImage} />
   </head>
 
   <body class="bg-white text-gray-900 isolate relative">
