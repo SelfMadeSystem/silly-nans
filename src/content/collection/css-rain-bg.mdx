@@ -1,0 +1,25 @@
+---
+title: 'CSS Rain Background'
+description: 'A rain background effect using only CSS.'
+pubDate: '2024-11-27'
+heroImage: '/matrix.png'
+source: 'https://github.com/SelfMadeSystem/silly-nans/blob/main/src/content/collection/css-rain-generator.ts'
+fullWidth: true
+isBackground: true
+darkMode: true
+---
+
+import generate from './css-rain-generator.ts';
+
+<div class="mx-auto w-fit max-w-lg rounded-xl p-4 pl-8 text-white backdrop-blur-sm">
+  I made this rain background effect using only CSS `background-image` and `@keyframes` animations.
+  This was very difficult to make. Honestly, just look at the source code. This also taught me that
+  having 750 animated background-images is not a good idea for performance. :)
+</div>
+
+<div class="absolute inset-0 -z-10 rain-bg bg-black">
+</div>
+
+<style>
+  {generate(12)}
+</style>

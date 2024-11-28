@@ -63,6 +63,16 @@ export function randomBool(probability = 0.5): boolean {
 }
 
 /**
+ * Returns a random ID with a given length
+ * @param length The length of the ID
+ * @returns The random ID with the given length
+ * @author SelfMadeSystem (Shoghi Simon) 2024-11-27
+ */
+export function randomId(length = 8): string {
+  return Array.from({ length }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+}
+
+/**
  * Loops a number between a min and max
  * @param at The number to loop
  * @param min The minimum number to return
