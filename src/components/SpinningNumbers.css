@@ -3,27 +3,30 @@
   font-size: 0.5em;
 }
 
-.spinning-number .number {
-  position: absolute;
+.spinning-number .wheel {
   animation: spinning-number-spin var(--t) linear infinite var(--r1);
 }
 
 @keyframes spinning-number-spin {
   0% {
-    transform: translate(-50%, -50%) rotate(0deg) rotate(var(--a))
-      translateY(calc(var(--l) * -1)) scale(var(--s));
+    transform: rotate(0deg);
   }
   to {
-    transform: translate(-50%, -50%) rotate(360deg) rotate(var(--a))
-      translateY(calc(var(--l) * -1)) scale(var(--s));
+    transform: rotate(360deg);
   }
+}
+
+.spinning-number .number {
+  position: absolute;
+  transform: translate(-50%, -50%) rotate(var(--a)) translateY(calc(var(--l) * -1)) scale(var(--s));
 }
 
 .spinning-number .number::before {
   content: '1';
   --z: 2;
   transform: translate(-50%, -50%);
-  animation: spinning-number-changing calc(var(--t) * var(--z)) calc(-1 * var(--z) * var(--t) * var(--i) / var(--m) - 60s) linear infinite var(--r);
+  animation: spinning-number-changing calc(var(--t) * var(--z))
+    calc(-1 * var(--z) * var(--t) * var(--i) / var(--m) - 60s) linear infinite var(--r);
 }
 
 @keyframes spinning-number-changing {

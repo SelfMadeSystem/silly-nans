@@ -19,7 +19,7 @@ function color(i: number, total: number): string {
   const hTo = 290;
   const wFrom = 0;
   const wTo = 0;
-  return `hwb(${lerp(hFrom, hTo, t)} ${lerp(wFrom, wTo, t)}% 0%);`;
+  return `hwb(${lerp(hFrom, hTo, t)} ${lerp(wFrom, wTo, t)}% 0%)`;
 }
 
 function createWheel(i: number, total: number): Wheel {
@@ -60,19 +60,20 @@ function SpinningWheel({ time, numbers, distance, color, scale }: Wheel) {
         } as CSSProperties
       }
     >
-      {divs.map((angle, i) => (
-        <div
-          className="number"
-          style={
-            {
-              '--a': `${(angle * 180) / Math.PI}deg`,
-              '--i': i,
-              '--r': Math.random() < 0.5 ? 'reverse' : 'normal',
-              visibility: Math.sqrt(Math.random()) < scale ? 'visible' : 'hidden',
-            } as CSSProperties
-          }
-        />
-      ))}
+      {divs.map((angle, i) =>
+        Math.sqrt(Math.random()) < scale ? (
+          <div
+            className="number"
+            style={
+              {
+                '--a': `${(angle * 180) / Math.PI}deg`,
+                '--i': i,
+                '--r': Math.random() < 0.5 ? 'reverse' : 'normal',
+              } as CSSProperties
+            }
+          />
+        ) : null,
+      )}
     </div>
   );
 }
