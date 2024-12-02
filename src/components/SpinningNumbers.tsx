@@ -63,6 +63,7 @@ function SpinningWheel({ time, numbers, distance, color, scale }: Wheel) {
       {divs.map((angle, i) =>
         Math.sqrt(Math.random()) < scale ? (
           <div
+            key={i}
             className="number"
             style={
               {
@@ -71,7 +72,9 @@ function SpinningWheel({ time, numbers, distance, color, scale }: Wheel) {
                 '--r': Math.random() < 0.5 ? 'reverse' : 'normal',
               } as CSSProperties
             }
-          />
+          >
+            {/* {Math.round(Math.random())} */}
+          </div>
         ) : null,
       )}
     </div>
@@ -79,12 +82,12 @@ function SpinningWheel({ time, numbers, distance, color, scale }: Wheel) {
 }
 
 export default function SpinningNumbers() {
-  const total = 20;
+  const total = 13;
   const wheels: Wheel[] = Array.from({ length: total }, (_, i) => createWheel(i, total));
   return (
     <div className="spinning-number">
-      {wheels.map(w => (
-        <SpinningWheel {...w} />
+      {wheels.map((w, i) => (
+        <SpinningWheel {...w} key={i} />
       ))}
     </div>
   );
