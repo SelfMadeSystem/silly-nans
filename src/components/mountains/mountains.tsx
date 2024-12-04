@@ -93,7 +93,7 @@ export class MountainArray {
     }
   }
 
-  getPoints(): [Vector2, Vector2, Vector2, Vector2][] {
+  getPolys(): [Vector2, Vector2, Vector2, Vector2][] {
     const lines: [Vector2, Vector2, Vector2, Vector2][][] = [];
     const hw = width / 2;
 
@@ -151,7 +151,7 @@ export class MountainArray {
   toSvg(): JSX.Element {
     const polygons = [];
 
-    const polys = this.getPoints();
+    const polys = this.getPolys();
 
     for (const polygon of polys) {
       const points = polygon.map(v => `${v.x},${v.y}`).join(' ');
@@ -179,7 +179,7 @@ export class MountainArray {
     ctx.lineWidth = 4;
     ctx.lineJoin = 'round';
 
-    const polys = this.getPoints();
+    const polys = this.getPolys();
 
     for (const polygon of polys) {
       ctx.beginPath();

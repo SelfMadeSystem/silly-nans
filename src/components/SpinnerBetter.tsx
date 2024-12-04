@@ -62,7 +62,9 @@ const SpinnerBetter: React.FC<SpinnerProps> = ({
       let timeDiff = date - prevDate;
       prevDate = date;
       if (spinDuration > 0) {
-        setDashOffsetAnimationTime(prev => (prev + timeDiff / spinDuration) % 1);
+        setDashOffsetAnimationTime(
+          prev => (prev + timeDiff / spinDuration) % 1,
+        );
       }
       requestAnimationFrame(animateDashOffset);
     };
@@ -110,7 +112,8 @@ const SpinnerBetter: React.FC<SpinnerProps> = ({
         strokeLinejoin={linejoin}
         onAnimationIteration={() => {
           dashOffsetLen.current = mod(
-            dashOffsetLen.current - ((dashMaxLen - dashMinLen) * multPathLength) / 2,
+            dashOffsetLen.current -
+              ((dashMaxLen - dashMinLen) * multPathLength) / 2,
             multPathLength,
           );
           svgPath.current!.style.setProperty(
