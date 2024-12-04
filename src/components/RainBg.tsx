@@ -73,8 +73,7 @@ function createRaindropsStyle(
       ({ height, color }) => `
     radial-gradient(${gradientWidth}px ${gradientHeight}px at 0px ${height}px, ${color}, #0000),
     radial-gradient(${gradientWidth}px ${gradientHeight}px at ${width}px ${height}px, ${color}, #0000),
-    radial-gradient(${dropWidth / 2}px ${dropWidth / 2}px at ${width / 2}px ${height / 2}px, ${color} 100%, #0000 150%)
-  `,
+    radial-gradient(${dropWidth / 2}px ${dropWidth / 2}px at ${width / 2}px ${height / 2}px, ${color} 100%, #0000 150%)`,
     )
     .join(', ');
 }
