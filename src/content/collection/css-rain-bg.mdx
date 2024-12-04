@@ -3,13 +3,13 @@ title: 'CSS Rain Background'
 description: 'A rain background effect using only CSS.'
 pubDate: '2024-11-27'
 heroImage: '/css-rain-bg.png'
-source: 'https://github.com/SelfMadeSystem/silly-nans/blob/main/src/content/collection/css-rain-generator.ts'
+source: 'https://github.com/SelfMadeSystem/silly-nans/blob/main/src/components/RainBg.tsx'
 fullWidth: true
 isBackground: true
 darkMode: true
 ---
 
-import generate from './css-rain-generator.ts';
+import RainBg from '../../components/RainBg';
 
 <div class="mx-auto w-fit max-w-lg rounded-xl p-4 pl-8 text-white backdrop-blur-sm">
   I made this rain background effect using only CSS `background-image` and `@keyframes` animations.
@@ -20,6 +20,4 @@ import generate from './css-rain-generator.ts';
 <div class="absolute inset-0 -z-10 rain-bg bg-black">
 </div>
 
-<style>
-  {generate(12)}
-</style>
+<RainBg client:load />
