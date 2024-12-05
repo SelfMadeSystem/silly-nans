@@ -148,6 +148,19 @@ export class MountainArray {
     return lines.toReversed().flat().filter(Boolean);
   }
 
+  toPolyPoints(): string[] {
+    const polygons = [];
+
+    const polys = this.getPolys();
+
+    for (const polygon of polys) {
+      const points = polygon.map(v => `${v.x},${v.y}`).join(' ');
+      polygons.push(points);
+    }
+
+    return polygons;
+  }
+
   toSvg(): JSX.Element {
     const polygons = [];
 
