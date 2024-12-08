@@ -1,0 +1,23 @@
+---
+title: 'Shader'
+description: 'A shader that I made for fun'
+pubDate: '2024-12-07'
+heroImage: '/shader.png'
+source: 'https://github.com/SelfMadeSystem/silly-nans/blob/main/src/components/ShaderCanvas.tsx'
+fullWidth: true
+darkMode: true
+isBackground: true
+---
+
+import Idk from '../../components/ShaderCanvas';
+
+<div class="mx-auto max-w-xl p-4 rounded-lg text-white backdrop-blur-md">
+  A shader that with frame fading. I originally made it for the
+  [UdemHacks](https://udemhacks.com/) website, but it turned out being too
+  complicated along with some other issues and so it was scrapped. I thought the
+  concept was cool enough to put it here though.
+</div>
+
+<div class="absolute inset-0 -z-10 bg-black">
+  <Idk client:load />
+</div>
