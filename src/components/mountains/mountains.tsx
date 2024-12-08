@@ -1,5 +1,5 @@
 // Synthwave mountains generator
-import { random, randomInt } from '../../utils/mathUtils';
+import { mod, random, randomInt } from '../../utils/mathUtils';
 import { Camera } from './camera';
 import { Vector2, Vector3 } from './vec';
 
@@ -97,34 +97,41 @@ export class MountainArray {
     const lines: [Vector2, Vector2, Vector2, Vector2][][] = [];
     const hw = width / 2;
 
-    for (let z = depth - 1; z >= 0; z--) {
-      for (let x = 0; x < width; x++) {
+    const zd = 1;
+    const xd = 1;
+
+    for (let z = depth * zd - 1; z >= -depth * zd; z--) {
+      for (let x = -width * (xd - 1); x < width * xd; x++) {
+        const wz = mod(z, depth);
+        const wz1 = mod(z + 1, depth);
+        const wx = mod(x, width);
+        const wx1 = mod(x + 1, width);
         // closer to center x it gets, the lower the y
-        const y1Mult = Math.pow(Math.abs(x - hw) / hw, 1.2);
-        const y2Mult = Math.pow(Math.abs(x + 1 - hw) / hw, 1.2);
+        const y1Mult = Math.min(1, Math.pow(Math.abs(x - hw) / hw, 1.2));
+        const y2Mult = Math.min(1, Math.pow(Math.abs(x + 1 - hw) / hw, 1.2));
         const x1 = (x - hw) * cellWidth;
-        const y1 = screenHeight - this.get(x, z) * cellHeight * y1Mult;
+        const y1 = screenHeight - this.get(wx, wz) * cellHeight * y1Mult;
         let z1 = (z + 4) * cellDepth;
         const x2 = (x + 1 - hw) * cellWidth;
         const y2 =
-          screenHeight - this.get((x + 1) % width, z) * cellHeight * y2Mult;
+          screenHeight - this.get(wx1, wz) * cellHeight * y2Mult;
         let z2 = z1;
         const x3 = x2;
         const y3 =
           screenHeight -
-          this.get((x + 1) % width, (z + 1) % depth) * cellHeight * y2Mult;
+          this.get(wx1, wz1) * cellHeight * y2Mult;
         let z3 = (z + 5) * cellDepth;
         const x4 = x1;
         const y4 =
-          screenHeight - this.get(x, (z + 1) % depth) * cellHeight * y1Mult;
+          screenHeight - this.get(wx, wz1) * cellHeight * y1Mult;
         let z4 = z3;
 
         let i = 0;
         while (z3 < this.camera.position.z) {
-          z1 += depth * cellDepth;
-          z2 += depth * cellDepth;
-          z3 += depth * cellDepth;
-          z4 += depth * cellDepth;
+          z1 += depth * cellDepth * zd;
+          z2 += depth * cellDepth * zd;
+          z3 += depth * cellDepth * zd;
+          z4 += depth * cellDepth * zd;
           i++;
         }
 

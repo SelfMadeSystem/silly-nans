@@ -6,8 +6,12 @@ heroImage: '/mountains.png'
 source: 'https://github.com/SelfMadeSystem/silly-nans/blob/main/src/components/mountains/Mountain.tsx'
 fullWidth: true
 darkMode: true
+isBackground: true
+noBlur: true
 ---
 
 import Mountain from '../../components/mountains/Mountain';
+import './mountains.css';
 
-<Mountain client:load />
+<div class="absolute inset-0 -z-10 bg-black" />
+<Mountain className="absolute -z-10 bottom-0 w-full" client:load />

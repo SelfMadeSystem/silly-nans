@@ -7,7 +7,18 @@ import FormattedDate from '../components/FormattedDate.astro';
 
 type Props = CollectionEntry<'collection'>['data'];
 
-const { title, description, pubDate, updatedDate, source, heroImage, fullWidth, isBackground, darkMode } = Astro.props;
+const {
+  title,
+  description,
+  pubDate,
+  updatedDate,
+  source,
+  heroImage,
+  fullWidth,
+  isBackground,
+  noBlur,
+  darkMode,
+} = Astro.props;
 ---
 
 <html lang="en" class={`${darkMode ? 'dark' : ''}`}>
@@ -16,11 +27,17 @@ const { title, description, pubDate, updatedDate, source, heroImage, fullWidth, 
   </head>
 
   <body class="bg-white text-gray-900 isolate relative">
-    <Header darkMode={darkMode} noBg={isBackground} />
-    <main class={`${darkMode && !isBackground ? 'bg-black' : ''} m-0 w-full max-w-full`}>
+    <Header darkMode={darkMode} noBlur={noBlur} noBg={isBackground} />
+    <main
+      class={`${darkMode && !isBackground ? 'bg-black' : ''} m-0 w-full max-w-full`}
+    >
       <article>
-        <div class={`pt-8 min-h-screen ${fullWidth ? '' : 'max-w-screen-md mx-auto p-4'}`}>
-          <div class="mb-4 mx-auto py-4 px-4 rounded-lg backdrop-blur-sm w-fit text-center leading-none">
+        <div
+          class={`pt-8 min-h-screen ${fullWidth ? '' : 'max-w-screen-md mx-auto p-4'}`}
+        >
+          <div
+            class="mb-4 mx-auto py-4 px-4 rounded-lg backdrop-blur-sm w-fit text-center leading-none"
+          >
             <div class={`mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
               <FormattedDate date={pubDate} />
               {
@@ -32,7 +49,9 @@ const { title, description, pubDate, updatedDate, source, heroImage, fullWidth, 
               }
             </div>
             <h1 class={`m-0 mb-2 ${darkMode ? 'text-white' : ''}`}>{title}</h1>
-            <a href={source} class="text-blue-500 hover:underline">Get this effect</a>
+            <a href={source} class="text-blue-500 hover:underline"
+              >Get this effect</a
+            >
           </div>
           <div class="content">
             <slot />
@@ -40,6 +59,6 @@ const { title, description, pubDate, updatedDate, source, heroImage, fullWidth, 
         </div>
       </article>
     </main>
-    <Footer noBg={isBackground} darkMode={darkMode} />
+    <Footer noBlur={noBlur} noBg={isBackground} darkMode={darkMode} />
   </body>
 </html>

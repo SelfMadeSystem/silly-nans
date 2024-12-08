@@ -17,6 +17,7 @@ const collection = defineCollection({
     fullWidth: z.boolean().optional(),
     source: z.string().optional(),
     isBackground: z.boolean().optional(),
+    noBlur: z.boolean().optional(),
     darkMode: z.boolean().optional(),
   }),
 });
