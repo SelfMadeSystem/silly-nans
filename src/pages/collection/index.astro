@@ -24,7 +24,7 @@ const posts = (await getCollection('collection')).sort(
           {
             posts.map(post => (
               <li class="max-w-md shrink grow md:max-w-lg">
-                <a href={`/collection/${post.slug}/`}>
+                <a href={`/collection/${post.id}/`}>
                   <img
                     width={720}
                     height={360}

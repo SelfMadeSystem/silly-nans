@@ -99,7 +99,7 @@ const useHexThing = (
       time: number = 0;
       targetTime: number = 0;
 
-      constructor(private index: number) {
+      constructor() {
         this.reset();
       }
 
@@ -204,7 +204,7 @@ const useHexThing = (
         ctx.globalCompositeOperation = 'lighter';
         ctx.globalAlpha = 1;
       }
-      if (lines.length < opts.count && Math.random() < opts.spawnChance) lines.push(new Line(lines.length));
+      if (lines.length < opts.count && Math.random() < opts.spawnChance) lines.push(new Line());
       lines.forEach(line => line.step(inView.current));
       if (prefersReducedMotion) return;
       // const imageData = ctx.getImageData(0, 0, w, h);

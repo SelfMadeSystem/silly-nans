@@ -1,5 +1,3 @@
-import { Vector2, Vector3 } from "./vec";
-
 type FixedLengthArray<T, L, A extends T[] = []> = 
   A['length'] extends L ? A : FixedLengthArray<T, L, [...A, T]>;
 
