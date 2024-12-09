@@ -3,8 +3,8 @@
  *
  * @author SelfMadeSystem (Shoghi Simon) 2024-11-07
  */
-import { useEffect, useRef } from "react";
-import { clamp, isInView, mod, randomInt, randomLog } from "../utils/mathUtils";
+import { clamp, isInView, mod, randomInt, randomLog } from '../utils/mathUtils';
+import { useEffect, useRef } from 'react';
 
 /**
  * A column in the matrix.
@@ -30,12 +30,14 @@ export type MatrixColumn = {
  * @author SelfMadeSystem (Shoghi Simon) 2024-11-07
  */
 const Matrix = ({
-  trailColor = "#0F0",
+  trailColor = '#0F0',
   dropColor = trailColor,
   charOpacity = 0.1,
   speed = [0.1, 0.3],
   fontSize = 14,
-  className = "",
+  className = '',
+  columns = 50,
+  rows = 30,
 }: {
   trailColor?: string;
   dropColor?: string;
@@ -43,23 +45,37 @@ const Matrix = ({
   speed?: [number, number];
   fontSize?: number;
   className?: string;
+  columns?: number;
+  rows?: number;
 }) => {
-  const matrixRef = useRef<HTMLCanvasElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationFrameRef = useRef<number>(0);
 
   useEffect(() => {
     const columnsArray: MatrixColumn[] = [];
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const prefersReducedMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches;
 
-    const matrixCanvas = matrixRef.current!;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d')!;
+    if (!ctx) return;
+
+    const matrixCanvas = document.createElement('canvas');
     if (!matrixCanvas) return;
-    const matrixCtx = matrixCanvas.getContext("2d")!;
+    const matrixCtx = matrixCanvas.getContext('2d')!;
     if (!matrixCtx) return;
+    matrixCanvas.width = columns * fontSize;
+    matrixCanvas.height = rows * fontSize;
 
-    let width = (matrixCanvas.width = matrixCanvas.clientWidth);
-    let height = (matrixCanvas.height = matrixCanvas.clientHeight);
+    let width = (canvas.width = canvas.clientWidth);
+    let height = (canvas.height = canvas.clientHeight);
 
-    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*()+-=[]{};:',.<>?/".split("");
+    const chars =
+      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*()+-=[]{};:',.<>?/".split(
+        '',
+      );
 
     /**
      * Returns a random character.
@@ -122,7 +138,6 @@ const Matrix = ({
      * @author SelfMadeSystem (Shoghi Simon) 2024-11-07
      */
     const drawMatrix = (draw = true) => {
-      const columns = Math.floor(width / fontSize);
       if (columnsArray.length < columns) {
         for (let i = columnsArray.length; i < columns; i++) {
           columnsArray.push(createColumn());
@@ -133,7 +148,6 @@ const Matrix = ({
       matrixCtx.fillStyle = trailColor;
       matrixCtx.font = `${fontSize}px monospace`;
 
-      const charsY = Math.floor(height / fontSize);
       for (let i = 0; i < columns; i++) {
         const { pos, speed, chars } = columnsArray[i];
 
@@ -141,15 +155,19 @@ const Matrix = ({
 
         // Draw the character at the position.
         if (draw) {
-          for (let j = 0; j < Math.min(chars.length, charsY); j++) {
+          for (let j = 0; j < Math.min(chars.length, rows); j++) {
             const char = chars[j];
-            matrixCtx.globalAlpha = clamp(1 - mod(fPos - j, charsY) * charOpacity, 0, 1);
+            matrixCtx.globalAlpha = clamp(
+              1 - mod(fPos - j, rows) * charOpacity,
+              0,
+              1,
+            );
             matrixCtx.fillStyle = j === fPos ? dropColor : trailColor;
             matrixCtx.fillText(char, i * fontSize, (j + 1) * fontSize);
           }
         }
         // Change the character when the position goes to the next integer.
-        if (pos + speed < charsY && Math.floor(pos + speed) > pos) {
+        if (pos + speed < rows && Math.floor(pos + speed) > pos) {
           const newPos = Math.floor(pos + speed);
           columnsArray[i].chars[newPos] = chars[randomInt(0, chars.length - 1)];
         }
@@ -157,11 +175,26 @@ const Matrix = ({
         columnsArray[i].pos += speed;
 
         // Reset the column if it goes out of bounds.
-        if (pos > charsY) {
+        if (pos > rows) {
           resetColumn(columnsArray[i]);
         }
       }
     };
+
+    /**
+     * Draws the matrix canvas onto the main canvas.
+     */
+    const drawMatrixCanvas = () => {
+      ctx.clearRect(0, 0, width, height);
+      const xIters = Math.ceil(width / matrixCanvas.width);
+      const yIters = Math.ceil(height / matrixCanvas.height);
+
+      for (let i = 0; i < xIters; i++) {
+        for (let j = 0; j < yIters; j++) {
+          ctx.drawImage(matrixCanvas, i * matrixCanvas.width, j * matrixCanvas.height);
+        }
+      }
+    }
 
     /**
      * Draws the matrix.
@@ -172,9 +205,10 @@ const Matrix = ({
      * @author SelfMadeSystem (Shoghi Simon) 2024-11-07
      */
     const draw = () => {
-      const inView = isInView(matrixCanvas);
+      const inView = isInView(canvas);
 
       drawMatrix(inView);
+      drawMatrixCanvas();
 
       if (prefersReducedMotion) return;
       animationFrameRef.current = requestAnimationFrame(draw);
@@ -182,7 +216,7 @@ const Matrix = ({
 
     const initDraw = () => {
       if (prefersReducedMotion) {
-        for (let i = 0; i < matrixCanvas.height / fontSize; i++) {
+        for (let i = 0; i < rows; i++) {
           drawMatrix();
         }
         draw();
@@ -197,14 +231,14 @@ const Matrix = ({
      * @author SelfMadeSystem (Shoghi Simon) 2024-11-07
      */
     const resize = () => {
-      width = matrixCanvas.width = matrixCanvas.clientWidth;
-      height = matrixCanvas.height = matrixCanvas.clientHeight;
+      width = canvas.width = canvas.clientWidth;
+      height = canvas.height = canvas.clientHeight;
       cancelAnimationFrame(animationFrameRef.current);
       initDraw();
     };
 
     const observer = new ResizeObserver(resize);
-    observer.observe(matrixCanvas);
+    observer.observe(canvas);
 
     initDraw();
 
@@ -223,9 +257,14 @@ const Matrix = ({
   return (
     <>
       <canvas
-        ref={matrixRef}
+        ref={canvasRef}
         className={className}
-        style={{ pointerEvents: "none", position: "absolute", width: "100%", height: "100%" }}
+        style={{
+          pointerEvents: 'none',
+          position: 'absolute',
+          width: '100%',
+          height: '100%',
+        }}
       />
     </>
   );
