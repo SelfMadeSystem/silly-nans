@@ -7,11 +7,14 @@ source: 'https://github.com/SelfMadeSystem/silly-nans/blob/main/src/components/M
 fullWidth: true
 isBackground: true
 darkMode: true
+headerClasses: 'bf-bg-dot before:backdrop-blur before:backdrop-brightness-[4] before:animate-backdrop-hue-rotate before:fade-b'
+contentClasses: 'bf-bg-dot before:backdrop-blur before:backdrop-brightness-[4] before:animate-backdrop-hue-rotate before:fade-y'
+footerClasses: 'bf-bg-dot before:backdrop-blur before:backdrop-brightness-[4] before:animate-backdrop-hue-rotate before:fade-t-xl'
 ---
 
 import Matrix from '../../components/Matrix';
 
-<div class="mx-auto w-fit max-w-xl rounded-xl p-4 text-white backdrop-blur-sm">
+<div class="mx-auto w-fit max-w-xl rounded-xl p-4 text-white bf-bg-dot before:backdrop-blur before:backdrop-brightness-[4] before:animate-backdrop-hue-rotate before:fade-y">
   I made this DNA matrix effect for an initial version of the [UdeMHacks](https://udemhacks.com/) website. website. The
   version on the website also has a Portal-inspired easter egg. :)
 </div>

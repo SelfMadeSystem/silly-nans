@@ -113,17 +113,13 @@ export class MountainArray {
         const y1 = screenHeight - this.get(wx, wz) * cellHeight * y1Mult;
         let z1 = (z + 4) * cellDepth;
         const x2 = (x + 1 - hw) * cellWidth;
-        const y2 =
-          screenHeight - this.get(wx1, wz) * cellHeight * y2Mult;
+        const y2 = screenHeight - this.get(wx1, wz) * cellHeight * y2Mult;
         let z2 = z1;
         const x3 = x2;
-        const y3 =
-          screenHeight -
-          this.get(wx1, wz1) * cellHeight * y2Mult;
+        const y3 = screenHeight - this.get(wx1, wz1) * cellHeight * y2Mult;
         let z3 = (z + 5) * cellDepth;
         const x4 = x1;
-        const y4 =
-          screenHeight - this.get(wx, wz1) * cellHeight * y1Mult;
+        const y4 = screenHeight - this.get(wx, wz1) * cellHeight * y1Mult;
         let z4 = z3;
 
         let i = 0;

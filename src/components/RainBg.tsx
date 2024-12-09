@@ -257,7 +257,7 @@ export default function RainBg({ options }: { options?: Options }) {
   return (
     <>
       <style>{css}</style>
-      <details className="mx-auto my-4 flex max-w-md flex-col rounded-lg p-4 text-white backdrop-blur-md">
+      <details className="mx-auto my-4 flex max-w-md flex-col rounded-lg p-4 text-white bf-bg-dot before:backdrop-blur-lg before:backdrop-brightness-[3] before:fade-y">
         <summary>Options</summary>
         <label className="flex flex-row justify-between">
           Count:
@@ -368,7 +368,7 @@ export default function RainBg({ options }: { options?: Options }) {
           />
         </label>
       </details>
-      <details className="mx-auto my-4 flex max-w-md flex-col rounded-lg p-4 text-white backdrop-blur-md">
+      <details className="mx-auto my-4 flex max-w-md flex-col rounded-lg p-4 text-white bf-bg-dot before:backdrop-blur-lg before:backdrop-brightness-[3] before:fade-y">
         <summary>Generated CSS</summary>
         {PrismSyntaxHighlighter && (
           <div className="scrollbar-hidden relative max-h-[75vh] overflow-auto">

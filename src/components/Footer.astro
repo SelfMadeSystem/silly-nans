@@ -2,23 +2,19 @@
 type Props = {
   noBg?: boolean;
   darkMode?: boolean;
-  noBlur?: boolean;
+  classes?: string;
 };
 const today = new Date();
-const { noBg, darkMode, noBlur } = Astro.props;
-let footerClasses = '';
+const { noBg, darkMode, classes } = Astro.props;
+let footerClasses = classes + ' relative isolate ';
 
 if (darkMode) {
   footerClasses += 'dark ';
 
-  if (noBg) {
-    if (!noBlur) footerClasses += 'backdrop-blur-sm ';
-  } else {
+  if (!noBg) {
     footerClasses += 'bg-gradient-to-b from-black to-slate-900 ';
   }
-} else if (noBg) {
-  if (!noBlur) footerClasses += 'backdrop-blur-sm ';
-} else {
+} else if (!noBg) {
   footerClasses += 'bg-gradient-to-b from-slate-100 to-white ';
 }
 ---

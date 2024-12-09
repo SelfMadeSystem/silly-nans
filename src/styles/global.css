@@ -4,6 +4,40 @@
   License MIT: https://github.com/HermanMartinus/bearblog/blob/master/LICENSE.md
  */
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-dot-grid-alpha: 1;
+}
+
+@property --tw-animate-backdrop-hue-rotate {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@layer components {
+  .bg-dot-grid {
+    background-image: radial-gradient(
+      circle at 50% 50%,
+      #0000 0,
+      #0000 2px,
+      rgba(0, 0, 0, var(--bg-dot-grid-alpha)) 2px
+    );
+    background-size: 8px 8px;
+  }
+
+  .bf-bg-dot {
+    @apply relative isolate before:bg-dot-grid before:inset-0 before:absolute before:-z-10;
+  }
+
+  .bf-bg {
+    @apply relative isolate before:inset-0 before:absolute before:-z-10;
+  }
+}
+
 /* Remove scrollbar on all browsers */
 .scrollbar-hidden {
   scrollbar-width: none;
@@ -155,7 +189,11 @@ hr {
   --d: 5%;
   --bg: #0000;
   --fg: rgb(90, 92, 102);
-  background-image: radial-gradient(circle at 75% 25%, var(--fg) var(--d), transparent var(--d)),
+  background-image: radial-gradient(
+      circle at 75% 25%,
+      var(--fg) var(--d),
+      transparent var(--d)
+    ),
     radial-gradient(circle at 25% 75%, var(--fg) var(--d), transparent var(--d));
   background-size: calc(var(--s) * 1.5) calc(var(--s) * 0.866025404);
   background-position: 7px 12px;

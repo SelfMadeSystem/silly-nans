@@ -7,17 +7,20 @@ source: 'https://github.com/SelfMadeSystem/silly-nans/blob/main/src/components/R
 fullWidth: true
 isBackground: true
 darkMode: true
+headerClasses: 'bf-bg-dot before:backdrop-blur-lg before:backdrop-brightness-[3] before:fade-b'
+contentClasses: 'bf-bg-dot before:backdrop-blur-lg before:backdrop-brightness-[3] before:fade-y'
+footerClasses: 'bf-bg-dot before:backdrop-blur-lg before:backdrop-brightness-[3] before:fade-t-xl'
 ---
 
 import RainBg from '../../components/RainBg';
 
-<div class="mx-auto w-fit max-w-lg rounded-xl p-4 pl-8 text-white backdrop-blur-sm">
-  I made this rain background effect using only CSS `background-image` and `@keyframes` animations.
-  This was very difficult to make. Honestly, just look at the source code. This also taught me that
-  having 750 animated background-images is not a good idea for performance. :)
+<div class="bf-bg-dot mx-auto w-fit max-w-lg rounded-xl p-4 pl-8 text-white before:backdrop-blur-lg before:backdrop-brightness-[3] before:fade-y">
+  I made this rain background effect using only CSS `background-image` and
+  `@keyframes` animations. This was very difficult to make. Honestly, just look
+  at the source code. This also taught me that having 750 animated
+  background-images is not a good idea for performance. :)
 </div>
 
-<div class="absolute inset-0 -z-10 rain-bg bg-black">
-</div>
+<div class="rain-bg absolute inset-0 -z-10 bg-black"></div>
 
 <RainBg client:load />

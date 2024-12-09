@@ -151,9 +151,9 @@ const ShaderCanvas = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const gl = canvas.getContext('webgl2');
+    const gl = canvas.getContext('webgl');
     if (!gl) {
-      console.error('WebGL2 not supported');
+      console.error('WebGL not supported');
       return;
     }
 
@@ -344,7 +344,10 @@ const ShaderCanvas = () => {
         gl.drawingBufferWidth,
         gl.drawingBufferHeight,
       ]);
-      gl.uniform1f(gl.getUniformLocation(fancyShaderProgram, 'u_time'), now + 200);
+      gl.uniform1f(
+        gl.getUniformLocation(fancyShaderProgram, 'u_time'),
+        now + 200,
+      );
 
       // Draw to texture 0
       gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);

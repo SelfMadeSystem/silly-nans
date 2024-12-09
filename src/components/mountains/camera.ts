@@ -55,8 +55,6 @@ export class Camera {
   }
 
   projectLine(start: Vector3, end: Vector3): [Vector2 | null, Vector2 | null] {
-    start = this.transformPoint(start);
-    end = this.transformPoint(end);
     const start2D = this.projectPoint(start);
     const end2D = this.projectPoint(end);
     return [start2D, end2D];

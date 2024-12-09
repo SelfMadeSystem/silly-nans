@@ -7,11 +7,14 @@ source: 'https://github.com/SelfMadeSystem/silly-nans/blob/main/src/components/M
 fullWidth: true
 isBackground: true
 darkMode: true
+headerClasses: 'bf-bg-dot before:backdrop-blur-lg before:backdrop-brightness-[4] before:animate-backdrop-hue-rotate before:fade-b'
+contentClasses: 'bf-bg-dot before:backdrop-blur-lg before:backdrop-brightness-[4] before:animate-backdrop-hue-rotate before:fade-y'
+footerClasses: 'bf-bg-dot before:backdrop-blur-[3px] before:backdrop-brightness-[2] before:fade-t-xl'
 ---
 
 import MatrixHelix from '../../components/MatrixHelix';
 
-<div class="mx-auto w-fit max-w-xl rounded-xl p-4 text-white backdrop-blur-sm">
+<div class="mx-auto w-fit max-w-xl rounded-xl p-4 text-white bf-bg-dot before:backdrop-blur-[3px] before:backdrop-brightness-[2] fade-y">
   I made this DNA matrix effect for an initial version of the [UdeMHacks](https://udemhacks.com/) website. We ended up
   not using it, but I still think it looks cool. It uses two layers of matrix effects, one for the darker "behind" part
   and one for the lighter "in front" part. The helix shape is set as the clip path, and the matrix effect is applied to

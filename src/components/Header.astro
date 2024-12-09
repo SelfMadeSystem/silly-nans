@@ -5,23 +5,19 @@ import { SITE_TITLE } from '../consts';
 type Props = {
   noBg?: boolean;
   darkMode?: boolean;
-  noBlur?: boolean;
+  classes?: string;
 };
 
-const { darkMode, noBg, noBlur } = Astro.props;
+const { darkMode, noBg, classes } = Astro.props;
 
-let headerClasses = '';
+let headerClasses = classes + ' relative isolate ';
 
 if (darkMode) {
   headerClasses += 'text-white ';
 
-  if (noBg) {
-    if (!noBlur) headerClasses += 'backdrop-blur-sm ';
-  } else {
+  if (!noBg) {
     headerClasses += 'from-black to-slate-900 bg-gradient-to-t ';
   }
-} else {
-  if (!noBlur) headerClasses += 'bg-white shadow-lg';
 }
 ---
 
