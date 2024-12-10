@@ -1,0 +1,29 @@
+---
+title: 'CSS Blur Blob Background'
+description: 'A blob background effect using only CSS.'
+pubDate: '2024-12-09'
+heroImage: '/css-blob-bg.png'
+source: 'https://github.com/SelfMadeSystem/silly-nans/blob/main/src/components/BlurBlogBg.tsx'
+fullWidth: true
+isBackground: true
+darkMode: true
+headerClasses: 'backdrop-blur-[1px] bg-black/50'
+contentClasses: 'backdrop-blur-[1px] bg-black/50'
+footerClasses: 'backdrop-blur-[1px] bg-black/50 fade-t-16'
+---
+
+import BlurBlogBg from '../../components/BlurBlogBg';
+
+<div class="mx-auto w-fit max-w-lg rounded-xl bg-black/50 p-4 pl-8 text-white backdrop-blur-[1px]">
+  I made this blob background effect using only CSS `background-image`,
+  `@keyframes` animations, and `backdrop-filter`. It's pretty much the exact
+  same concept as the rain background, but with a different shape and over usage
+  of `backdrop-filter` lol. I'm too lazy to make the `blobs-bg-over` effect
+  customizable. I might integrate something like
+  [lil-gui](https://github.com/georgealways/lil-gui) at some point.
+</div>
+
+<div class="blobs-bg absolute inset-0 -z-10 bg-black"></div>
+<div class="blobs-bg-over absolute inset-0 -z-10"></div>
+
+<BlurBlogBg client:load />
