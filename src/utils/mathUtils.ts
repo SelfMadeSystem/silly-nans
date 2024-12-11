@@ -130,6 +130,21 @@ export function lerpVec2(a: Vec2, b: Vec2, t: number): Vec2 {
 }
 
 /**
+ * Greater common divisor of two numbers using iteration
+ * @param a The first number
+ * @param b The second number
+ * @returns The greater common divisor of a and b
+ */
+export function gcd(a: number, b: number): number {
+  while (b !== 0) {
+    const temp = b;
+    b = a % b;
+    a = temp;
+  }
+  return a;
+}
+
+/**
  * Calculates a point on a bezier curve
  * @param a The first point
  * @param b The second point
