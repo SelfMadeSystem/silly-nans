@@ -1,19 +1,22 @@
-type FixedLengthArray<T, L, A extends T[] = []> = 
-  A['length'] extends L ? A : FixedLengthArray<T, L, [...A, T]>;
+import { Vector3 } from "./vec";
 
-export type ProjectionMatrix = FixedLengthArray<number, 16>;
+// prettier-ignore
+type Matrix3x3Array = [
+  number, number, number,
+  number, number, number,
+  number, number, number,
+];
 
-export function perspective(fov: number, aspect: number, near: number, far: number): ProjectionMatrix {
-  const f = 1 / Math.tan(fov / 2);
-  const x = f / aspect;
-  const y = f;
-  const z = (far + near) / (near - far);
-  const w = (2 * far * near) / (near - far);
+export class Matrix3x3 {
+  constructor(public elements: Matrix3x3Array) {}
 
-  return [
-    x, 0, 0, 0,
-    0, y, 0, 0,
-    0, 0, z, -1,
-    0, 0, w, 0,
-  ];
+  multiply(other: Vector3): Vector3 {
+    const [a, b, c, d, e, f, g, h, i] = this.elements;
+    const { x, y, z } = other;
+    return new Vector3(
+      a * x + b * y + c * z,
+      d * x + e * y + f * z,
+      g * x + h * y + i * z,
+    );
+  }
 }

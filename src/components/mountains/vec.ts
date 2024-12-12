@@ -87,6 +87,10 @@ export class Vector3 {
     return new Vector3(point.x, point.y, point.z);
   }
 
+  clone(): Vector3 {
+    return new Vector3(this.x, this.y, this.z);
+  }
+
   toString(): string {
     return `(${this.x}, ${this.y}, ${this.z})`;
   }
