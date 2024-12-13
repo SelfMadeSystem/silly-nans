@@ -1,5 +1,5 @@
 .tunnel-path {
-  fill: #000;
-  stroke: #fff;
+  fill: hwb(calc(((var(--n) + var(--s)) / 40) * 360) 0% 80%);
+  stroke: #fff8;
   stroke-width: 2;
 }

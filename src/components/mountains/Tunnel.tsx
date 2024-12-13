@@ -204,7 +204,7 @@ export class Tunnel {
     );
     this.ogPoly = new Polygon(sides, 1);
     this.curve = new BezierCurve([
-      new Vector3(3, -2, 4),
+      new Vector3(3.5, -2, 4),
       new Vector3(3, -2, 4),
       new Vector3(0, -0, 4),
       new Vector3(0, -0, 0),
