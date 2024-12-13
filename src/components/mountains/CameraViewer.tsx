@@ -2,14 +2,16 @@ import { Tunnel, screenHeight, screenWidth } from './Tunnel';
 import './tunnel.css';
 import { useEffect, useRef, useState } from 'react';
 
-function createTunnel() {
-  const tunnel = new Tunnel(9);
-  return tunnel;
-}
-
+const sides = 5;
 const step = 0.05;
 const tunnelRotateSpeed = 3;
-const shapeRotateSpeed = 3.5;
+const shapeRotateSpeed = 10;
+const shapeRotateOffset = 5;
+
+function createTunnel() {
+  const tunnel = new Tunnel(sides);
+  return tunnel;
+}
 
 export default function CameraViewer({ className }: { className?: string }) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -24,9 +26,10 @@ export default function CameraViewer({ className }: { className?: string }) {
       return;
     }
 
-    const s = timeRef.current % step;
+    const time = timeRef.current;
+    const s = time % step;
 
-    svgRef.current.style.setProperty('--s', `${s / step}`);
+    svgRef.current.style.setProperty('--t', `${time}`);
 
     const polys = [...tunnel.getPolygonPath()];
     const svgPolys = pathRefs.current;
@@ -41,7 +44,7 @@ export default function CameraViewer({ className }: { className?: string }) {
       }
       const svgPoly = svgPolys[i];
       svgPoly.setAttribute('d', fillEntireThingPath + poly);
-      svgPoly.style.setProperty('--n', `${i}`);
+      svgPoly.style.setProperty('--n', `${i + s / step}`);
     }
 
     if (svgPolys.length < polys.length) {
@@ -61,26 +64,27 @@ export default function CameraViewer({ className }: { className?: string }) {
   useEffect(() => {
     let animationFrameId: number;
     const tick = (time: number) => {
-      timeRef.current = time / 10000;
+      time = time / 10000;
+      timeRef.current = time;
       update(u => u + 1);
 
       tunnel.curve = tunnel.ogCurve.clone();
-      tunnel.curve.rotateZ(timeRef.current * tunnelRotateSpeed);
+      tunnel.curve.rotateZ(time * tunnelRotateSpeed);
 
-      const s = timeRef.current % step;
+      const s = time % step;
 
       const curve = tunnel.curve;
       const poly = tunnel.ogPoly;
       tunnel.polygons = [];
 
       const startT = s - step;
-      const endT = startT + 1 + step * 2;
+      const endT = startT + 1 + step;
 
-      for (let t = startT; t < endT; t += step) {
+      for (let t = startT; t <= endT; t += step) {
         const tangent = curve.getTangent(t);
         const p = curve.getPoint(t);
         const newPoly = poly.clone();
-        newPoly.rotateZ(t * shapeRotateSpeed);
+        newPoly.rotateZ(shapeRotateSpeed * time + shapeRotateOffset * t);
         newPoly.rotateToFace(tangent);
         newPoly.move(p);
         tunnel.polygons.push(newPoly);
