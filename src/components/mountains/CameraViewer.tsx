@@ -8,6 +8,8 @@ function createTunnel() {
 }
 
 const step = 0.05;
+const tunnelRotateSpeed = 3;
+const shapeRotateSpeed = 3.5;
 
 export default function CameraViewer({ className }: { className?: string }) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -62,6 +64,9 @@ export default function CameraViewer({ className }: { className?: string }) {
       timeRef.current = time / 10000;
       update(u => u + 1);
 
+      tunnel.curve = tunnel.ogCurve.clone();
+      tunnel.curve.rotateZ(timeRef.current * tunnelRotateSpeed);
+
       const s = timeRef.current % step;
 
       const curve = tunnel.curve;
@@ -75,7 +80,7 @@ export default function CameraViewer({ className }: { className?: string }) {
         const tangent = curve.getTangent(t);
         const p = curve.getPoint(t);
         const newPoly = poly.clone();
-        newPoly.rotateZ(t * Math.PI);
+        newPoly.rotateZ(t * shapeRotateSpeed);
         newPoly.rotateToFace(tangent);
         newPoly.move(p);
         tunnel.polygons.push(newPoly);

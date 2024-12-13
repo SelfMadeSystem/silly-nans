@@ -59,6 +59,21 @@ class BezierCurve {
     }
     return points;
   }
+
+  /**
+   * Rotates all points around the Z axis by the given angle
+   */
+  rotateZ(angle: number) {
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    this.controlPoints = this.controlPoints.map(
+      v => new Vector3(v.x * cos - v.y * sin, v.x * sin + v.y * cos, v.z),
+    );
+  }
+
+  clone(): BezierCurve {
+    return new BezierCurve(this.controlPoints.map(p => p.clone()));
+  }
 }
 
 class Polygon {
@@ -191,6 +206,7 @@ export class Tunnel {
   public camera: Camera;
   public ogPoly: Polygon;
   public polygons: Polygon[] = [];
+  public ogCurve: BezierCurve;
   public curve: BezierCurve;
 
   constructor(sides: number) {
@@ -203,12 +219,14 @@ export class Tunnel {
       screenHeight / 2,
     );
     this.ogPoly = new Polygon(sides, 1);
-    this.curve = new BezierCurve([
+    this.ogCurve = new BezierCurve([
       new Vector3(3.5, -2, 4),
       new Vector3(3, -2, 4),
       new Vector3(0, -0, 4),
       new Vector3(0, -0, 0),
     ]);
+
+    this.curve = this.ogCurve.clone();
   }
 
   /**
