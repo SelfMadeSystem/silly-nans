@@ -71,6 +71,13 @@ class BezierCurve {
     );
   }
 
+  /**
+   * Scales all xy points by the given factor
+   */
+  scale(factor: number) {
+    this.controlPoints = this.controlPoints.map(v => new Vector3(v.x * factor, v.y * factor, v.z));
+  }
+
   clone(): BezierCurve {
     return new BezierCurve(this.controlPoints.map(p => p.clone()));
   }

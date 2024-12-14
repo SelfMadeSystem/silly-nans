@@ -6,6 +6,7 @@ import { Pane } from 'tweakpane';
 const initialConfig = {
   sides: 6,
   step: 0.05,
+  curvature: 1,
   tunnelRotateSpeed: 3,
   shapeRotateSpeed: 10,
   shapeRotateOffset: 5,
@@ -32,15 +33,32 @@ export default function TunnelView({ className }: { className?: string }) {
         tunnel.ogPoly = new Polygon(config.sides, 1);
         tunnel.polygons = [];
       });
-    pane.addBinding(config, 'step', { min: 0.01, max: 0.1, step: 0.01 });
-    pane.addBinding(config, 'tunnelRotateSpeed', {
+    pane.addBinding(
+      {
+        step: -Math.log10(config.step),
+      },
+      'step',
+      { max: -Math.log10(0.01), min: -Math.log10(0.15), step: 0.01 },
+    ).on('change', (e) => {
+      config.step = Math.pow(10, -e.value);
+    });
+    pane.addBinding(config, 'curvature', {
       min: 0,
+      max: 2,
+      step: 0.1,
+    });
+    pane.addBinding(config, 'tunnelRotateSpeed', {
+      min: -10,
       max: 10,
       step: 0.1,
     });
-    pane.addBinding(config, 'shapeRotateSpeed', { min: 0, max: 20, step: 0.1 });
+    pane.addBinding(config, 'shapeRotateSpeed', {
+      min: -20,
+      max: 20,
+      step: 0.1,
+    });
     pane.addBinding(config, 'shapeRotateOffset', {
-      min: 0,
+      min: -10,
       max: 10,
       step: 0.1,
     });
@@ -102,6 +120,7 @@ export default function TunnelView({ className }: { className?: string }) {
       const {
         tunnelRotateSpeed,
         sides,
+        curvature,
         shapeRotateSpeed,
         shapeRotateOffset,
         step,
@@ -112,6 +131,7 @@ export default function TunnelView({ className }: { className?: string }) {
 
       tunnel.curve = tunnel.ogCurve.clone();
       tunnel.curve.rotateZ(time * tunnelRotateSpeed);
+      tunnel.curve.scale(curvature);
 
       const s = time % step;
 
@@ -127,7 +147,8 @@ export default function TunnelView({ className }: { className?: string }) {
         const p = curve.getPoint(t);
         const newPoly = poly.clone();
         newPoly.rotateZ(
-          shapeRotateSpeed * time + ((shapeRotateOffset * Math.PI * 2) / sides) * t,
+          shapeRotateSpeed * time +
+            ((shapeRotateOffset * Math.PI * 2) / sides) * t,
         );
         newPoly.rotateToFace(tangent);
         newPoly.move(p);
