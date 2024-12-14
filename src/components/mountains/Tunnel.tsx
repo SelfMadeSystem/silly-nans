@@ -76,7 +76,7 @@ class BezierCurve {
   }
 }
 
-class Polygon {
+export class Polygon {
   private vertices: Vector3[];
 
   /**

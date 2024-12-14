@@ -1,30 +1,60 @@
-import { Tunnel, screenHeight, screenWidth } from './Tunnel';
+import { Polygon, Tunnel, screenHeight, screenWidth } from './Tunnel';
 import './tunnel.css';
 import { useEffect, useRef, useState } from 'react';
+import { Pane } from 'tweakpane';
 
-const sides = 5;
-const step = 0.05;
-const tunnelRotateSpeed = 3;
-const shapeRotateSpeed = 10;
-const shapeRotateOffset = 5;
+const initialConfig = {
+  sides: 6,
+  step: 0.05,
+  tunnelRotateSpeed: 3,
+  shapeRotateSpeed: 10,
+  shapeRotateOffset: 5,
+};
 
-function createTunnel() {
+function createTunnel(sides: number) {
   const tunnel = new Tunnel(sides);
   return tunnel;
 }
 
-export default function CameraViewer({ className }: { className?: string }) {
+export default function TunnelView({ className }: { className?: string }) {
   const svgRef = useRef<SVGSVGElement>(null);
   const pathRefs = useRef<SVGPathElement[]>([]);
-  const [tunnel] = useState<Tunnel>(createTunnel());
+  const [config] = useState(initialConfig);
+  const [tunnel] = useState<Tunnel>(createTunnel(config.sides));
   const timeRef = useRef(0);
   const [u, update] = useState(0);
+
+  useEffect(() => {
+    const pane = new Pane();
+    pane
+      .addBinding(config, 'sides', { min: 3, max: 20, step: 1 })
+      .on('change', () => {
+        tunnel.ogPoly = new Polygon(config.sides, 1);
+        tunnel.polygons = [];
+      });
+    pane.addBinding(config, 'step', { min: 0.01, max: 0.1, step: 0.01 });
+    pane.addBinding(config, 'tunnelRotateSpeed', {
+      min: 0,
+      max: 10,
+      step: 0.1,
+    });
+    pane.addBinding(config, 'shapeRotateSpeed', { min: 0, max: 20, step: 0.1 });
+    pane.addBinding(config, 'shapeRotateOffset', {
+      min: 0,
+      max: 10,
+      step: 0.1,
+    });
+
+    return () => pane.dispose();
+  }, []);
 
   useEffect(() => {
     const svg = svgRef.current;
     if (!svg) {
       return;
     }
+
+    const { step } = config;
 
     const time = timeRef.current;
     const s = time % step;
@@ -45,6 +75,11 @@ export default function CameraViewer({ className }: { className?: string }) {
       const svgPoly = svgPolys[i];
       svgPoly.setAttribute('d', fillEntireThingPath + poly);
       svgPoly.style.setProperty('--n', `${i + s / step}`);
+      svgPoly.style.setProperty('display', 'block');
+    }
+
+    for (let i = polys.length; i < svgPolys.length; i++) {
+      svgPolys[i].style.setProperty('display', 'none');
     }
 
     if (svgPolys.length < polys.length) {
@@ -59,11 +94,18 @@ export default function CameraViewer({ className }: { className?: string }) {
         svg.appendChild(svgPoly);
       }
     }
-  }, [u]);
+  }, [u, config, tunnel]);
 
   useEffect(() => {
     let animationFrameId: number;
     const tick = (time: number) => {
+      const {
+        tunnelRotateSpeed,
+        sides,
+        shapeRotateSpeed,
+        shapeRotateOffset,
+        step,
+      } = config;
       time = time / 10000;
       timeRef.current = time;
       update(u => u + 1);
@@ -84,7 +126,9 @@ export default function CameraViewer({ className }: { className?: string }) {
         const tangent = curve.getTangent(t);
         const p = curve.getPoint(t);
         const newPoly = poly.clone();
-        newPoly.rotateZ(shapeRotateSpeed * time + shapeRotateOffset * t);
+        newPoly.rotateZ(
+          shapeRotateSpeed * time + ((shapeRotateOffset * Math.PI * 2) / sides) * t,
+        );
         newPoly.rotateToFace(tangent);
         newPoly.move(p);
         tunnel.polygons.push(newPoly);
@@ -93,9 +137,9 @@ export default function CameraViewer({ className }: { className?: string }) {
       animationFrameId = requestAnimationFrame(tick);
     };
 
-    tick(0);
+    tick(u);
     return () => cancelAnimationFrame(animationFrameId);
-  }, []);
+  }, [config]);
 
   return (
     <div className={`flex w-full flex-col items-center ${className}`}>
