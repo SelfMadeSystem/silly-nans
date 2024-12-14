@@ -1,0 +1,16 @@
+---
+title: 'Shadow DOM'
+description: 'A simple editor that uses the Shadow DOM to encapsulate html and css.'
+pubDate: '2024-12-13'
+heroImage: '/shadow-dom.png'
+source: 'https://github.com/SelfMadeSystem/silly-nans/blob/main/src/components/ShadowDomEditor.tsx'
+fullWidth: true
+darkMode: true
+footerClasses: 'before:bg-dot-grid before:inset-0 before:absolute before:-z-10 before:backdrop-blur-lg before:backdrop-brightness-150 before:fade-t-xl'
+---
+
+import ShadowDomEditor from '../../components/ShadowDomEditor';
+import ShadowDomView from '../../components/ShadowDomView';
+
+<ShadowDomEditor client:only="react" />
+<ShadowDomView client:only="react" />
