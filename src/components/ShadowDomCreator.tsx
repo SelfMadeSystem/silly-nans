@@ -1,7 +1,8 @@
+import { CSS_PRELUDE } from './ShadowDomConsts';
 import postcss from 'postcss';
+import safe from 'postcss-safe-parser';
 import { useEffect, useRef } from 'react';
 import { v4 as uuid } from 'uuid';
-import { CSS_PRELUDE } from './ShadowDomConsts';
 
 /**
  * Finds all registered CSS properties in a PostCSS root.
@@ -48,6 +49,13 @@ function removeCssProperties(root: postcss.Root) {
 }
 
 /**
+ * Creates a regex pattern that matches a CSS property name.
+ */
+function createPropertyPattern(name: string) {
+  return new RegExp(`(?<=[^a-zA-Z0-9]|^)${name}(?=[^a-zA-Z0-9]|$)`, 'g');
+}
+
+/**
  * Replaces all instances of a CSS properties with other properties in a PostCSS
  * root.
  */
@@ -57,9 +65,10 @@ function replaceCssProperty(
 ) {
   root.walkDecls(decl => {
     replacements.forEach(([oldProperty, newProperty]) => {
-      decl.prop = decl.prop.replace(new RegExp(oldProperty, 'g'), newProperty);
+      const pattern = createPropertyPattern(oldProperty);
+      decl.prop = decl.prop.replace(pattern, newProperty);
       decl.value = decl.value.replace(
-        new RegExp(oldProperty, 'g'),
+        pattern,
         newProperty,
       );
     });
@@ -75,7 +84,7 @@ function replaceHtmlProperty(
   oldProperty: string,
   newProperty: string,
 ) {
-  return html.replace(new RegExp(oldProperty, 'g'), newProperty);
+  return html.replace(createPropertyPattern(oldProperty), newProperty);
 }
 
 /**
@@ -134,7 +143,7 @@ export function ShadowDomCreator({
     }
 
     try {
-      const postcssRoot = postcss.parse(css);
+      const postcssRoot = postcss().process(css, { parser: safe }).root;
       const cssProperties = findCssProperties(postcssRoot);
       const ids = cssProperties.map(
         ({ name, inherits, initialValue, syntax }) =>
@@ -149,7 +158,14 @@ export function ShadowDomCreator({
       }));
 
       // Register all CSS properties
-      replacedCssProperties.forEach(CSS.registerProperty);
+      replacedCssProperties.forEach(p => {
+        try {
+          CSS.registerProperty(p);
+        } catch (e) {
+          console.error(p, e);
+          throw new Error('Failed to register CSS property');
+        }
+      });
 
       // Replace all CSS properties in the HTML string with the generated
       // property names
@@ -183,7 +199,7 @@ export function ShadowDomCreator({
 
   return (
     <div
-      className="isolate h-[calc(100vh-8em)] overflow-hidden flex justify-center items-center"
+      className="isolate flex h-[calc(100vh-8em)] transform-cpu items-center justify-center overflow-hidden"
       ref={previewRef}
     ></div>
   );

@@ -45,7 +45,7 @@ export function ShadowDomViewer({ css, html, properties }: ExportData) {
 
   return (
     <div
-      className="isolate flex h-[calc(100vh-8em)] items-center justify-center overflow-hidden"
+      className="isolate flex h-[calc(100vh-8em)] transform-cpu items-center justify-center overflow-hidden"
       ref={previewRef}
     ></div>
   );
