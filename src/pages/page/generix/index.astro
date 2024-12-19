@@ -1,0 +1,139 @@
+---
+import BaseHead from '../../../components/BaseHead.astro';
+import BlurBlobBg from '../../../components/BlurBlobBg';
+import Header from './components/Header';
+import colors from 'tailwindcss/colors';
+import './generix.css';
+import Wave from '../../../components/Wave';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <BaseHead
+      title="Generix - Home page"
+      description="Generix - a typo of the word generic"
+    />
+  </head>
+  <body class="text-white bg-slate-900">
+    <Header client:load />
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="0"
+      height="0"
+      aria-hidden="true"
+    >
+      <defs>
+        <filter id="unopaq">
+          <feColorMatrix
+            type="matrix"
+            values="1 0 0 0 0
+                  0 1 0 0 0
+                  0 0 1 0 0
+                  0 0 0 2.5 0"
+          ></feColorMatrix>
+        </filter>
+      </defs>
+    </svg>
+    <div class="min-h-screen overflow-hidden relative">
+      <div class="blobs-bg absolute -inset-full -z-10"></div>
+      <div
+        class="bg-dot-grid fade-t-[18rem] absolute bottom-0 left-0 right-0 h-[24rem] -z-10"
+      >
+      </div>
+      <div class="bg-dot-grid opacity-50 absolute inset-0 -z-10"></div>
+      <BlurBlobBg
+        options={{
+          count: 8,
+          minWidth: 350,
+          maxWidth: 1000,
+          minHeight: 350,
+          maxHeight: 1000,
+          minGradientWidth: 100,
+          maxGradientWidth: 150,
+          minGradientHeight: 100,
+          maxGradientHeight: 150,
+          animDur: 5,
+          minSpeedX: -2,
+          maxSpeedX: 2,
+          minSpeedY: -2,
+          maxSpeedY: 2,
+          color: [colors.orange[600], colors.red[600]],
+        }}
+      />
+      <section
+        class="relative flex flex-col max-w-xl lg:max-w-4xl mx-auto mt-24 lg:mt-28 p-4"
+      >
+        <div class="text-4xl md:text-6xl lg:text-7xl font-bold text-center">
+          The most <span class="fancy-text-animation inline-flex">
+            <span style="--i: 1">g</span>
+            <span style="--i: 2">e</span>
+            <span style="--i: 3">n</span>
+            <span style="--i: 4">e</span>
+            <span style="--i: 5">r</span>
+            <span style="--i: 6">i</span>
+            <span style="--i: 7">c</span>
+          </span> page you'll ever see
+        </div>
+        <div class="mx-24 lg:mx-32">
+          <div
+            class="text-center mt-8 p-4 rounded-3xl w-fit text-lg lg:text-2xl mx-auto text-gray-300 backdrop-blur-sm"
+          >
+            This is a generic page, but it's not just any generic page. It's the
+            most generic page you'll ever see.
+          </div>
+        </div>
+      </section>
+      <div class="absolute bottom-0 left-0 right-0 h-48">
+        <Wave fill={colors.slate[900]} amount={2} client:load />
+      </div>
+    </div>
+    <div class="mx-auto max-w-4xl my-8">
+      Lorem, ipsum dolor sit amet consectetur adipisicing elit. Magni nobis,
+      eligendi dolorum modi aperiam itaque qui quam dolor quis temporibus
+      necessitatibus nemo vero aspernatur esse perspiciatis ab sapiente officiis
+      maxime.
+    </div>
+    <div class="mx-auto max-w-4xl my-8">
+      Numquam tenetur illo officiis qui, explicabo distinctio assumenda sit
+      debitis expedita earum ipsum excepturi corrupti esse in harum libero
+      tempora? Cum nobis officiis odit. Voluptatem dolorem aliquid suscipit et
+      quasi.
+    </div>
+    <div class="mx-auto max-w-4xl my-8">
+      Modi aut quaerat vero beatae aliquid esse, praesentium libero quas dolores
+      iure corrupti laboriosam temporibus ut. Labore provident nemo impedit, hic
+      unde possimus laboriosam consectetur, dicta id soluta repellat! Illum.
+    </div>
+    <div class="mx-auto max-w-4xl my-8">
+      Quaerat inventore distinctio nam impedit iure debitis eveniet sapiente
+      possimus aspernatur esse sequi voluptate porro maiores architecto deserunt
+      sed explicabo, ipsam perspiciatis facilis quos alias voluptas ducimus.
+      Aperiam, libero nihil!
+    </div>
+    <div class="mx-auto max-w-4xl my-8">
+      Cumque quia aspernatur praesentium, fugit voluptates reiciendis laboriosam
+      vel. Maiores non molestiae, placeat tempore perferendis obcaecati commodi
+      incidunt atque blanditiis ipsum, nemo rem necessitatibus magnam doloribus
+      facilis sequi error officiis!
+    </div>
+    <div class="mx-auto max-w-4xl my-8">
+      Nobis sequi numquam quos. Quidem cupiditate magni nesciunt facilis
+      architecto reprehenderit? Odio a ratione maxime similique, earum
+      blanditiis quos, ut officia aspernatur consectetur debitis placeat rem
+      expedita eius impedit necessitatibus.
+    </div>
+    <div class="mx-auto max-w-4xl my-8">
+      Iure dolor exercitationem eveniet tempore? Provident, magnam optio. Sint
+      molestiae beatae blanditiis corporis laboriosam tenetur necessitatibus
+      sunt, explicabo iure voluptatem corrupti nobis. Repudiandae a,
+      voluptatibus similique aliquid illo iure aut?
+    </div>
+    <div class="mx-auto max-w-4xl my-8">
+      Praesentium illum nesciunt minus, a laboriosam harum sapiente neque magni
+      molestias reiciendis modi voluptatibus obcaecati similique quaerat nobis
+      ratione necessitatibus saepe fugit ullam tenetur. Neque, in sint. Facilis,
+      eos atque!
+    </div>
+  </body>
+</html>

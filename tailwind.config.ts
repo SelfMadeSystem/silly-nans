@@ -57,7 +57,8 @@ const fadeUtil = plugin(function ({ addUtilities, matchUtilities, theme, e }) {
 const backdropHueRotateUtil = plugin(function ({ addUtilities }) {
   addUtilities({
     '.animate-backdrop-hue-rotate': {
-      '--tw-backdrop-hue-rotate': 'hue-rotate(var(--tw-animate-backdrop-hue-rotate))',
+      '--tw-backdrop-hue-rotate':
+        'hue-rotate(var(--tw-animate-backdrop-hue-rotate))',
       animation: 'backdrop-hue-rotate 20s linear infinite',
     },
   });

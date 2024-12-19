@@ -12,26 +12,6 @@
   initial-value: 0deg;
 }
 
-@layer components {
-  .bg-dot-grid {
-    background-image: radial-gradient(
-      circle at 50% 50%,
-      #0000 0,
-      #0000 2px,
-      rgba(0, 0, 0, var(--bg-dot-grid-alpha)) 2px
-    );
-    background-size: 8px 8px;
-  }
-
-  .bf-bg-dot {
-    @apply before:bg-dot-grid relative isolate before:absolute before:inset-0 before:-z-10;
-  }
-
-  .bf-bg {
-    @apply relative isolate before:absolute before:inset-0 before:-z-10;
-  }
-}
-
 /* Remove scrollbar on all browsers */
 .scrollbar-hidden {
   scrollbar-width: none;

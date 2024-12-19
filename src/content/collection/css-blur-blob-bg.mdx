@@ -3,7 +3,7 @@ title: 'CSS Blur Blob Background'
 description: 'A blob background effect using only CSS.'
 pubDate: '2024-12-09'
 heroImage: '/css-blob-bg.png'
-source: 'https://github.com/SelfMadeSystem/silly-nans/blob/main/src/components/BlurBlogBg.tsx'
+source: 'https://github.com/SelfMadeSystem/silly-nans/blob/main/src/components/BlurBlobBg.tsx'
 fullWidth: true
 isBackground: true
 darkMode: true
@@ -12,7 +12,7 @@ contentClasses: 'backdrop-blur-[1px] bg-black/50'
 footerClasses: 'backdrop-blur-[1px] bg-black/50 fade-t-16'
 ---
 
-import BlurBlogBg from '../../components/BlurBlogBg';
+import BlurBlogBg from '../../components/BlurBlobBg';
 
 <div class="mx-auto w-fit max-w-lg rounded-xl bg-black/50 p-4 pl-8 text-white backdrop-blur-[1px]">
   I made this blob background effect using only CSS `background-image`,
@@ -26,4 +26,4 @@ import BlurBlogBg from '../../components/BlurBlogBg';
 <div class="blobs-bg absolute inset-0 -z-10 bg-black"></div>
 <div class="blobs-bg-over absolute inset-0 -z-10"></div>
 
-<BlurBlogBg client:load />
+<BlurBlogBg showOpts={true} client:load />
