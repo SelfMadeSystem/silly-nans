@@ -67,10 +67,7 @@ function replaceCssProperty(
     replacements.forEach(([oldProperty, newProperty]) => {
       const pattern = createPropertyPattern(oldProperty);
       decl.prop = decl.prop.replace(pattern, newProperty);
-      decl.value = decl.value.replace(
-        pattern,
-        newProperty,
-      );
+      decl.value = decl.value.replace(pattern, newProperty);
     });
   });
 }
@@ -199,7 +196,7 @@ export function ShadowDomCreator({
 
   return (
     <div
-      className="isolate flex h-[calc(100vh-8em)] transform-cpu items-center justify-center overflow-hidden"
+      className="isolate flex h-full w-full transform-cpu items-center justify-center overflow-hidden"
       ref={previewRef}
     ></div>
   );
