@@ -166,7 +166,7 @@ export default function ShadowDomEditor() {
             >
               {showCssEditor ? 'Show HTML Editor' : 'Show CSS Editor'}
             </button>
-            <div className={showCssEditor ? 'hidden' : 'grow'}>
+            <div className={showCssEditor ? 'grow' : 'hidden'}>
               <Editor
                 language="css"
                 options={{
@@ -178,7 +178,7 @@ export default function ShadowDomEditor() {
                 theme="vs-dark"
               />
             </div>
-            <div className={showCssEditor ? 'grow' : 'hidden'}>
+            <div className={showCssEditor ? 'hidden' : 'grow'}>
               <Editor
                 language="html"
                 options={{

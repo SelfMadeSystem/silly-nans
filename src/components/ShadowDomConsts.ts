@@ -208,11 +208,11 @@ export const PRESETS: Preset[] = [
  overflow: hidden;
 }
 
-button:hover {
+.btn:hover {
  color: black;
 }
 
-button:after {
+.btn:after {
  content: "";
  background: white;
  position: absolute;
@@ -225,7 +225,7 @@ button:after {
  transition: all 0.5s;
 }
 
-button:hover:after {
+.btn:hover:after {
  transform: skewX(-45deg) scale(1, 1);
  -webkit-transition: all 0.5s;
  transition: all 0.5s;
