@@ -179,3 +179,64 @@ export const DEFAULT_CSS = `\
 .spin-inside::before {
   background: linear-gradient(var(--r), #fc9 30%, #0000 45% 55%, #9cf 70%);
 }`;
+
+export type Preset = {
+  name: string;
+  html: string;
+  css: string;
+};
+
+export const PRESETS: Preset[] = [
+  {
+    name: 'Button',
+    html: `<button class="btn">Button</button>`,
+    css: `\
+/* From Uiverse.io by CristianMontoya98 */ 
+.btn {
+ width: 6.5em;
+ height: 2.3em;
+ margin: 0.5em;
+ background: #333;
+ color: white;
+ border: none;
+ border-radius: 0.625em;
+ font-size: 20px;
+ font-weight: bold;
+ cursor: pointer;
+ position: relative;
+ z-index: 1;
+ overflow: hidden;
+}
+
+button:hover {
+ color: black;
+}
+
+button:after {
+ content: "";
+ background: white;
+ position: absolute;
+ z-index: -1;
+ left: -20%;
+ right: -20%;
+ top: 0;
+ bottom: 0;
+ transform: skewX(-45deg) scale(0, 1);
+ transition: all 0.5s;
+}
+
+button:hover:after {
+ transform: skewX(-45deg) scale(1, 1);
+ -webkit-transition: all 0.5s;
+ transition: all 0.5s;
+}`,
+  },
+  {
+    name: 'SVG',
+    html: `\
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="50" cy="50" r="40" fill="red" />
+</svg>`,
+    css: ``,
+  },
+];

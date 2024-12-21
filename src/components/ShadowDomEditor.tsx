@@ -1,4 +1,9 @@
-import { DEFAULT_CSS, DEFAULT_HTML } from './ShadowDomConsts';
+import {
+  DEFAULT_CSS,
+  DEFAULT_HTML,
+  PRESETS,
+  type Preset,
+} from './ShadowDomConsts';
 import { type ExportData, ShadowDomCreator } from './ShadowDomCreator';
 import Editor from '@monaco-editor/react';
 import { useState } from 'react';
@@ -9,7 +14,7 @@ import { useState } from 'react';
  */
 const checkIfSvg = (html: string) => {
   return html.trim().startsWith('<svg') && html.trim().endsWith('</svg>');
-}
+};
 
 export default function ShadowDomEditor() {
   const [rewriting, setRewriting] = useState(false);
@@ -23,16 +28,29 @@ export default function ShadowDomEditor() {
   const [showCssEditor, setShowCssEditor] = useState(true);
   const isSvg = checkIfSvg(html ?? '');
 
+  const [selectedPreset, setSelectedPreset] = useState<Preset | undefined>();
+
+  const handlePresetChange = (preset: Preset) => {
+    setHtml(preset.html);
+    setCss(preset.css);
+    setSelectedPreset(preset);
+  };
+
   const minifySvg = (svg: string) => {
-    return svg.replace(/\s+/g, ' ').trim().replace(/<!--.*?-->/g, '');
+    return svg
+      .replace(/\s+/g, ' ')
+      .trim()
+      .replace(/<!--.*?-->/g, '');
   };
 
   const toBase64 = () => {
     const content = html ?? '';
     const minifiedContent = isSvg ? minifySvg(content) : content;
-    const prefix = isSvg ? 'data:image/svg+xml;base64,' : 'data:text/html;base64,';
+    const prefix = isSvg
+      ? 'data:image/svg+xml;base64,'
+      : 'data:text/html;base64,';
     return prefix + window.btoa(minifiedContent);
-  };  
+  };
 
   const rewriteCssWithDelay = (css: string, delay: number) => {
     setRewriting(true);
@@ -57,7 +75,7 @@ export default function ShadowDomEditor() {
 
   return (
     <div className="mx-auto flex flex-col justify-center gap-4 text-white">
-      <div className="mx-auto flex w-fit max-w-3xl flex-row gap-8">
+      <div className="mx-auto flex w-fit max-w-3xl flex-row flex-wrap gap-8">
         <button
           className="mx-auto block w-20 rounded bg-blue-500 py-2 text-white"
           onClick={() => {
@@ -104,6 +122,27 @@ export default function ShadowDomEditor() {
         >
           Rewrite CSS
         </button>
+        <select
+          value={selectedPreset?.name ?? ''}
+          onChange={e => {
+            const preset = PRESETS.find(p => p.name === e.target.value);
+            if (preset) handlePresetChange(preset);
+          }}
+          className="mx-auto block rounded border-2 border-blue-500 bg-transparent px-4 py-2 text-white outline-none"
+        >
+          <option value="" className="hidden">
+            Presets
+          </option>
+          {PRESETS.map(preset => (
+            <option
+              key={preset.name}
+              value={preset.name}
+              className="text-white bg-slate-900"
+            >
+              {preset.name}
+            </option>
+          ))}
+        </select>
       </div>
       <p className="mx-auto mt-5 max-w-3xl text-center">
         This is a demo of a CSS Shadow DOM. It supports the{' '}
