@@ -3,13 +3,36 @@ import { type ExportData, ShadowDomCreator } from './ShadowDomCreator';
 import Editor from '@monaco-editor/react';
 import { useState } from 'react';
 
+/**
+ * Checks if the given HTML string is an SVG. Does so by checking if the string
+ * starts and ends with an SVG tag.
+ */
+const checkIfSvg = (html: string) => {
+  return html.trim().startsWith('<svg') && html.trim().endsWith('</svg>');
+}
+
 export default function ShadowDomEditor() {
   const [rewriting, setRewriting] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedHtml, setCopiedHtml] = useState(false);
+  const [copiedCss, setCopiedCss] = useState(false);
+  const [copiedBase64, setCopiedBase64] = useState(false);
   const [data, setData] = useState<ExportData | undefined>(undefined);
   const [html, setHtml] = useState<string | undefined>(DEFAULT_HTML);
   const [css, setCss] = useState<string | undefined>(DEFAULT_CSS);
   const [showCssEditor, setShowCssEditor] = useState(true);
+  const isSvg = checkIfSvg(html ?? '');
+
+  const minifySvg = (svg: string) => {
+    return svg.replace(/\s+/g, ' ').trim().replace(/<!--.*?-->/g, '');
+  };
+
+  const toBase64 = () => {
+    const content = html ?? '';
+    const minifiedContent = isSvg ? minifySvg(content) : content;
+    const prefix = isSvg ? 'data:image/svg+xml;base64,' : 'data:text/html;base64,';
+    return prefix + window.btoa(minifiedContent);
+  };  
 
   const rewriteCssWithDelay = (css: string, delay: number) => {
     setRewriting(true);
@@ -46,6 +69,36 @@ export default function ShadowDomEditor() {
           {copied ? 'Copied!' : 'Copy'}
         </button>
         <button
+          className="mx-auto block w-32 rounded bg-blue-500 py-2 text-white"
+          onClick={() => {
+            navigator.clipboard.writeText(html ?? '');
+            setCopiedHtml(true);
+            setTimeout(() => setCopiedHtml(false), 2000);
+          }}
+        >
+          {copiedHtml ? 'Copied!' : 'Copy HTML'}
+        </button>
+        <button
+          className="mx-auto block w-28 rounded bg-blue-500 py-2 text-white"
+          onClick={() => {
+            navigator.clipboard.writeText(css ?? '');
+            setCopiedCss(true);
+            setTimeout(() => setCopiedCss(false), 2000);
+          }}
+        >
+          {copiedCss ? 'Copied!' : 'Copy CSS'}
+        </button>
+        <button
+          className="mx-auto block w-32 rounded bg-blue-500 py-2 text-white"
+          onClick={() => {
+            navigator.clipboard.writeText(toBase64());
+            setCopiedBase64(true);
+            setTimeout(() => setCopiedBase64(false), 2000);
+          }}
+        >
+          {copiedBase64 ? 'Copied!' : 'Copy Base64'}
+        </button>
+        <button
           className="mx-auto block rounded bg-blue-500 px-4 py-2 text-white"
           onClick={() => rewriteCssWithDelay(css ?? '', 50)}
         >
@@ -66,7 +119,7 @@ export default function ShadowDomEditor() {
             setExportData={setData}
           />
         </div>
-        <div className="relative h-full w-full overflow-hidden">
+        <div className="relative h-full w-full">
           <div className="absolute inset-0 flex flex-col">
             <button
               className="border border-gray-500 p-1 text-white"

@@ -2,7 +2,6 @@ import { CSS_PRELUDE } from './ShadowDomConsts';
 import postcss from 'postcss';
 import safe from 'postcss-safe-parser';
 import { useEffect, useRef } from 'react';
-import { v4 as uuid } from 'uuid';
 
 /**
  * Finds all registered CSS properties in a PostCSS root.
@@ -143,10 +142,19 @@ export function ShadowDomCreator({
       const postcssRoot = postcss().process(css, { parser: safe }).root;
       const cssProperties = findCssProperties(postcssRoot);
       const ids = cssProperties.map(
-        ({ name, inherits, initialValue, syntax }) =>
-          sanitizePropertyName(
-            `--${uuid()}-${name}-${initialValue}-${syntax}-${inherits}`,
-          ),
+        ({ name, inherits, initialValue, syntax }) => {
+          // Don't need to make a random ID for the property name since, even if
+          // there are duplicate property names, if they have different syntax
+          // or initial values, they are considered different properties.
+          // Furthermore, it doesn't matter if the property is shared between
+          // different components since the property name is scoped to the
+          // component.
+          // Don't need the -- prefix for the property name
+          const smolName = name.slice(2);
+          return sanitizePropertyName(
+            `--${smolName}-${initialValue}-${syntax}-${inherits}`,
+          );
+        },
       );
 
       const replacedCssProperties = cssProperties.map((property, i) => ({
