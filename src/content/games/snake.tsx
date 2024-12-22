@@ -54,6 +54,10 @@ class Snake {
     this.points.pop();
   }
 
+  setHead(point: Point) {
+    this.points[0] = point;
+  }
+
   grow() {
     const tail = this.points[this.points.length - 1];
     const newTail: Point = { x: tail.x, y: tail.y };
@@ -138,17 +142,35 @@ class Food {
     return point;
   }
 
+  getAppleCount(gameProps: GameProps) {
+    switch (gameProps.appleType) {
+      case 'normal':
+        return 1;
+      case 'portal':
+        return 2;
+    }
+  }
+
   randomize(nonLocations: Point[], gameProps: GameProps) {
-    if (nonLocations.length >= gameProps.width * gameProps.height) {
+    const count = this.getAppleCount(gameProps);
+    if (nonLocations.length >= gameProps.width * gameProps.height - count) {
       this.points = [];
       return;
     }
 
-    this.points = [Food.getPoint(nonLocations, gameProps)];
+    this.points = [];
+
+    for (let i = 0; i < count; i++) {
+      this.points.push(
+        Food.getPoint([...nonLocations, ...this.points], gameProps),
+      );
+    }
   }
 
   regenerate(nonLocations: Point[], gameProps: GameProps) {
     if (
+      (this.points.length > 0 &&
+        this.getAppleCount(gameProps) !== this.points.length) ||
       this.points.some(
         p =>
           nonLocations.some(nl => nl.x === p.x && nl.y === p.y) ||
@@ -161,8 +183,18 @@ class Food {
   }
 
   eat(pos: Point, snake: Snake, gameState: GameState, gameProps: GameProps) {
-    if (this.points.some(p => p.x === pos.x && p.y === pos.y)) {
-      snake.grow();
+    const idx = this.points.findIndex(p => p.x === pos.x && p.y === pos.y);
+    if (idx !== -1) {
+      switch (gameProps.appleType) {
+        case 'normal':
+          snake.grow();
+          break;
+        case 'portal':
+          snake.grow();
+          snake.move();
+          snake.setHead(this.points[(idx + 1) % 2]);
+          break;
+      }
       this.randomize(gameState.getPoints(this.points), gameProps);
     }
   }
@@ -181,12 +213,14 @@ class Food {
 }
 
 type PlayState = 'waiting' | 'playing' | 'gameover';
+type AppleType = 'normal' | 'portal';
 
 const defaultGameProps = {
   tickDelay: 100,
   width: 20,
   height: 20,
   apples: 1,
+  appleType: 'normal' as AppleType,
 };
 
 type GameProps = typeof defaultGameProps;
@@ -269,6 +303,18 @@ export default function SnakeGame() {
           }
           draw();
         });
+      pane.addBinding(props, 'appleType', {
+        options: {
+          normal: 'normal',
+          portal: 'portal',
+        },
+      })
+      .on('change', () => {
+        gameState.foods.forEach(food => {
+          food.regenerate(gameState.getPoints(food.points), props);
+        });
+        draw();
+      });
     }
 
     setupPane();
