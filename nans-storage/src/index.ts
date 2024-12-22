@@ -6,8 +6,8 @@ export default {
     const id = url.searchParams.get('id');
     const pathname = url.pathname.substring(1); // Remove leading slash
 
-    // Redirect to NAN_URL if pathname is empty
-    if (!pathname) {
+    // Redirect to NAN_URL if pathname is empty and id is not present
+    if (!pathname && !id) {
       return Response.redirect(NAN_URL, 301);
     }
 
