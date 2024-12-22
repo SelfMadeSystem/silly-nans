@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
+import { Pane } from 'tweakpane';
 
 type Point = {
   x: number;
@@ -10,22 +11,18 @@ type Direction = 'up' | 'down' | 'left' | 'right';
 const CELL_SIZE = 20;
 const CELL_GAP = 2;
 const CELL_TOT = CELL_SIZE + CELL_GAP;
-const GRID_WIDTH = 20;
-const GRID_HEIGHT = 20;
-const CANVAS_WIDTH = GRID_WIDTH * CELL_TOT;
-const CANVAS_HEIGHT = GRID_HEIGHT * CELL_TOT;
 
 class Snake {
   points: Point[] = [];
   direction: Direction = 'right';
 
-  constructor() {
-    this.reset();
+  constructor(gameProps: GameProps) {
+    this.reset(gameProps);
   }
 
-  reset() {
+  reset(gameProps: GameProps) {
     const x = 0;
-    const y = Math.floor(GRID_HEIGHT / 2);
+    const y = Math.floor(gameProps.height / 2);
     this.points = [
       { x, y },
       { x, y },
@@ -95,7 +92,7 @@ class Snake {
     );
   }
 
-  collidesWithWall(width: number, height: number) {
+  collidesWithWall({ width, height }: GameProps) {
     const head = this.getHead();
     return head.x < 0 || head.y < 0 || head.x >= width || head.y >= height;
   }
@@ -104,8 +101,8 @@ class Snake {
     ctx.fillStyle = 'green';
     this.getBody().forEach(point => {
       ctx.fillRect(
-        point.x * CELL_TOT,
-        point.y * CELL_TOT,
+        point.x * CELL_TOT + CELL_GAP,
+        point.y * CELL_TOT + CELL_GAP,
         CELL_SIZE,
         CELL_SIZE,
       );
@@ -113,87 +110,184 @@ class Snake {
 
     ctx.fillStyle = 'darkgreen';
     const head = this.getHead();
-    ctx.fillRect(head.x * CELL_TOT, head.y * CELL_TOT, CELL_SIZE, CELL_SIZE);
-  }
-}
-
-class Food {
-  point: Point = { x: 0, y: 0 };
-
-  constructor(nonLocations: Point[]) {
-    this.randomize(nonLocations);
-  }
-
-  randomize(nonLocations: Point[]) {
-    do {
-      this.point = {
-        x: Math.floor(Math.random() * GRID_WIDTH),
-        y: Math.floor(Math.random() * GRID_HEIGHT),
-      };
-    } while (nonLocations.some(p => p.x === this.point.x && p.y === this.point.y));
-  }
-
-  getPoint() {
-    return this.point;
-  }
-
-  draw(ctx: CanvasRenderingContext2D) {
-    ctx.fillStyle = 'red';
     ctx.fillRect(
-      this.point.x * CELL_TOT,
-      this.point.y * CELL_TOT,
+      head.x * CELL_TOT + CELL_GAP,
+      head.y * CELL_TOT + CELL_GAP,
       CELL_SIZE,
       CELL_SIZE,
     );
   }
 }
 
+class Food {
+  points: Point[] = [];
+
+  constructor(nonLocations: Point[], gameProps: GameProps) {
+    this.randomize(nonLocations, gameProps);
+  }
+
+  private static getPoint(nonLocations: Point[], gameProps: GameProps) {
+    let point: Point;
+    do {
+      point = {
+        x: Math.floor(Math.random() * gameProps.width),
+        y: Math.floor(Math.random() * gameProps.height),
+      };
+    } while (nonLocations.some(p => p.x === point.x && p.y === point.y));
+
+    return point;
+  }
+
+  randomize(nonLocations: Point[], gameProps: GameProps) {
+    if (nonLocations.length >= gameProps.width * gameProps.height) {
+      this.points = [];
+      return;
+    }
+
+    this.points = [Food.getPoint(nonLocations, gameProps)];
+  }
+
+  regenerate(nonLocations: Point[], gameProps: GameProps) {
+    if (
+      this.points.some(
+        p =>
+          nonLocations.some(nl => nl.x === p.x && nl.y === p.y) ||
+          p.x >= gameProps.width ||
+          p.y >= gameProps.height,
+      )
+    ) {
+      this.randomize(nonLocations, gameProps);
+    }
+  }
+
+  eat(pos: Point, snake: Snake, gameState: GameState, gameProps: GameProps) {
+    if (this.points.some(p => p.x === pos.x && p.y === pos.y)) {
+      snake.grow();
+      this.randomize(gameState.getPoints(this.points), gameProps);
+    }
+  }
+
+  draw(ctx: CanvasRenderingContext2D) {
+    ctx.fillStyle = 'red';
+    this.points.forEach(point =>
+      ctx.fillRect(
+        point.x * CELL_TOT + CELL_GAP,
+        point.y * CELL_TOT + CELL_GAP,
+        CELL_SIZE,
+        CELL_SIZE,
+      ),
+    );
+  }
+}
+
 type PlayState = 'waiting' | 'playing' | 'gameover';
+
+const defaultGameProps = {
+  tickDelay: 100,
+  width: 20,
+  height: 20,
+  apples: 1,
+};
+
+type GameProps = typeof defaultGameProps;
+
+class GameState {
+  public snake: Snake;
+  public foods: Food[];
+  public playState: PlayState;
+  public props: GameProps;
+
+  constructor(props: GameProps) {
+    this.snake = new Snake(props);
+    this.foods = Array.from(
+      { length: props.apples },
+      () => new Food([], props),
+    );
+    this.playState = 'waiting';
+    this.props = props;
+  }
+
+  getPoints(exclude: Point[] = []): Point[] {
+    const points: Point[] = [
+      ...this.snake.points,
+      ...this.foods.flatMap(f => f.points),
+    ];
+    return points.filter(p => !exclude.some(e => e.x === p.x && e.y === p.y));
+  }
+
+  reset() {
+    this.playState = 'playing';
+    this.snake.reset(this.props);
+    this.foods.forEach(food => food.randomize(this.getPoints(), this.props));
+  }
+}
 
 export default function SnakeGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    const ctx = canvasRef.current?.getContext('2d');
+    const canvas = canvasRef.current!;
+    if (!canvas) {
+      return;
+    }
+    const ctx = canvas.getContext('2d');
     if (!ctx) {
       return;
     }
 
-    let playState: PlayState = 'waiting';
+    const props = defaultGameProps;
 
-    const snake = new Snake();
-    const foods = [new Food(snake.points)];
+    function setupPane() {
+      const pane = new Pane();
+      pane.addBinding(props, 'tickDelay', { min: 50, max: 500, step: 50 });
+      pane
+        .addBinding(props, 'width', { min: 10, max: 30, step: 1 })
+        .on('change', () => {
+          canvas.width = props.width * CELL_TOT + CELL_GAP;
+          gameState.foods.forEach(food => {
+            food.regenerate(gameState.getPoints(food.points), props);
+          });
+          draw();
+        });
+      pane
+        .addBinding(props, 'height', { min: 10, max: 30, step: 1 })
+        .on('change', () => {
+          canvas.height = props.height * CELL_TOT + CELL_GAP;
+          gameState.foods.forEach(food => {
+            food.regenerate(gameState.getPoints(food.points), props);
+          });
+          draw();
+        });
+      pane
+        .addBinding(props, 'apples', { min: 1, max: 20, step: 1 })
+        .on('change', () => {
+          while (gameState.foods.length < props.apples) {
+            gameState.foods.push(new Food(gameState.getPoints(), props));
+          }
+          while (gameState.foods.length > props.apples) {
+            gameState.foods.pop();
+          }
+          draw();
+        });
+    }
+
+    setupPane();
+
+    const gameState = new GameState(props);
     let lastTime = 0;
     let dt = 0;
     let acc = 0;
 
-    const tick = () => {
-      acc = 0;
-      snake.move();
-      if (
-        snake.collidesWithWall(GRID_WIDTH, GRID_HEIGHT) ||
-        snake.collidesWithItself()
-      ) {
-        playState = 'gameover';
-        update(0);
-        return;
-      }
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      gameState.snake.draw(ctx);
+      gameState.foods.forEach(food => food.draw(ctx));
 
-      const head = snake.getHead();
-      foods.forEach(food => {
-        if (head.x === food.point.x && head.y === food.point.y) {
-          snake.grow();
-          food.randomize([...snake.points, ...foods.map(f => f.point)]);
-        }
-      });
-
-      ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-      snake.draw(ctx);
-      foods.forEach(food => food.draw(ctx));
+      drawText();
     };
 
-    const update = (time: number) => {
-      switch (playState) {
+    const drawText = () => {
+      switch (gameState.playState) {
         case 'waiting':
           ctx.fillStyle = 'white';
           ctx.font = '24px sans-serif';
@@ -201,10 +295,10 @@ export default function SnakeGame() {
           ctx.textBaseline = 'middle';
           ctx.fillText(
             'Press any key to start',
-            CANVAS_WIDTH / 2,
-            CANVAS_HEIGHT / 2,
+            canvas.width / 2,
+            canvas.height / 2,
           );
-          return;
+          break;
         case 'gameover':
           ctx.fillStyle = 'white';
           ctx.font = '24px sans-serif';
@@ -212,66 +306,90 @@ export default function SnakeGame() {
           ctx.textBaseline = 'middle';
           ctx.fillText(
             'Game Over! Press any key to restart',
-            CANVAS_WIDTH / 2,
-            CANVAS_HEIGHT / 2,
+            canvas.width / 2,
+            canvas.height / 2,
           );
-          return;
+          break;
       }
+    };
+
+    const tick = () => {
+      acc = 0;
+      gameState.snake.move();
+      if (
+        gameState.snake.collidesWithWall(props) ||
+        gameState.snake.collidesWithItself()
+      ) {
+        gameState.playState = 'gameover';
+        update(0);
+        draw();
+        return;
+      }
+
+      const head = gameState.snake.getHead();
+
+      gameState.foods.forEach(food => {
+        food.eat(head, gameState.snake, gameState, props);
+      });
+
+      draw();
+    };
+
+    const update = (time: number) => {
       dt = time - lastTime;
       lastTime = time;
       acc += dt;
 
-      if (acc > 100) {
+      if (acc > props.tickDelay) {
         tick();
       }
 
-      if (playState === 'playing') {
+      if (gameState.playState === 'playing') {
         requestAnimationFrame(update);
       }
     };
 
-    update(0);
+    drawText();
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      switch (playState) {
+      switch (gameState.playState) {
         case 'waiting':
-          playState = 'playing';
+          gameState.playState = 'playing';
           requestAnimationFrame(update);
           break;
         case 'gameover':
-          playState = 'playing';
-          snake.reset();
-          foods.forEach(food => food.randomize([...snake.points, ...foods.map(f => f.point)]));
+          gameState.reset();
           requestAnimationFrame(update);
           break;
       }
 
       function ce() {
         e.preventDefault();
+        e.stopPropagation();
       }
 
       switch (e.key) {
         case 'ArrowUp':
           ce();
-          if (snake.setDirection('up')) {
+          if (gameState.snake.setDirection('up')) {
             tick();
           }
           break;
         case 'ArrowDown':
           ce();
-          if (snake.setDirection('down')) {
+          if (gameState.snake.setDirection('down')) {
             tick();
           }
           break;
         case 'ArrowLeft':
           ce();
-          if (snake.setDirection('left')) {
+          if (gameState.snake.setDirection('left')) {
             tick();
           }
           break;
         case 'ArrowRight':
           ce();
-          if (snake.setDirection('right')) {
+          if (gameState.snake.setDirection('right')) {
             tick();
           }
           break;
@@ -288,8 +406,8 @@ export default function SnakeGame() {
     <canvas
       className="mx-auto border border-white"
       ref={canvasRef}
-      width={CANVAS_WIDTH}
-      height={CANVAS_HEIGHT}
+      width={defaultGameProps.width * CELL_TOT + CELL_GAP}
+      height={defaultGameProps.height * CELL_TOT + CELL_GAP}
     />
   );
 }
