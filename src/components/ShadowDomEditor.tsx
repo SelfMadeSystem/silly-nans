@@ -6,19 +6,32 @@ import {
 } from './ShadowDomConsts';
 import { type ExportData, ShadowDomCreator } from './ShadowDomCreator';
 import Editor from '@monaco-editor/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 /**
  * Checks if the given HTML string is an SVG. Does so by checking if the string
  * starts and ends with an SVG tag.
  */
-const checkIfSvg = (html: string) => {
+function checkIfSvg(html: string) {
   return html.trim().startsWith('<svg') && html.trim().endsWith('</svg>');
-};
+}
+
+/**
+ * Generates a wrangler command to set a key-value pair in a KV namespace.
+ * @param key - The key name.
+ * @param json - The JSON string to store.
+ * @returns The wrangler command as a string.
+ */
+function generateWranglerCommand(key: string, json: string): string {
+  const NAMESPACE_ID = '09fc70eb28e042399286b0f4ff3c9a9b';
+  const sanatizedJson = json.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  return `wrangler kv:key put --namespace-id=${NAMESPACE_ID} ${key} "${sanatizedJson}"`;
+}
 
 export default function ShadowDomEditor() {
   const [rewriting, setRewriting] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedCli, setCopiedCli] = useState(false);
   const [copiedHtml, setCopiedHtml] = useState(false);
   const [copiedCss, setCopiedCss] = useState(false);
   const [copiedBase64, setCopiedBase64] = useState(false);
@@ -29,6 +42,24 @@ export default function ShadowDomEditor() {
   const isSvg = checkIfSvg(html ?? '');
 
   const [selectedPreset, setSelectedPreset] = useState<Preset | undefined>();
+
+  useEffect(() => {
+    const URL = 'https://nans-storage.creepercannyon.workers.dev/?id=';
+    const urlParams = new URLSearchParams(window.location.search);
+    const idName = urlParams.get('id');
+    if (idName) {
+      fetch(`${URL}${idName}`)
+        .then(response => response.json())
+        .then(data => {
+          setHtml(data.html);
+          setCss(data.css);
+          setSelectedPreset(data.preset);
+        })
+        .catch(error => {
+          console.error('Error fetching data:', error);
+        });
+    }
+  });
 
   const handlePresetChange = (preset: Preset) => {
     setHtml(preset.html);
@@ -89,6 +120,25 @@ export default function ShadowDomEditor() {
         <button
           className="mx-auto block w-32 rounded bg-blue-500 py-2 text-white"
           onClick={() => {
+            const id = (
+              window.prompt('Enter a unique ID for the data:') ?? ''
+            ).trim();
+            if (!id) {
+              window.alert('No ID provided.');
+              return;
+            }
+            navigator.clipboard.writeText(
+              generateWranglerCommand(id, JSON.stringify(data)),
+            );
+            setCopiedCli(true);
+            setTimeout(() => setCopiedCli(false), 2000);
+          }}
+        >
+          {copiedCli ? 'Copied!' : 'Copy CLI'}
+        </button>
+        <button
+          className="mx-auto block w-32 rounded bg-blue-500 py-2 text-white"
+          onClick={() => {
             navigator.clipboard.writeText(html ?? '');
             setCopiedHtml(true);
             setTimeout(() => setCopiedHtml(false), 2000);
@@ -137,7 +187,7 @@ export default function ShadowDomEditor() {
             <option
               key={preset.name}
               value={preset.name}
-              className="text-white bg-slate-900"
+              className="bg-slate-900 text-white"
             >
               {preset.name}
             </option>
