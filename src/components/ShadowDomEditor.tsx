@@ -59,7 +59,7 @@ export default function ShadowDomEditor() {
           console.error('Error fetching data:', error);
         });
     }
-  });
+  }, []);
 
   const handlePresetChange = (preset: Preset) => {
     setHtml(preset.html);
