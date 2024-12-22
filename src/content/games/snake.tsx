@@ -101,15 +101,152 @@ class Snake {
     return head.x < 0 || head.y < 0 || head.x >= width || head.y >= height;
   }
 
+  static draw(
+    ctx: CanvasRenderingContext2D,
+    point: Point,
+    prev: Point | null,
+    next: Point | null,
+    color: string,
+  ) {
+    ctx.fillStyle = color;
+    ctx.fillRect(
+      point.x * CELL_TOT + CELL_GAP,
+      point.y * CELL_TOT + CELL_GAP,
+      CELL_SIZE,
+      CELL_SIZE,
+    );
+
+    if (prev) {
+      const dx = point.x - prev.x;
+      const dy = point.y - prev.y;
+      ctx.fillStyle = 'cyan';
+      switch (`${dx},${dy}`) {
+        case '1,0':
+          ctx.fillRect(
+            point.x * CELL_TOT + CELL_SIZE,
+            point.y * CELL_TOT + CELL_GAP,
+            CELL_GAP,
+            CELL_SIZE,
+          );
+          break;
+        case '-1,0':
+          ctx.fillRect(
+            point.x * CELL_TOT + CELL_GAP,
+            point.y * CELL_TOT + CELL_GAP,
+            CELL_GAP,
+            CELL_SIZE,
+          );
+          break;
+        case '0,1':
+          ctx.fillRect(
+            point.x * CELL_TOT + CELL_GAP,
+            point.y * CELL_TOT + CELL_SIZE,
+            CELL_SIZE,
+            CELL_GAP,
+          );
+          break;
+        case '0,-1':
+          ctx.fillRect(
+            point.x * CELL_TOT + CELL_GAP,
+            point.y * CELL_TOT + CELL_GAP,
+            CELL_SIZE,
+            CELL_GAP,
+          );
+          break;
+      }
+    }
+
+    if (next) {
+      const dx = next.x - point.x;
+      const dy = next.y - point.y;
+      ctx.fillStyle = 'cyan';
+      switch (`${dx},${dy}`) {
+        case '1,0':
+          ctx.fillRect(
+            point.x * CELL_TOT + CELL_SIZE,
+            point.y * CELL_TOT + CELL_GAP,
+            CELL_GAP,
+            CELL_SIZE,
+          );
+          break;
+        case '-1,0':
+          ctx.fillRect(
+            point.x * CELL_TOT + CELL_GAP,
+            point.y * CELL_TOT + CELL_GAP,
+            CELL_GAP,
+            CELL_SIZE,
+          );
+          break;
+        case '0,1':
+          ctx.fillRect(
+            point.x * CELL_TOT + CELL_GAP,
+            point.y * CELL_TOT + CELL_SIZE,
+            CELL_SIZE,
+            CELL_GAP,
+          );
+          break;
+        case '0,-1':
+          ctx.fillRect(
+            point.x * CELL_TOT + CELL_GAP,
+            point.y * CELL_TOT + CELL_GAP,
+            CELL_SIZE,
+            CELL_GAP,
+          );
+          break;
+      }
+    }
+  }
+
   draw(ctx: CanvasRenderingContext2D) {
-    ctx.fillStyle = 'green';
-    this.getBody().forEach(point => {
+    this.getBody().forEach((point, i) => {
+      ctx.fillStyle = 'green';
       ctx.fillRect(
         point.x * CELL_TOT + CELL_GAP,
         point.y * CELL_TOT + CELL_GAP,
         CELL_SIZE,
         CELL_SIZE,
       );
+      const prev = this.points[i];
+      if (!prev) {
+        return;
+      }
+      const dx = prev.x - point.x;
+      const dy = prev.y - point.y;
+
+      switch (`${dx},${dy}`) {
+        case '1,0':
+          ctx.fillRect(
+            point.x * CELL_TOT + CELL_SIZE,
+            point.y * CELL_TOT + CELL_GAP,
+            CELL_GAP * 2,
+            CELL_SIZE,
+          );
+          break;
+        case '-1,0':
+          ctx.fillRect(
+            point.x * CELL_TOT - CELL_GAP,
+            point.y * CELL_TOT + CELL_GAP,
+            CELL_GAP * 2,
+            CELL_SIZE,
+          );
+          break;
+        case '0,1':
+          ctx.fillRect(
+            point.x * CELL_TOT + CELL_GAP,
+            point.y * CELL_TOT + CELL_SIZE,
+            CELL_SIZE,
+            CELL_GAP * 2,
+          );
+          break;
+        case '0,-1':
+          ctx.fillRect(
+            point.x * CELL_TOT + CELL_GAP,
+            point.y * CELL_TOT - CELL_GAP,
+            CELL_SIZE,
+            CELL_GAP * 2,
+          );
+          break;
+      }
     });
 
     ctx.fillStyle = 'darkblue';
