@@ -332,7 +332,7 @@ class Food {
           snake.setHead(this.points[(idx + 1) % 2]);
           break;
       }
-      this.randomize(gameState.getPoints(this.points), gameProps);
+      this.randomize(gameState.getPoints(), gameProps);
     }
   }
 
