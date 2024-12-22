@@ -112,7 +112,7 @@ class Snake {
       );
     });
 
-    ctx.fillStyle = 'darkgreen';
+    ctx.fillStyle = 'darkblue';
     const head = this.getHead();
     ctx.fillRect(
       head.x * CELL_TOT + CELL_GAP,
@@ -303,18 +303,19 @@ export default function SnakeGame() {
           }
           draw();
         });
-      pane.addBinding(props, 'appleType', {
-        options: {
-          normal: 'normal',
-          portal: 'portal',
-        },
-      })
-      .on('change', () => {
-        gameState.foods.forEach(food => {
-          food.regenerate(gameState.getPoints(food.points), props);
+      pane
+        .addBinding(props, 'appleType', {
+          options: {
+            normal: 'normal',
+            portal: 'portal',
+          },
+        })
+        .on('change', () => {
+          gameState.foods.forEach(food => {
+            food.regenerate(gameState.getPoints(food.points), props);
+          });
+          draw();
         });
-        draw();
-      });
     }
 
     setupPane();
@@ -402,11 +403,11 @@ export default function SnakeGame() {
         case 'waiting':
           gameState.playState = 'playing';
           requestAnimationFrame(update);
-          break;
+          return;
         case 'gameover':
           gameState.reset();
           requestAnimationFrame(update);
-          break;
+          return;
       }
 
       function ce() {
