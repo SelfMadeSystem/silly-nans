@@ -44,7 +44,7 @@ export default function ShadowDomEditor() {
   const [selectedPreset, setSelectedPreset] = useState<Preset | undefined>();
 
   useEffect(() => {
-    const URL = 'https://nans-storage.creepercannyon.workers.dev/?id=';
+    const URL = 'https://nan.shoghisimon.ca?id=';
     const urlParams = new URLSearchParams(window.location.search);
     const idName = urlParams.get('id');
     if (idName) {
