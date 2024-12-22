@@ -1,0 +1,52 @@
+---
+import BaseHead from '../../components/BaseHead.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import { SITE_TITLE, SITE_DESCRIPTION } from '../../consts';
+import { getCollection } from 'astro:content';
+import FormattedDate from '../../components/FormattedDate.astro';
+import '../../styles/main.css';
+
+const posts = (await getCollection('games')).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+  </head>
+  <body>
+    <Header />
+    <main class="mx-auto max-w-6xl">
+      <section>
+        <ul class="flex flex-row flex-wrap justify-around gap-8 p-8">
+          {
+            posts.map(post => (
+              <li class="max-w-md shrink grow md:max-w-lg">
+                <a href={`/games/${post.id}/`}>
+                  <img
+                    width={720}
+                    height={360}
+                    class="max-h-80 bg-black object-cover"
+                    src={post.data.heroImage}
+                    alt=""
+                  />
+                  <h4>{post.data.title}</h4>
+                  <div class="text-gray-500">
+                    <FormattedDate date={post.data.pubDate} />
+                  </div>
+                </a>
+                <a href={post.data.source} class="block text-blue-600">
+                  Get this effect
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+    </main>
+    <Footer />
+  </body>
+</html>
