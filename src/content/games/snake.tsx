@@ -622,6 +622,7 @@ export default function SnakeGame() {
           } else {
             gameState.snake.setDirection('right');
           }
+          tick();
           setHorizontal(true);
           break;
         case 'left':
@@ -631,6 +632,7 @@ export default function SnakeGame() {
           } else {
             gameState.snake.setDirection('down');
           }
+          tick();
           setHorizontal(false);
           break;
       }
