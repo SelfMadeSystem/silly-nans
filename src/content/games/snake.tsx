@@ -540,16 +540,13 @@ export default function SnakeGame() {
         case 'waiting':
           gameState.playState = 'playing';
           requestAnimationFrame(update);
+          ce();
           return;
         case 'gameover':
           gameState.reset();
           requestAnimationFrame(update);
+          ce();
           return;
-      }
-
-      function ce() {
-        e.preventDefault();
-        e.stopPropagation();
       }
 
       switch (e.key) {
@@ -577,6 +574,11 @@ export default function SnakeGame() {
             tick();
           }
           break;
+      }
+      
+      function ce() {
+        e.preventDefault();
+        e.stopPropagation();
       }
     };
 
