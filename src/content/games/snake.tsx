@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react';
+import classNames from 'classnames';
+import { useEffect, useRef, useState } from 'react';
 import { Pane } from 'tweakpane';
 
 type Point = {
@@ -395,8 +396,12 @@ class GameState {
 
 export default function SnakeGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const touchRef = useRef<HTMLDivElement>(null);
+  const [isTouch, setIsTouch] = useState(false);
+  const [horizontal, setHorizontal] = useState(true);
 
   useEffect(() => {
+    setIsTouch('ontouchstart' in window);
     const canvas = canvasRef.current!;
     if (!canvas) {
       return;
@@ -405,6 +410,7 @@ export default function SnakeGame() {
     if (!ctx) {
       return;
     }
+    const touch = touchRef.current!;
 
     const props = defaultGameProps;
 
@@ -543,6 +549,7 @@ export default function SnakeGame() {
           ce();
           return;
         case 'gameover':
+          setHorizontal(true);
           gameState.reset();
           requestAnimationFrame(update);
           ce();
@@ -554,46 +561,168 @@ export default function SnakeGame() {
           ce();
           if (gameState.snake.setDirection('up')) {
             tick();
+            setHorizontal(false);
           }
           break;
         case 'ArrowDown':
           ce();
           if (gameState.snake.setDirection('down')) {
             tick();
+            setHorizontal(false);
           }
           break;
         case 'ArrowLeft':
           ce();
           if (gameState.snake.setDirection('left')) {
             tick();
+            setHorizontal(true);
           }
           break;
         case 'ArrowRight':
           ce();
           if (gameState.snake.setDirection('right')) {
             tick();
+            setHorizontal(true);
           }
           break;
       }
-      
+
       function ce() {
         e.preventDefault();
         e.stopPropagation();
       }
     };
 
+    const handleTouchStart = (e: TouchEvent) => {
+      switch (gameState.playState) {
+        case 'waiting':
+          gameState.playState = 'playing';
+          requestAnimationFrame(update);
+          return;
+        case 'gameover':
+          gameState.reset();
+          setHorizontal(true);
+          requestAnimationFrame(update);
+          return;
+      }
+
+      const touch = e.touches[0];
+      const x = touch.clientX;
+      const y = touch.clientY;
+
+      const rect = canvas.getBoundingClientRect();
+      const canvasX = x - rect.left;
+      const canvasY = y - rect.top;
+
+      switch (gameState.snake.direction) {
+        case 'up':
+        case 'down':
+          if (canvasX < canvas.width / 2) {
+            gameState.snake.setDirection('left');
+          } else {
+            gameState.snake.setDirection('right');
+          }
+          setHorizontal(true);
+          break;
+        case 'left':
+        case 'right':
+          if (canvasY < canvas.height / 2) {
+            gameState.snake.setDirection('up');
+          } else {
+            gameState.snake.setDirection('down');
+          }
+          setHorizontal(false);
+          break;
+      }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
+    touch.addEventListener('touchstart', handleTouchStart);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
+      touch.removeEventListener('touchstart', handleTouchStart);
     };
   }, []);
 
   return (
-    <canvas
-      className="mx-auto border border-white"
-      ref={canvasRef}
-      width={defaultGameProps.width * CELL_TOT + CELL_GAP}
-      height={defaultGameProps.height * CELL_TOT + CELL_GAP}
-    />
+    <div className="flex justify-center">
+      <div
+        className={classNames(
+          'relative isolate mx-auto border border-white/25',
+          isTouch && 'p-24',
+        )}
+        ref={touchRef}
+      >
+        {isTouch && (
+          <div className="absolute inset-0 -z-10">
+            {horizontal ? (
+              <>
+                <div className="absolute bottom-1/2 left-0 right-0 top-0">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    className="w-full h-full"
+                  >
+                    <path
+                      fill="#fff2"
+                      d="M7.41,15.41L12,10.83L16.59,15.41L18,14L12,8L6,14L7.41,15.41Z"
+                    />
+                  </svg>
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 top-1/2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    className="w-full h-full"
+                  >
+                    <path
+                      fill="#fff2"
+                      d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
+                    />
+                  </svg>
+                </div>
+                <div className="absolute left-0 right-0 top-1/2 h-[1px] bg-white/25" />
+              </>
+            ) : (
+              <>
+                <div className="absolute bottom-0 left-0 right-1/2 top-0">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    className="w-full h-full"
+                  >
+                    <path
+                      fill="#fff2"
+                      d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z"
+                    />
+                  </svg>
+                </div>
+                <div className="absolute bottom-0 left-1/2 right-0 top-0">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    className="w-full h-full"
+                  >
+                    <path
+                      fill="#fff2"
+                      d="M8.58,16.58L13.17,12L8.58,7.41L10,6L16,12L10,18L8.58,16.58Z"
+                    />
+                  </svg>
+                </div>
+              <div className="absolute bottom-0 left-1/2 top-0 w-[1px] bg-white/25" />
+              </>
+            )}
+            <div className="absolute bottom-0 left-1/2 top-0 w-[1px] bg-white/5" />
+            <div className="absolute left-0 right-0 top-1/2 h-[1px] bg-white/5" />
+          </div>
+        )}
+        <canvas
+          className="border border-white"
+          ref={canvasRef}
+          width={defaultGameProps.width * CELL_TOT + CELL_GAP}
+          height={defaultGameProps.height * CELL_TOT + CELL_GAP}
+        />
+      </div>
+    </div>
   );
 }
