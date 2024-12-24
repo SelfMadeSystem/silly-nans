@@ -315,7 +315,7 @@ class Tetris {
     }
 
     if (key) {
-      this.gameState.score += 2;
+      this.gameState.score += 1;
     }
 
     if (
@@ -355,7 +355,7 @@ class Tetris {
       this.gameState.tetromino.canMove({ x: 0, y: 1 }, this.gameState.board)
     ) {
       this.gameState.tetromino.move({ x: 0, y: 1 });
-      this.gameState.score += 4;
+      this.gameState.score += 2;
     }
     this.dropTetromino();
   }
@@ -456,12 +456,7 @@ class Tetris {
       const { x, y } = block.pos;
       this.ctx.fillStyle = block.color;
       this.ctx.globalAlpha = 0.5;
-      this.ctx.fillRect(
-        x * BLOCK_SIZE,
-        y * BLOCK_SIZE,
-        BLOCK_SIZE,
-        BLOCK_SIZE,
-      );
+      this.ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
       this.ctx.globalAlpha = 1;
     });
   }
@@ -485,7 +480,7 @@ class Tetris {
       return;
     }
     this.gameState.heldTetromino.blocks.forEach(block => {
-      const { x, y } = block.pos
+      const { x, y } = block.pos;
       this.ctx.fillStyle = block.color;
       this.ctx.fillRect(
         x * BLOCK_SIZE + 300,
@@ -573,7 +568,7 @@ class Tetris {
       }
     };
 
-    const handleKey = (event: KeyboardEvent) => {
+    const handleKey = (event: KeyboardEvent, repeat = false) => {
       function ce() {
         event.preventDefault();
         event.stopPropagation();
@@ -602,35 +597,43 @@ class Tetris {
           break;
         case 'ArrowUp':
         case 'x':
-          this.rotateTetrominoCw();
           ce();
+          if (!repeat) this.rotateTetrominoCw();
           break;
         case 'Control':
         case 'z':
-          this.rotateTetrominoCcw();
           ce();
+          if (!repeat) this.rotateTetrominoCcw();
           break;
         case 'Shift':
         case 'c':
-          this.holdTetromino();
           ce();
+          if (!repeat) this.holdTetromino();
           break;
         case ' ':
-          this.hardDropTetromino();
           ce();
+          if (!repeat) this.hardDropTetromino();
           break;
         case 'Escape':
-          this.pauseGame();
           ce();
+          if (!repeat) this.pauseGame();
           break;
       }
     };
 
     window.addEventListener('keydown', event => {
+      if (event.repeat) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
       clearKeyRepeat();
       handleKey(event);
       keyRepeatTimeout = setTimeout(() => {
-        keyRepeatIntervalId = setInterval(() => handleKey(event), keyRepeatInterval);
+        keyRepeatIntervalId = setInterval(
+          () => handleKey(event, true),
+          keyRepeatInterval,
+        );
       }, keyRepeatDelay);
     });
 
