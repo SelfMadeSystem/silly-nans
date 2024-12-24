@@ -309,9 +309,13 @@ class Tetris {
     }
   }
 
-  dropTetromino() {
+  dropTetromino(key = false) {
     if (this.gameState.playState !== 'playing') {
       return;
+    }
+
+    if (key) {
+      this.gameState.score += 2;
     }
 
     if (
@@ -351,6 +355,7 @@ class Tetris {
       this.gameState.tetromino.canMove({ x: 0, y: 1 }, this.gameState.board)
     ) {
       this.gameState.tetromino.move({ x: 0, y: 1 });
+      this.gameState.score += 4;
     }
     this.dropTetromino();
   }
@@ -552,7 +557,23 @@ class Tetris {
   }
 
   initEvents() {
-    window.addEventListener('keydown', event => {
+    const keyRepeatDelay = 100; // Delay before key repeat starts (in ms)
+    const keyRepeatInterval = 50; // Interval between key repeats (in ms)
+    let keyRepeatTimeout: NodeJS.Timeout | null = null;
+    let keyRepeatIntervalId: NodeJS.Timeout | null = null;
+
+    const clearKeyRepeat = () => {
+      if (keyRepeatTimeout) {
+        clearTimeout(keyRepeatTimeout);
+        keyRepeatTimeout = null;
+      }
+      if (keyRepeatIntervalId) {
+        clearInterval(keyRepeatIntervalId);
+        keyRepeatIntervalId = null;
+      }
+    };
+
+    const handleKey = (event: KeyboardEvent) => {
       function ce() {
         event.preventDefault();
         event.stopPropagation();
@@ -576,7 +597,7 @@ class Tetris {
           ce();
           break;
         case 'ArrowDown':
-          this.dropTetromino();
+          this.dropTetromino(true);
           ce();
           break;
         case 'ArrowUp':
@@ -603,6 +624,18 @@ class Tetris {
           ce();
           break;
       }
+    };
+
+    window.addEventListener('keydown', event => {
+      clearKeyRepeat();
+      handleKey(event);
+      keyRepeatTimeout = setTimeout(() => {
+        keyRepeatIntervalId = setInterval(() => handleKey(event), keyRepeatInterval);
+      }, keyRepeatDelay);
+    });
+
+    window.addEventListener('keyup', () => {
+      clearKeyRepeat();
     });
   }
 
