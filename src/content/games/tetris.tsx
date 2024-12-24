@@ -648,7 +648,10 @@ class Tetris {
   }
 }
 
-export default createCanvasComponent({ width: 400, height: 400 }, canvas => {
-  const tetris = new Tetris(canvas);
-  tetris.start();
-});
+export default createCanvasComponent(
+  { width: 400, height: 400, className: 'mx-auto' },
+  canvas => {
+    const tetris = new Tetris(canvas);
+    tetris.start();
+  },
+);
