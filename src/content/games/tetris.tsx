@@ -16,21 +16,95 @@ function isBlockValid(vec: Vec2, board: Board) {
   );
 }
 
+const WALL_KICKS: Record<number, Vec2[]> = {
+  0: [
+    { x: 0, y: 0 },
+    { x: -1, y: 0 },
+    { x: -1, y: -1 },
+    { x: 0, y: 2 },
+    { x: -1, y: 2 },
+  ],
+  1: [
+    { x: 0, y: 0 },
+    { x: 1, y: 0 },
+    { x: 1, y: 1 },
+    { x: 0, y: -2 },
+    { x: 1, y: -2 },
+  ],
+  2: [
+    { x: 0, y: 0 },
+    { x: 1, y: 0 },
+    { x: 1, y: -1 },
+    { x: 0, y: 2 },
+    { x: 1, y: 2 },
+  ],
+  3: [
+    { x: 0, y: 0 },
+    { x: -1, y: 0 },
+    { x: -1, y: 1 },
+    { x: 0, y: -2 },
+    { x: -1, y: -2 },
+  ],
+};
+
+const I_WALL_KICKS: Record<number, Vec2[]> = {
+  0: [
+    { x: 0, y: 0 },
+    { x: -2, y: 0 },
+    { x: 1, y: 0 },
+    { x: -2, y: 1 },
+    { x: 1, y: -2 },
+  ],
+  1: [
+    { x: 0, y: 0 },
+    { x: -1, y: 0 },
+    { x: 2, y: 0 },
+    { x: -1, y: -2 },
+    { x: 2, y: 1 },
+  ],
+  2: [
+    { x: 0, y: 0 },
+    { x: 2, y: 0 },
+    { x: -1, y: 0 },
+    { x: 2, y: -1 },
+    { x: -1, y: 2 },
+  ],
+  3: [
+    { x: 0, y: 0 },
+    { x: 1, y: 0 },
+    { x: -2, y: 0 },
+    { x: 1, y: 2 },
+    { x: -2, y: -1 },
+  ],
+};
+
 class Tetromino {
-  blocks: Block[];
+  rotation: number = 0;
   constructor(
-    blocks: Vec2[],
-    color: string,
+    public blocks: Vec2[],
+    public color: string,
     public id: string,
     public rotationPoint: Vec2 = { x: 0, y: 0 },
-  ) {
-    this.blocks = blocks.map(pos => ({ pos, color }));
+  ) {}
+
+  getBlocks() {
+    return this.blocks.map(block => ({
+      pos: {
+        x: block.x,
+        y: block.y,
+      },
+      color: this.color,
+    }));
+  }
+
+  wallKicks(rotation: number) {
+    return this.id === 'I' ? I_WALL_KICKS[rotation] : WALL_KICKS[rotation];
   }
 
   move(delta: Vec2) {
     this.blocks.forEach(block => {
-      block.pos.x += delta.x;
-      block.pos.y += delta.y;
+      block.x += delta.x;
+      block.y += delta.y;
     });
     this.rotationPoint.x += delta.x;
     this.rotationPoint.y += delta.y;
@@ -38,56 +112,77 @@ class Tetromino {
 
   rotateICw(i: number): Vec2 {
     const { x: cx, y: cy } = this.rotationPoint;
-    const x = this.blocks[i].pos.x - cx;
-    const y = this.blocks[i].pos.y - cy;
+    const x = this.blocks[i].x - cx;
+    const y = this.blocks[i].y - cy;
     return { x: cx - y, y: cy + x };
   }
 
-  rotateCw() {
+  rotateCw(board: Board): boolean {
+    const ogBlocks = this.blocks.map(block => ({ ...block }));
     this.blocks.forEach((block, i) => {
-      block.pos = this.rotateICw(i);
+      const { x, y } = this.rotateICw(i);
+      block.x = x;
+      block.y = y;
     });
+
+    const wallKicks = this.wallKicks(this.rotation);
+
+    for (const kick of wallKicks) {
+      if (this.canMove(kick, board)) {
+        this.rotation = (this.rotation + 1) % 4;
+        this.move(kick);
+        return true;
+      }
+    }
+
+    this.blocks = ogBlocks;
+    return false;
   }
 
   rotateICcw(i: number): Vec2 {
     const { x: cx, y: cy } = this.rotationPoint;
-    const x = this.blocks[i].pos.x - cx;
-    const y = this.blocks[i].pos.y - cy;
+    const x = this.blocks[i].x - cx;
+    const y = this.blocks[i].y - cy;
     return { x: cx + y, y: cy - x };
   }
 
-  rotateCcw() {
+  rotateCcw(board: Board): boolean {
+    const ogBlocks = this.blocks.map(block => ({ ...block }));
     this.blocks.forEach((block, i) => {
-      block.pos = this.rotateICcw(i);
+      const { x, y } = this.rotateICcw(i);
+      block.x = x;
+      block.y = y;
     });
+
+    const wallKicks = this.wallKicks((this.rotation + 3) % 4).map(kick => ({
+      x: -kick.x,
+      y: -kick.y,
+    }));
+
+    for (const kick of wallKicks) {
+      if (this.canMove(kick, board)) {
+        this.rotation = (this.rotation + 3) % 4;
+        this.move(kick);
+        return true;
+      }
+    }
+
+    this.blocks = ogBlocks;
+    return false;
   }
 
   canMove(delta: Vec2, board: Board) {
     return this.blocks.every(block => {
-      const x = block.pos.x + delta.x;
-      const y = block.pos.y + delta.y;
+      const x = block.x + delta.x;
+      const y = block.y + delta.y;
       return isBlockValid({ x, y }, board);
-    });
-  }
-
-  canRotateCw(board: Board) {
-    return this.blocks.every((_, i) => {
-      const v = this.rotateICw(i);
-      return isBlockValid(v, board);
-    });
-  }
-
-  canRotateCcw(board: Board) {
-    return this.blocks.every((_, i) => {
-      const v = this.rotateICcw(i);
-      return isBlockValid(v, board);
     });
   }
 
   clone() {
     return new Tetromino(
-      this.blocks.map(block => ({ ...block.pos })),
-      this.blocks[0].color,
+      this.blocks.map(block => ({ ...block })),
+      this.color,
       this.id,
       { ...this.rotationPoint },
     );
@@ -108,7 +203,7 @@ const TETROMINOS = {
     ],
     'cyan',
     'I',
-    { x: 0.5, y: -0.5 },
+    { x: 0.5, y: 0.5 },
   ),
   J: new Tetromino(
     [
@@ -125,28 +220,28 @@ const TETROMINOS = {
       { x: -1, y: 0 },
       { x: 0, y: 0 },
       { x: 1, y: 0 },
-      { x: 1, y: 1 },
+      { x: 1, y: -1 },
     ],
     'orange',
     'L',
   ),
   O: new Tetromino(
     [
-      { x: -1, y: -1 },
-      { x: -1, y: 0 },
+      { x: 1, y: -1 },
+      { x: 1, y: 0 },
       { x: 0, y: -1 },
       { x: 0, y: 0 },
     ],
     'yellow',
     'O',
-    { x: -0.5, y: -0.5 },
+    { x: 0.5, y: -0.5 },
   ),
   S: new Tetromino(
     [
-      { x: -1, y: 1 },
-      { x: 0, y: 1 },
+      { x: -1, y: 0 },
       { x: 0, y: 0 },
-      { x: 1, y: 0 },
+      { x: 0, y: -1 },
+      { x: 1, y: -1 },
     ],
     'green',
     'S',
@@ -155,7 +250,7 @@ const TETROMINOS = {
     [
       { x: -1, y: 0 },
       { x: 0, y: 0 },
-      { x: 0, y: 1 },
+      { x: 0, y: -1 },
       { x: 1, y: 0 },
     ],
     'purple',
@@ -199,7 +294,7 @@ class Board {
 
   setTetromino(tetromino: Tetromino) {
     tetromino.blocks.forEach(block => {
-      this.set(block.pos.x, block.pos.y, block.color);
+      this.set(block.x, block.y, tetromino.color);
     });
   }
 
@@ -234,7 +329,7 @@ type PlayState = 'waiting' | 'paused' | 'playing' | 'gameover';
 type TetrominoPool = Tetromino[];
 
 function newTetrominoPool(): TetrominoPool {
-  const poolSize = 2;
+  const poolSize = 1;
 
   const keys = [
     ...Array.from({ length: poolSize }, () => TETROMINO_TYPES).flat(),
@@ -268,7 +363,7 @@ const initialGameState = (): GameState => {
     held: false,
     playState: 'waiting',
     score: 0,
-    tickInterval: 19000,
+    tickInterval: 9999999,
   };
 };
 
@@ -298,10 +393,8 @@ class Tetris {
       return;
     }
 
-    if (this.gameState.tetromino.canRotateCw(this.gameState.board)) {
-      this.gameState.tetromino.rotateCw();
-      this.draw();
-    }
+    this.gameState.tetromino.rotateCw(this.gameState.board);
+    this.draw();
   }
 
   rotateTetrominoCcw() {
@@ -309,10 +402,8 @@ class Tetris {
       return;
     }
 
-    if (this.gameState.tetromino.canRotateCcw(this.gameState.board)) {
-      this.gameState.tetromino.rotateCcw();
-      this.draw();
-    }
+    this.gameState.tetromino.rotateCcw(this.gameState.board);
+    this.draw();
   }
 
   dropTetromino(key = false) {
@@ -438,7 +529,7 @@ class Tetris {
   drawBoard() {
     [
       ...this.gameState.board.getBlocks(),
-      ...this.gameState.tetromino.blocks,
+      ...this.gameState.tetromino.getBlocks(),
     ].forEach(block => {
       if (block) {
         const { x, y } = block.pos;
@@ -458,20 +549,18 @@ class Tetris {
     while (tetromino.canMove({ x: 0, y: 1 }, this.gameState.board)) {
       tetromino.move({ x: 0, y: 1 });
     }
-    tetromino.blocks.forEach(block => {
-      const { x, y } = block.pos;
-      this.ctx.fillStyle = block.color;
-      this.ctx.globalAlpha = 0.5;
+    this.ctx.fillStyle = tetromino.color;
+    this.ctx.globalAlpha = 0.5;
+    tetromino.blocks.forEach(({ x, y }) => {
       this.ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
-      this.ctx.globalAlpha = 1;
     });
+    this.ctx.globalAlpha = 1;
   }
 
   drawNextTetromino() {
     const tetromino = this.gameState.pool[this.gameState.pool.length - 1];
-    tetromino.blocks.forEach(block => {
-      const { x, y } = block.pos;
-      this.ctx.fillStyle = block.color;
+    this.ctx.fillStyle = tetromino.color;
+    tetromino.blocks.forEach(({ x, y }) => {
       this.ctx.fillRect(
         x * BLOCK_SIZE + 220,
         y * BLOCK_SIZE + 20,
@@ -485,9 +574,9 @@ class Tetris {
     if (this.gameState.heldTetromino === null) {
       return;
     }
-    this.gameState.heldTetromino.blocks.forEach(block => {
-      const { x, y } = block.pos;
-      this.ctx.fillStyle = this.gameState.held ? '#888' : block.color;
+    const tetromino = this.gameState.heldTetromino;
+    this.ctx.fillStyle = this.gameState.held ? '#888' : tetromino.color;
+    tetromino.blocks.forEach(({ x, y }) => {
       this.ctx.fillRect(
         x * BLOCK_SIZE + 300,
         y * BLOCK_SIZE + 20,
