@@ -428,29 +428,11 @@ export default function SnakeGame() {
       const totalSize = joystickSize + touchThreshold;
       ctx.strokeStyle = '#fff6';
       ctx.beginPath();
-      ctx.arc(
-        joystick.x,
-        joystick.y,
-        totalSize,
-        0,
-        Math.PI * 2,
-      );
-      ctx.moveTo(
-        joystick.x + totalSize,
-        joystick.y + totalSize,
-      )
-      ctx.lineTo(
-        joystick.x - totalSize,
-        joystick.y - totalSize,
-      );
-      ctx.moveTo(
-        joystick.x - totalSize,
-        joystick.y + totalSize,
-      )
-      ctx.lineTo(
-        joystick.x + totalSize,
-        joystick.y - totalSize,
-      );
+      ctx.arc(joystick.x, joystick.y, totalSize, 0, Math.PI * 2);
+      ctx.moveTo(joystick.x + totalSize, joystick.y + totalSize);
+      ctx.lineTo(joystick.x - totalSize, joystick.y - totalSize);
+      ctx.moveTo(joystick.x - totalSize, joystick.y + totalSize);
+      ctx.lineTo(joystick.x + totalSize, joystick.y - totalSize);
       ctx.stroke();
 
       ctx.fillStyle = '#fff';
@@ -572,9 +554,15 @@ export default function SnakeGame() {
       const rect = canvas.getBoundingClientRect();
       joystick.x = jx - rect.left;
       joystick.y = jy - rect.top;
+      joystickDiff.x = 0;
+      joystickDiff.y = 0;
       let didStart = false;
 
       const onMove = (e: TouchEvent) => {
+        if (gameState.playState !== 'playing') {
+          onEnd();
+          return;
+        }
         const touch = e.touches[0];
         const cx = touch.clientX - rect.left;
         const cy = touch.clientY - rect.top;
