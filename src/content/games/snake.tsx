@@ -9,10 +9,6 @@ type Point = {
 
 type Direction = 'up' | 'down' | 'left' | 'right';
 
-const CELL_SIZE = 20;
-const CELL_GAP = 2;
-const CELL_TOT = CELL_SIZE + CELL_GAP;
-
 class Snake {
   points: Point[] = [];
   direction: Direction = 'right';
@@ -102,110 +98,14 @@ class Snake {
     return head.x < 0 || head.y < 0 || head.x >= width || head.y >= height;
   }
 
-  static draw(
-    ctx: CanvasRenderingContext2D,
-    point: Point,
-    prev: Point | null,
-    next: Point | null,
-    color: string,
-  ) {
-    ctx.fillStyle = color;
-    ctx.fillRect(
-      point.x * CELL_TOT + CELL_GAP,
-      point.y * CELL_TOT + CELL_GAP,
-      CELL_SIZE,
-      CELL_SIZE,
-    );
-
-    if (prev) {
-      const dx = point.x - prev.x;
-      const dy = point.y - prev.y;
-      ctx.fillStyle = 'cyan';
-      switch (`${dx},${dy}`) {
-        case '1,0':
-          ctx.fillRect(
-            point.x * CELL_TOT + CELL_SIZE,
-            point.y * CELL_TOT + CELL_GAP,
-            CELL_GAP,
-            CELL_SIZE,
-          );
-          break;
-        case '-1,0':
-          ctx.fillRect(
-            point.x * CELL_TOT + CELL_GAP,
-            point.y * CELL_TOT + CELL_GAP,
-            CELL_GAP,
-            CELL_SIZE,
-          );
-          break;
-        case '0,1':
-          ctx.fillRect(
-            point.x * CELL_TOT + CELL_GAP,
-            point.y * CELL_TOT + CELL_SIZE,
-            CELL_SIZE,
-            CELL_GAP,
-          );
-          break;
-        case '0,-1':
-          ctx.fillRect(
-            point.x * CELL_TOT + CELL_GAP,
-            point.y * CELL_TOT + CELL_GAP,
-            CELL_SIZE,
-            CELL_GAP,
-          );
-          break;
-      }
-    }
-
-    if (next) {
-      const dx = next.x - point.x;
-      const dy = next.y - point.y;
-      ctx.fillStyle = 'cyan';
-      switch (`${dx},${dy}`) {
-        case '1,0':
-          ctx.fillRect(
-            point.x * CELL_TOT + CELL_SIZE,
-            point.y * CELL_TOT + CELL_GAP,
-            CELL_GAP,
-            CELL_SIZE,
-          );
-          break;
-        case '-1,0':
-          ctx.fillRect(
-            point.x * CELL_TOT + CELL_GAP,
-            point.y * CELL_TOT + CELL_GAP,
-            CELL_GAP,
-            CELL_SIZE,
-          );
-          break;
-        case '0,1':
-          ctx.fillRect(
-            point.x * CELL_TOT + CELL_GAP,
-            point.y * CELL_TOT + CELL_SIZE,
-            CELL_SIZE,
-            CELL_GAP,
-          );
-          break;
-        case '0,-1':
-          ctx.fillRect(
-            point.x * CELL_TOT + CELL_GAP,
-            point.y * CELL_TOT + CELL_GAP,
-            CELL_SIZE,
-            CELL_GAP,
-          );
-          break;
-      }
-    }
-  }
-
-  draw(ctx: CanvasRenderingContext2D) {
+  draw(ctx: CanvasRenderingContext2D, props: GameProps) {
     this.getBody().forEach((point, i) => {
       ctx.fillStyle = 'green';
       ctx.fillRect(
-        point.x * CELL_TOT + CELL_GAP,
-        point.y * CELL_TOT + CELL_GAP,
-        CELL_SIZE,
-        CELL_SIZE,
+        point.x * (props.cellSize + props.cellGap) + props.cellGap,
+        point.y * (props.cellSize + props.cellGap) + props.cellGap,
+        props.cellSize,
+        props.cellSize,
       );
       const prev = this.points[i];
       if (!prev) {
@@ -217,34 +117,34 @@ class Snake {
       switch (`${dx},${dy}`) {
         case '1,0':
           ctx.fillRect(
-            point.x * CELL_TOT + CELL_SIZE,
-            point.y * CELL_TOT + CELL_GAP,
-            CELL_GAP * 2,
-            CELL_SIZE,
+            point.x * (props.cellSize + props.cellGap) + props.cellSize,
+            point.y * (props.cellSize + props.cellGap) + props.cellGap,
+            props.cellGap * 2,
+            props.cellSize,
           );
           break;
         case '-1,0':
           ctx.fillRect(
-            point.x * CELL_TOT - CELL_GAP,
-            point.y * CELL_TOT + CELL_GAP,
-            CELL_GAP * 2,
-            CELL_SIZE,
+            point.x * (props.cellSize + props.cellGap) - props.cellGap,
+            point.y * (props.cellSize + props.cellGap) + props.cellGap,
+            props.cellGap * 2,
+            props.cellSize,
           );
           break;
         case '0,1':
           ctx.fillRect(
-            point.x * CELL_TOT + CELL_GAP,
-            point.y * CELL_TOT + CELL_SIZE,
-            CELL_SIZE,
-            CELL_GAP * 2,
+            point.x * (props.cellSize + props.cellGap) + props.cellGap,
+            point.y * (props.cellSize + props.cellGap) + props.cellSize,
+            props.cellSize,
+            props.cellGap * 2,
           );
           break;
         case '0,-1':
           ctx.fillRect(
-            point.x * CELL_TOT + CELL_GAP,
-            point.y * CELL_TOT - CELL_GAP,
-            CELL_SIZE,
-            CELL_GAP * 2,
+            point.x * (props.cellSize + props.cellGap) + props.cellGap,
+            point.y * (props.cellSize + props.cellGap) - props.cellGap,
+            props.cellSize,
+            props.cellGap * 2,
           );
           break;
       }
@@ -253,10 +153,10 @@ class Snake {
     ctx.fillStyle = 'darkblue';
     const head = this.getHead();
     ctx.fillRect(
-      head.x * CELL_TOT + CELL_GAP,
-      head.y * CELL_TOT + CELL_GAP,
-      CELL_SIZE,
-      CELL_SIZE,
+      head.x * (props.cellSize + props.cellGap) + props.cellGap,
+      head.y * (props.cellSize + props.cellGap) + props.cellGap,
+      props.cellSize,
+      props.cellSize,
     );
   }
 }
@@ -337,14 +237,14 @@ class Food {
     }
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
+  draw(ctx: CanvasRenderingContext2D, props: GameProps) {
     ctx.fillStyle = 'red';
     this.points.forEach(point =>
       ctx.fillRect(
-        point.x * CELL_TOT + CELL_GAP,
-        point.y * CELL_TOT + CELL_GAP,
-        CELL_SIZE,
-        CELL_SIZE,
+        point.x * (props.cellSize + props.cellGap) + props.cellGap,
+        point.y * (props.cellSize + props.cellGap) + props.cellGap,
+        props.cellSize,
+        props.cellSize,
       ),
     );
   }
@@ -357,6 +257,8 @@ const defaultGameProps = {
   tickDelay: 100,
   width: 20,
   height: 20,
+  cellSize: 20,
+  cellGap: 2,
   apples: 1,
   appleType: 'normal' as AppleType,
 };
@@ -398,7 +300,6 @@ export default function SnakeGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const touchRef = useRef<HTMLDivElement>(null);
   const [isTouch, setIsTouch] = useState(false);
-  const [horizontal, setHorizontal] = useState(true);
 
   useEffect(() => {
     setIsTouch('ontouchstart' in window);
@@ -410,9 +311,13 @@ export default function SnakeGame() {
     if (!ctx) {
       return;
     }
-    const touch = touchRef.current!;
+    const touchDiv = touchRef.current!;
 
     const props = defaultGameProps;
+    let joystickActive = false;
+    const joystick = { x: 0, y: 0 };
+    const joystickDiff = { x: 0, y: 0 };
+    const touchThreshold = 30;
 
     function setupPane() {
       const pane = new Pane();
@@ -420,7 +325,7 @@ export default function SnakeGame() {
       pane
         .addBinding(props, 'width', { min: 10, max: 30, step: 1 })
         .on('change', () => {
-          canvas.width = props.width * CELL_TOT + CELL_GAP;
+          resizeCanavas();
           gameState.foods.forEach(food => {
             food.regenerate(gameState.getPoints(food.points), props);
           });
@@ -429,7 +334,7 @@ export default function SnakeGame() {
       pane
         .addBinding(props, 'height', { min: 10, max: 30, step: 1 })
         .on('change', () => {
-          canvas.height = props.height * CELL_TOT + CELL_GAP;
+          resizeCanavas();
           gameState.foods.forEach(food => {
             food.regenerate(gameState.getPoints(food.points), props);
           });
@@ -463,6 +368,20 @@ export default function SnakeGame() {
 
     setupPane();
 
+    const resizeCanavas = () => {
+      props.cellSize = Math.min(
+        20,
+        Math.floor(
+          (window.innerWidth - props.cellGap * (props.width + 1)) /
+            (props.width + 2),
+        ),
+      );
+      canvas.width =
+        props.width * (props.cellSize + props.cellGap) + props.cellGap;
+      canvas.height =
+        props.height * (props.cellSize + props.cellGap) + props.cellGap;
+    };
+
     const gameState = new GameState(props);
     let lastTime = 0;
     let dt = 0;
@@ -470,10 +389,11 @@ export default function SnakeGame() {
 
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      gameState.snake.draw(ctx);
-      gameState.foods.forEach(food => food.draw(ctx));
+      gameState.snake.draw(ctx, props);
+      gameState.foods.forEach(food => food.draw(ctx, props));
 
       drawText();
+      if (joystickActive) drawJoystick();
     };
 
     const drawText = () => {
@@ -501,6 +421,51 @@ export default function SnakeGame() {
           );
           break;
       }
+    };
+
+    const drawJoystick = () => {
+      const joystickSize = 10;
+      const totalSize = joystickSize + touchThreshold;
+      ctx.strokeStyle = '#fff6';
+      ctx.beginPath();
+      ctx.arc(
+        joystick.x,
+        joystick.y,
+        totalSize,
+        0,
+        Math.PI * 2,
+      );
+      ctx.moveTo(
+        joystick.x + totalSize,
+        joystick.y + totalSize,
+      )
+      ctx.lineTo(
+        joystick.x - totalSize,
+        joystick.y - totalSize,
+      );
+      ctx.moveTo(
+        joystick.x - totalSize,
+        joystick.y + totalSize,
+      )
+      ctx.lineTo(
+        joystick.x + totalSize,
+        joystick.y - totalSize,
+      );
+      ctx.stroke();
+
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      const joystickAngle = Math.atan2(joystickDiff.y, joystickDiff.x);
+      const joystickDist = Math.min(
+        touchThreshold,
+        Math.sqrt(
+          joystickDiff.x * joystickDiff.x + joystickDiff.y * joystickDiff.y,
+        ),
+      );
+      const x = joystick.x + Math.cos(joystickAngle) * joystickDist;
+      const y = joystick.y + Math.sin(joystickAngle) * joystickDist;
+      ctx.arc(x, y, joystickSize, 0, Math.PI * 2);
+      ctx.fill();
     };
 
     const tick = () => {
@@ -549,7 +514,6 @@ export default function SnakeGame() {
           ce();
           return;
         case 'gameover':
-          setHorizontal(true);
           gameState.reset();
           requestAnimationFrame(update);
           ce();
@@ -561,28 +525,24 @@ export default function SnakeGame() {
           ce();
           if (gameState.snake.setDirection('up')) {
             tick();
-            setHorizontal(false);
           }
           break;
         case 'ArrowDown':
           ce();
           if (gameState.snake.setDirection('down')) {
             tick();
-            setHorizontal(false);
           }
           break;
         case 'ArrowLeft':
           ce();
           if (gameState.snake.setDirection('left')) {
             tick();
-            setHorizontal(true);
           }
           break;
         case 'ArrowRight':
           ce();
           if (gameState.snake.setDirection('right')) {
             tick();
-            setHorizontal(true);
           }
           break;
       }
@@ -601,48 +561,75 @@ export default function SnakeGame() {
           return;
         case 'gameover':
           gameState.reset();
-          setHorizontal(true);
           requestAnimationFrame(update);
           return;
       }
 
       const touch = e.touches[0];
-      const x = touch.clientX;
-      const y = touch.clientY;
-
+      const jx = touch.clientX;
+      const jy = touch.clientY;
+      joystickActive = true;
       const rect = canvas.getBoundingClientRect();
-      const canvasX = x - rect.left;
-      const canvasY = y - rect.top;
+      joystick.x = jx - rect.left;
+      joystick.y = jy - rect.top;
+      let didStart = false;
 
-      switch (gameState.snake.direction) {
-        case 'up':
-        case 'down':
-          if (canvasX < canvas.width / 2) {
-            gameState.snake.setDirection('left');
-          } else {
-            gameState.snake.setDirection('right');
-          }
+      const onMove = (e: TouchEvent) => {
+        const touch = e.touches[0];
+        const cx = touch.clientX - rect.left;
+        const cy = touch.clientY - rect.top;
+        const dx = cx - joystick.x;
+        const dy = cy - joystick.y;
+
+        joystickDiff.x = dx;
+        joystickDiff.y = dy;
+
+        const distSq = dx * dx + dy * dy;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!didStart && distSq < touchThreshold) {
+          return;
+        }
+
+        didStart = true;
+
+        const angle = Math.atan2(dy, dx);
+        let didMove = false;
+
+        if (angle > -Math.PI / 4 && angle < Math.PI / 4) {
+          didMove = gameState.snake.setDirection('right');
+        } else if (angle > Math.PI / 4 && angle < (3 * Math.PI) / 4) {
+          didMove = gameState.snake.setDirection('down');
+        } else if (angle < -Math.PI / 4 && angle > (-3 * Math.PI) / 4) {
+          didMove = gameState.snake.setDirection('up');
+        } else {
+          didMove = gameState.snake.setDirection('left');
+        }
+
+        if (didMove) {
           tick();
-          setHorizontal(true);
-          break;
-        case 'left':
-        case 'right':
-          if (canvasY < canvas.height / 2) {
-            gameState.snake.setDirection('up');
-          } else {
-            gameState.snake.setDirection('down');
-          }
-          tick();
-          setHorizontal(false);
-          break;
-      }
+        }
+      };
+
+      const onEnd = () => {
+        touchDiv.removeEventListener('touchmove', onMove);
+        touchDiv.removeEventListener('touchend', onEnd);
+        joystickActive = false;
+      };
+
+      touchDiv.addEventListener('touchmove', onMove);
+      touchDiv.addEventListener('touchend', onEnd);
     };
 
+    resizeCanavas();
+
     window.addEventListener('keydown', handleKeyDown);
-    touch.addEventListener('touchstart', handleTouchStart);
+    touchDiv.addEventListener('touchstart', handleTouchStart);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      touch.removeEventListener('touchstart', handleTouchStart);
+      touchDiv.removeEventListener('touchstart', handleTouchStart);
     };
   }, []);
 
@@ -655,74 +642,11 @@ export default function SnakeGame() {
         )}
         ref={touchRef}
       >
-        {isTouch && (
-          <div className="absolute inset-0 -z-10">
-            {horizontal ? (
-              <>
-                <div className="absolute bottom-1/2 left-0 right-0 top-0">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    className="w-full h-full"
-                  >
-                    <path
-                      fill="#fff2"
-                      d="M7.41,15.41L12,10.83L16.59,15.41L18,14L12,8L6,14L7.41,15.41Z"
-                    />
-                  </svg>
-                </div>
-                <div className="absolute bottom-0 left-0 right-0 top-1/2">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    className="w-full h-full"
-                  >
-                    <path
-                      fill="#fff2"
-                      d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
-                    />
-                  </svg>
-                </div>
-                <div className="absolute left-0 right-0 top-1/2 h-[1px] bg-white/25" />
-              </>
-            ) : (
-              <>
-                <div className="absolute bottom-0 left-0 right-1/2 top-0">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    className="w-full h-full"
-                  >
-                    <path
-                      fill="#fff2"
-                      d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z"
-                    />
-                  </svg>
-                </div>
-                <div className="absolute bottom-0 left-1/2 right-0 top-0">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    className="w-full h-full"
-                  >
-                    <path
-                      fill="#fff2"
-                      d="M8.58,16.58L13.17,12L8.58,7.41L10,6L16,12L10,18L8.58,16.58Z"
-                    />
-                  </svg>
-                </div>
-              <div className="absolute bottom-0 left-1/2 top-0 w-[1px] bg-white/25" />
-              </>
-            )}
-            <div className="absolute bottom-0 left-1/2 top-0 w-[1px] bg-white/5" />
-            <div className="absolute left-0 right-0 top-1/2 h-[1px] bg-white/5" />
-          </div>
-        )}
         <canvas
           className="border border-white"
           ref={canvasRef}
-          width={defaultGameProps.width * CELL_TOT + CELL_GAP}
-          height={defaultGameProps.height * CELL_TOT + CELL_GAP}
+          width={200}
+          height={200}
         />
       </div>
     </div>
