@@ -22,6 +22,7 @@ class Tetromino {
     blocks: Vec2[],
     color: string,
     public id: string,
+    public rotationPoint: Vec2 = { x: 0, y: 0 },
   ) {
     this.blocks = blocks.map(pos => ({ pos, color }));
   }
@@ -31,13 +32,15 @@ class Tetromino {
       block.pos.x += delta.x;
       block.pos.y += delta.y;
     });
+    this.rotationPoint.x += delta.x;
+    this.rotationPoint.y += delta.y;
   }
 
   rotateICw(i: number): Vec2 {
-    const center = this.blocks[1].pos;
-    const x = this.blocks[i].pos.x - center.x;
-    const y = this.blocks[i].pos.y - center.y;
-    return { x: center.x - y, y: center.y + x };
+    const { x: cx, y: cy } = this.rotationPoint;
+    const x = this.blocks[i].pos.x - cx;
+    const y = this.blocks[i].pos.y - cy;
+    return { x: cx - y, y: cy + x };
   }
 
   rotateCw() {
@@ -47,10 +50,10 @@ class Tetromino {
   }
 
   rotateICcw(i: number): Vec2 {
-    const center = this.blocks[1].pos;
-    const x = this.blocks[i].pos.x - center.x;
-    const y = this.blocks[i].pos.y - center.y;
-    return { x: center.x + y, y: center.y - x };
+    const { x: cx, y: cy } = this.rotationPoint;
+    const x = this.blocks[i].pos.x - cx;
+    const y = this.blocks[i].pos.y - cy;
+    return { x: cx + y, y: cy - x };
   }
 
   rotateCcw() {
@@ -68,14 +71,14 @@ class Tetromino {
   }
 
   canRotateCw(board: Board) {
-    return this.blocks.every((block, i) => {
+    return this.blocks.every((_, i) => {
       const v = this.rotateICw(i);
       return isBlockValid(v, board);
     });
   }
 
   canRotateCcw(board: Board) {
-    return this.blocks.every((block, i) => {
+    return this.blocks.every((_, i) => {
       const v = this.rotateICcw(i);
       return isBlockValid(v, board);
     });
@@ -86,6 +89,7 @@ class Tetromino {
       this.blocks.map(block => ({ ...block.pos })),
       this.blocks[0].color,
       this.id,
+      { ...this.rotationPoint },
     );
   }
 
@@ -97,70 +101,72 @@ class Tetromino {
 const TETROMINOS = {
   I: new Tetromino(
     [
+      { x: -1, y: 0 },
       { x: 0, y: 0 },
-      { x: 0, y: 1 },
-      { x: 0, y: 2 },
-      { x: 0, y: 3 },
+      { x: 1, y: 0 },
+      { x: 2, y: 0 },
     ],
     'cyan',
     'I',
+    { x: 0.5, y: -0.5 },
   ),
   J: new Tetromino(
     [
+      { x: -1, y: -1 },
+      { x: -1, y: 0 },
       { x: 0, y: 0 },
-      { x: 0, y: 1 },
-      { x: 0, y: 2 },
-      { x: 1, y: 2 },
+      { x: 1, y: 0 },
     ],
     'blue',
     'J',
   ),
   L: new Tetromino(
     [
+      { x: -1, y: 0 },
+      { x: 0, y: 0 },
       { x: 1, y: 0 },
       { x: 1, y: 1 },
-      { x: 1, y: 2 },
-      { x: 0, y: 2 },
     ],
     'orange',
     'L',
   ),
   O: new Tetromino(
     [
+      { x: -1, y: -1 },
+      { x: -1, y: 0 },
+      { x: 0, y: -1 },
       { x: 0, y: 0 },
-      { x: 0, y: 1 },
-      { x: 1, y: 0 },
-      { x: 1, y: 1 },
     ],
     'yellow',
     'O',
+    { x: -0.5, y: -0.5 },
   ),
   S: new Tetromino(
     [
-      { x: 1, y: 0 },
-      { x: 0, y: 0 },
-      { x: 0, y: 1 },
       { x: -1, y: 1 },
+      { x: 0, y: 1 },
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
     ],
     'green',
     'S',
   ),
   T: new Tetromino(
     [
+      { x: -1, y: 0 },
       { x: 0, y: 0 },
+      { x: 0, y: 1 },
       { x: 1, y: 0 },
-      { x: 2, y: 0 },
-      { x: 1, y: 1 },
     ],
     'purple',
     'T',
   ),
   Z: new Tetromino(
     [
-      { x: -1, y: 0 },
+      { x: -1, y: -1 },
+      { x: 0, y: -1 },
       { x: 0, y: 0 },
-      { x: 0, y: 1 },
-      { x: 1, y: 1 },
+      { x: 1, y: 0 },
     ],
     'red',
     'Z',
@@ -262,7 +268,7 @@ const initialGameState = (): GameState => {
     held: false,
     playState: 'waiting',
     score: 0,
-    tickInterval: 1000,
+    tickInterval: 19000,
   };
 };
 
