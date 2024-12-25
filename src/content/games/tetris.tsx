@@ -341,8 +341,8 @@ class Tetris {
       ) {
         this.gameState.playState = 'gameover';
       }
-      this.draw();
       this.gameState.held = false;
+      this.draw();
     }
   }
 
@@ -481,7 +481,7 @@ class Tetris {
     }
     this.gameState.heldTetromino.blocks.forEach(block => {
       const { x, y } = block.pos;
-      this.ctx.fillStyle = block.color;
+      this.ctx.fillStyle = this.gameState.held ? '#888' : block.color;
       this.ctx.fillRect(
         x * BLOCK_SIZE + 300,
         y * BLOCK_SIZE + 20,
