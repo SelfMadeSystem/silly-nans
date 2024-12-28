@@ -321,7 +321,7 @@ class Board {
 }
 
 const BOARD_WIDTH = 10;
-const BOARD_HEIGHT = 20;
+const BOARD_HEIGHT = 23;
 const BLOCK_SIZE = 20;
 
 type PlayState = 'waiting' | 'paused' | 'playing' | 'gameover';
@@ -349,12 +349,13 @@ type GameState = {
   playState: PlayState;
   score: number;
   tickInterval: number;
+  level: number;
 };
 
 const initialGameState = (): GameState => {
   const pool = newTetrominoPool();
   const firstTetromino = pool.pop()!;
-  firstTetromino.move({ x: Math.floor(BOARD_WIDTH / 2 - 1), y: 0 });
+  firstTetromino.move({ x: Math.floor(BOARD_WIDTH / 2 - 1), y: 3 });
   return {
     board: new Board(BOARD_WIDTH, BOARD_HEIGHT),
     tetromino: firstTetromino,
@@ -363,7 +364,8 @@ const initialGameState = (): GameState => {
     held: false,
     playState: 'waiting',
     score: 0,
-    tickInterval: 9999999,
+    tickInterval: 1000,
+    level: 0,
   };
 };
 
@@ -424,14 +426,22 @@ class Tetris {
       this.gameState.board.setTetromino(this.gameState.tetromino);
       const linesCleared = this.gameState.board.clearLines();
       this.gameState.score +=
-        linesCleared === 0 ? 0 : Math.pow(2, linesCleared - 1) * 100;
+        linesCleared === 0 ? 0 : Math.pow(2, linesCleared - 1) * 100 * (this.gameState.level + 1);
+      if (linesCleared > 0) {
+        this.gameState.level += linesCleared / 10;
+        this.gameState.tickInterval = Math.max(
+          100,
+          1000 - Math.floor(this.gameState.level) * 100,
+        );
+        this.setInterval(this.gameState.tickInterval);
+      }
       this.gameState.tetromino = this.gameState.pool.pop()!;
       if (this.gameState.pool.length === 0) {
         this.gameState.pool = newTetrominoPool();
       }
       this.gameState.tetromino.move({
         x: Math.floor(BOARD_WIDTH / 2 - 1),
-        y: 0,
+        y: 3,
       });
       if (
         !this.gameState.tetromino.canMove({ x: 0, y: 0 }, this.gameState.board)
@@ -481,7 +491,7 @@ class Tetris {
     }
     this.gameState.tetromino.move({
       x: Math.floor(BOARD_WIDTH / 2 - 1),
-      y: 0,
+      y: 3,
     });
     this.draw();
   }
@@ -536,7 +546,7 @@ class Tetris {
         this.ctx.fillStyle = block.color;
         this.ctx.fillRect(
           x * BLOCK_SIZE,
-          y * BLOCK_SIZE,
+          (y - 3) * BLOCK_SIZE,
           BLOCK_SIZE,
           BLOCK_SIZE,
         );
@@ -552,7 +562,12 @@ class Tetris {
     this.ctx.fillStyle = tetromino.color;
     this.ctx.globalAlpha = 0.5;
     tetromino.blocks.forEach(({ x, y }) => {
-      this.ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+      this.ctx.fillRect(
+        x * BLOCK_SIZE,
+        (y - 3) * BLOCK_SIZE,
+        BLOCK_SIZE,
+        BLOCK_SIZE,
+      );
     });
     this.ctx.globalAlpha = 1;
   }
@@ -604,6 +619,7 @@ class Tetris {
     this.ctx.font = '20px monospace';
     this.ctx.fillStyle = 'white';
     this.ctx.fillText(`Score: ${this.gameState.score}`, 220, 200);
+    this.ctx.fillText(`Level: ${Math.floor(this.gameState.level)}`, 220, 230);
   }
 
   drawGameOver() {
