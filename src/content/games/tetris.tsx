@@ -432,7 +432,7 @@ class Tetris {
       this.gameState.board.setTetromino(this.gameState.tetromino);
       const linesCleared = this.gameState.board.clearLines();
       this.gameState.score +=
-        linesCleared === 0 ? 0 : Math.pow(2, linesCleared - 1) * 100 * (this.gameState.level + 1);
+        linesCleared === 0 ? 0 : Math.pow(2, linesCleared - 1) * 100 * (Math.floor(this.gameState.level) + 1);
       if (linesCleared > 0) {
         this.gameState.level += linesCleared / 10;
         this.gameState.tickInterval = Math.max(
