@@ -399,6 +399,22 @@ class Tetris {
     this.draw();
   }
 
+  spawnNewTetromino() {
+    this.gameState.tetromino = this.gameState.pool.pop()!;
+    if (this.gameState.pool.length < 3) {
+      this.gameState.pool.unshift(...newTetrominoPool());
+    }
+    this.gameState.tetromino.move({
+      x: Math.floor(BOARD_WIDTH / 2 - 1),
+      y: 3,
+    });
+    if (!this.gameState.tetromino.canMove({ x: 0, y: 0 }, this.gameState.board)) {
+      this.gameState.playState = 'gameover';
+    }
+    this.gameState.held = false;
+    this.draw();
+  }
+
   dropTetromino(key = false) {
     if (this.gameState.playState !== 'playing') {
       return;
@@ -409,9 +425,7 @@ class Tetris {
       this.resetInterval();
     }
 
-    if (
-      this.gameState.tetromino.canMove({ x: 0, y: 1 }, this.gameState.board)
-    ) {
+    if (this.gameState.tetromino.canMove({ x: 0, y: 1 }, this.gameState.board)) {
       this.gameState.tetromino.move({ x: 0, y: 1 });
       this.draw();
     } else {
@@ -427,21 +441,7 @@ class Tetris {
         );
         this.setInterval(this.gameState.tickInterval);
       }
-      this.gameState.tetromino = this.gameState.pool.pop()!;
-      if (this.gameState.pool.length === 0) {
-        this.gameState.pool = newTetrominoPool();
-      }
-      this.gameState.tetromino.move({
-        x: Math.floor(BOARD_WIDTH / 2 - 1),
-        y: 3,
-      });
-      if (
-        !this.gameState.tetromino.canMove({ x: 0, y: 0 }, this.gameState.board)
-      ) {
-        this.gameState.playState = 'gameover';
-      }
-      this.gameState.held = false;
-      this.draw();
+      this.spawnNewTetromino();
     }
   }
 
@@ -472,20 +472,17 @@ class Tetris {
 
     if (this.gameState.heldTetromino === null) {
       this.gameState.heldTetromino = this.gameState.tetromino.reset();
-      this.gameState.tetromino = this.gameState.pool.pop()!;
-      if (this.gameState.pool.length === 0) {
-        this.gameState.pool = newTetrominoPool();
-      }
+      this.spawnNewTetromino();
     } else {
       const temp = this.gameState.tetromino.reset();
       this.gameState.tetromino = this.gameState.heldTetromino;
       this.gameState.heldTetromino = temp;
+      this.gameState.tetromino.move({
+        x: Math.floor(BOARD_WIDTH / 2 - 1),
+        y: 3,
+      });
+      this.draw();
     }
-    this.gameState.tetromino.move({
-      x: Math.floor(BOARD_WIDTH / 2 - 1),
-      y: 3,
-    });
-    this.draw();
   }
 
   startGame() {
@@ -569,17 +566,23 @@ class Tetris {
     this.ctx.globalAlpha = 1;
   }
 
-  drawNextTetromino() {
-    const tetromino = this.gameState.pool[this.gameState.pool.length - 1];
+  drawNextTetromino(i: number) {
+    const tetromino = this.gameState.pool[this.gameState.pool.length - i - 1];
     this.ctx.fillStyle = tetromino.color;
     tetromino.blocks.forEach(({ x, y }) => {
       this.ctx.fillRect(
         (x + NEXT_TETROMINO_OFFSET_X) * BLOCK_SIZE,
-        (y + NEXT_TETROMINO_OFFSET_Y) * BLOCK_SIZE,
+        (y + NEXT_TETROMINO_OFFSET_Y + i * 3) * BLOCK_SIZE,
         BLOCK_SIZE,
         BLOCK_SIZE,
       );
     });
+  }
+
+  drawNextTetrominos() {
+    for (let i = 0; i < 3; i++) {
+      this.drawNextTetromino(i);
+    }
   }
 
   drawHoldTetromino() {
@@ -644,7 +647,7 @@ class Tetris {
       return;
     }
     this.drawBoard();
-    this.drawNextTetromino();
+    this.drawNextTetrominos();
     this.drawHoldTetromino();
     this.drawHardDrop();
     this.drawScore();
