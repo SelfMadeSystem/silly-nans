@@ -1,5 +1,18 @@
 import { Vector2 } from '../utils/vec';
 import createCanvasComponent from './CanvasComponent';
+import { Pane } from 'tweakpane';
+
+const defaultOptions = {
+  mouseGradient: 'outward' as 'inward' | 'outward' | 'none',
+  spacing: 30,
+  mouseRepel: true,
+  mouseDistance: 600,
+  mouseDistanceOffset: 100,
+  mouseStrength: 1,
+  moveStrength: 4,
+};
+
+type Options = typeof defaultOptions;
 
 class Lattice {
   public ogPoints: Array<Vector2>;
@@ -54,43 +67,47 @@ class Lattice {
     ctx.fill();
   }
 
-  physics(dt: number, mousePos: Vector2) {
-    this.movePoints(dt);
-    this.moveFromMouse(dt, mousePos);
+  physics(dt: number, mousePos: Vector2, options: Options) {
+    this.movePoints(dt, options);
+    this.moveFromMouse(dt, mousePos, options);
     // this.interactPoints(dt);
   }
 
-  movePoints(dt: number) {
+  movePoints(dt: number, options: Options) {
     for (let i = 0; i < this.points.length; i++) {
       const p = this.points[i];
       const ogP = this.ogPoints[i];
       const diff = ogP.sub(p);
-      this.points[i] = p.add(diff.mult(dt * 4));
+      this.points[i] = p.add(diff.mult(dt * options.moveStrength));
     }
   }
 
-  moveFromMouse(dt: number, mousePos: Vector2) {
+  moveFromMouse(dt: number, mousePos: Vector2, options: Options) {
     for (let i = 0; i < this.points.length; i++) {
       const p = this.points[i];
       const diff = mousePos.sub(p);
       const dist = diff.length();
-      const influence = Math.max(0, 1 - (dist + 100) / 600);
+      const influence =
+        Math.max(
+          0,
+          1 - (dist + options.mouseDistanceOffset) / options.mouseDistance,
+        ) * (options.mouseRepel ? -1 : 1);
       this.points[i] = p.add(diff.mult(dt * influence));
     }
   }
 
-  interactPoints(dt: number) {
-    for (const [i, j] of this.links) {
-      const p1 = this.points[i];
-      const p2 = this.points[j];
-      const diff = p2.sub(p1);
-      const dist = diff.length();
-      const diffLen = dist - this.spacing;
-      const move = diff.mult((0.5 * diffLen) / dist);
-      this.points[i] = p1.add(move);
-      this.points[j] = p2.sub(move);
-    }
-  }
+  // interactPoints(dt: number) {
+  //   for (const [i, j] of this.links) {
+  //     const p1 = this.points[i];
+  //     const p2 = this.points[j];
+  //     const diff = p2.sub(p1);
+  //     const dist = diff.length();
+  //     const diffLen = dist - this.spacing;
+  //     const move = diff.mult((0.5 * diffLen) / dist);
+  //     this.points[i] = p1.add(move);
+  //     this.points[j] = p2.sub(move);
+  //   }
+  // }
 }
 
 export default createCanvasComponent({
@@ -107,22 +124,98 @@ export default createCanvasComponent({
   setup(canvas) {
     const ctx = canvas.getContext('2d')!;
 
-    const lattice = new Lattice(
-      new Vector2(-45, -45),
-      canvas.width + 60,
-      canvas.height + 60,
-      30,
-    );
+    function newLattice(options: Options) {
+      return new Lattice(
+        new Vector2(-options.spacing * 1.5, -options.spacing * 1.5),
+        canvas.width + options.spacing * 3,
+        canvas.height + options.spacing * 3,
+        options.spacing,
+      );
+    }
+
+    let lattice = newLattice(defaultOptions);
+
+    const options = { ...defaultOptions };
 
     let mousePos = new Vector2(-99999, -99999);
 
+    {
+      const pane = new Pane();
+
+      {
+        const optionsFolder = pane.addFolder({
+          title: 'Options',
+          expanded: false,
+        });
+        optionsFolder.addBinding(options, 'mouseGradient', {
+          options: {
+            Inward: 'inward',
+            Outward: 'outward',
+            None: 'none',
+          },
+        });
+        optionsFolder
+          .addBinding(options, 'spacing', {
+            min: 10,
+            max: 100,
+          })
+          .on('change', () => {
+            lattice = newLattice(options);
+          });
+        optionsFolder.addBinding(options, 'mouseRepel');
+        optionsFolder.addBinding(options, 'mouseDistance', {
+          min: 0,
+          max: 1000,
+        });
+        optionsFolder.addBinding(options, 'mouseDistanceOffset', {
+          min: 0,
+          max: 1000,
+        });
+        optionsFolder.addBinding(options, 'mouseStrength', {
+          min: 0,
+          max: 10,
+        });
+        optionsFolder.addBinding(options, 'moveStrength', {
+          min: 0,
+          max: 10,
+        });
+      }
+
+      const presetsFolder = pane.addFolder({
+        title: 'Presets',
+        expanded: false,
+      });
+
+      presetsFolder
+        .addButton({
+          title: 'Outward',
+        })
+        .on('click', () => {
+          Object.assign(options, {
+            mouseGradient: 'outward',
+            mouseRepel: true,
+          });
+        });
+
+      presetsFolder
+        .addButton({
+          title: 'Inward',
+        })
+        .on('click', () => {
+          Object.assign(options, {
+            mouseGradient: 'inward',
+            mouseRepel: false,
+          });
+        });
+    }
     return {
       update(dt) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.strokeStyle = ctx.fillStyle = 'rgba(255, 255, 255)';
-        lattice.physics(dt / 1000, mousePos);
+        lattice.physics(dt / 1000, mousePos, options);
         lattice.drawPoints(ctx);
 
+        if (options.mouseGradient === 'none') return;
         const mouseGradient = ctx.createRadialGradient(
           mousePos.x,
           mousePos.y,
@@ -131,14 +224,23 @@ export default createCanvasComponent({
           mousePos.y,
           600,
         );
-        mouseGradient.addColorStop(0, 'rgba(0,0,0, 0.9)');
-        mouseGradient.addColorStop(1, 'rgba(0,0,0, 0.2)');
+        if (options.mouseGradient === 'inward') {
+          mouseGradient.addColorStop(0, 'rgba(0,0,0, 0.9)');
+          mouseGradient.addColorStop(1, 'rgba(0,0,0, 0.2)');
+        } else {
+          mouseGradient.addColorStop(0, 'rgba(0,0,0, 0.2)');
+          mouseGradient.addColorStop(1, 'rgba(0,0,0, 0.9)');
+        }
         ctx.fillStyle = mouseGradient;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       },
 
       mouseMove(_e, x, y) {
         mousePos = new Vector2(x, y);
+      },
+
+      resize() {
+        lattice = newLattice(options);
       },
     };
   },
