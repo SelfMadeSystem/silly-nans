@@ -1,7 +1,7 @@
 // Synthwave mountains generator
 import { mod, random, randomInt } from '../../utils/mathUtils';
+import { Vector2, Vector3 } from '../../utils/vec';
 import { Camera } from './camera';
-import { Vector2, Vector3 } from './vec';
 
 export const width = 21;
 export const depth = 42;

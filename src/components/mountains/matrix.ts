@@ -1,4 +1,4 @@
-import { Vector3 } from "./vec";
+import { Vector3 } from '../../utils/vec';
 
 // prettier-ignore
 type Matrix3x3Array = [

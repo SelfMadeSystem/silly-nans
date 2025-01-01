@@ -1,6 +1,6 @@
+import { Vector2, Vector3 } from '../../utils/vec';
 import { Camera } from './camera';
 import { Matrix3x3 as Matrix3 } from './matrix';
-import { Vector2, Vector3 } from './vec';
 
 export const screenWidth = 800;
 export const screenHeight = 600;
@@ -75,7 +75,9 @@ class BezierCurve {
    * Scales all xy points by the given factor
    */
   scale(factor: number) {
-    this.controlPoints = this.controlPoints.map(v => new Vector3(v.x * factor, v.y * factor, v.z));
+    this.controlPoints = this.controlPoints.map(
+      v => new Vector3(v.x * factor, v.y * factor, v.z),
+    );
   }
 
   clone(): BezierCurve {

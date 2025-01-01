@@ -1,6 +1,6 @@
+import { Vector3 } from '../../utils/vec';
 import './mountain.css';
-import { depth, MountainArray, screenHeight, screenWidth } from './mountains';
-import { Vector3 } from './vec';
+import { MountainArray, depth, screenHeight, screenWidth } from './mountains';
 import { useEffect, useRef, useState } from 'react';
 
 function createMountains() {
@@ -11,11 +11,7 @@ function createMountains() {
 
 const offset = 10;
 
-export default function Mountain({
-  className,
-}: {
-  className?: string;
-}) {
+export default function Mountain({ className }: { className?: string }) {
   const svgRef = useRef<SVGSVGElement>(null);
   const polygonRefs = useRef<SVGPolygonElement[]>([]);
   // const canvas = useRef<HTMLCanvasElement>(null);
@@ -75,7 +71,7 @@ export default function Mountain({
   }, []);
 
   return (
-    <div className={`flex flex-col w-full items-center ${className}`}>
+    <div className={`flex w-full flex-col items-center ${className}`}>
       <svg
         ref={svgRef}
         width={screenWidth}

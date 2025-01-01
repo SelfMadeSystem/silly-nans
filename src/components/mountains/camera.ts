@@ -1,4 +1,4 @@
-import { Vector2, Vector3 } from './vec';
+import { Vector2, Vector3 } from '../../utils/vec';
 
 export class Camera {
   constructor(
@@ -31,7 +31,11 @@ export class Camera {
     const y3 = y2 * cosX - z2 * sinX;
     const z3 = y2 * sinX + z2 * cosX;
 
-    return new Vector3(x3 - this.position.x, y3 - this.position.y, z3 - this.position.z);
+    return new Vector3(
+      x3 - this.position.x,
+      y3 - this.position.y,
+      z3 - this.position.z,
+    );
   }
 
   projectPoint(point: Vector3): Vector2 | null {
