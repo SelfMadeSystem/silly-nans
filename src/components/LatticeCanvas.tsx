@@ -222,7 +222,7 @@ export default createCanvasComponent({
           0,
           mousePos.x,
           mousePos.y,
-          600,
+          options.mouseDistance,
         );
         if (options.mouseGradient === 'inward') {
           mouseGradient.addColorStop(0, 'rgba(0,0,0, 0.9)');
