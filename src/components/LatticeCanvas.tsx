@@ -7,7 +7,6 @@ const defaultOptions = {
   spacing: 30,
   mouseRepel: true,
   mouseDistance: 600,
-  mouseDistanceOffset: 100,
   mouseStrength: 1,
   moveStrength: 4,
 };
@@ -88,10 +87,9 @@ class Lattice {
       const diff = mousePos.sub(p);
       const dist = diff.length();
       const influence =
-        Math.max(
-          0,
-          1 - (dist + options.mouseDistanceOffset) / options.mouseDistance,
-        ) * (options.mouseRepel ? -1 : 1);
+        Math.max(0, 1 - dist / options.mouseDistance) *
+        (options.mouseRepel ? -1 : 1) *
+        options.mouseStrength;
       this.points[i] = p.add(diff.mult(dt * influence));
     }
   }
@@ -126,9 +124,9 @@ export default createCanvasComponent({
 
     function newLattice(options: Options) {
       return new Lattice(
-        new Vector2(-options.spacing * 1.5, -options.spacing * 1.5),
-        canvas.width + options.spacing * 3,
-        canvas.height + options.spacing * 3,
+        new Vector2(-60, -60),
+        canvas.width + 120,
+        canvas.height + 120,
         options.spacing,
       );
     }
@@ -167,13 +165,9 @@ export default createCanvasComponent({
           min: 0,
           max: 1000,
         });
-        optionsFolder.addBinding(options, 'mouseDistanceOffset', {
-          min: 0,
-          max: 1000,
-        });
         optionsFolder.addBinding(options, 'mouseStrength', {
           min: 0,
-          max: 10,
+          max: 3,
         });
         optionsFolder.addBinding(options, 'moveStrength', {
           min: 0,
