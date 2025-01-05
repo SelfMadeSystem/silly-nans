@@ -10,6 +10,7 @@ const defaultOptions = {
   mouseDistance: 600,
   mouseStrength: 1,
   moveStrength: 4,
+  accStrength: 0,
   xSpeed: 100,
   ySpeed: 0,
 };
@@ -19,6 +20,7 @@ type Options = typeof defaultOptions;
 class Lattice {
   public ogPoints: Array<Vector2>;
   public points: Array<Vector2>;
+  public prevPoints: Array<Vector2>;
   public offset: Vector2 = new Vector2(0, 0);
   public links: Array<[number, number]>;
 
@@ -30,11 +32,13 @@ class Lattice {
   ) {
     this.points = [];
     this.ogPoints = [];
+    this.prevPoints = [];
     this.links = [];
     for (let y = 0; y < height; y += spacing) {
       for (let x = 0; x < width; x += spacing) {
         this.points.push(origin.add(new Vector2(x, y)));
         this.ogPoints.push(origin.add(new Vector2(x, y)));
+        this.prevPoints.push(origin.add(new Vector2(x, y)));
       }
     }
     for (let y = 0; y < height; y += spacing) {
@@ -72,9 +76,11 @@ class Lattice {
   }
 
   physics(dt: number, mousePos: Vector2, options: Options) {
+    console.log(dt);
     this.moveOffset(dt, options);
     this.movePointsToOg(dt, options);
     this.moveFromMouse(dt, mousePos, options);
+    this.accelerate(dt, options);
     // this.interactPoints(dt);
   }
 
@@ -100,6 +106,7 @@ class Lattice {
       for (const i of outOfBounds) {
         this.points[i] = this.points[i].sub(new Vector2(this.width, 0));
         this.ogPoints[i] = this.ogPoints[i].sub(new Vector2(this.width, 0));
+        this.prevPoints[i] = this.prevPoints[i].sub(new Vector2(this.width, 0));
       }
 
       // Reconnect the links
@@ -132,6 +139,7 @@ class Lattice {
       for (const i of outOfBounds) {
         this.points[i] = this.points[i].add(new Vector2(this.width, 0));
         this.ogPoints[i] = this.ogPoints[i].add(new Vector2(this.width, 0));
+        this.prevPoints[i] = this.prevPoints[i].add(new Vector2(this.width, 0));
       }
 
       this.links = this.links.map(([i, j]) => {
@@ -165,6 +173,9 @@ class Lattice {
       for (const i of outOfBounds) {
         this.points[i] = this.points[i].sub(new Vector2(0, this.height));
         this.ogPoints[i] = this.ogPoints[i].sub(new Vector2(0, this.height));
+        this.prevPoints[i] = this.prevPoints[i].sub(
+          new Vector2(0, this.height),
+        );
       }
 
       this.links = this.links.map(([i, j]) => {
@@ -196,6 +207,9 @@ class Lattice {
       for (const i of outOfBounds) {
         this.points[i] = this.points[i].add(new Vector2(0, this.height));
         this.ogPoints[i] = this.ogPoints[i].add(new Vector2(0, this.height));
+        this.prevPoints[i] = this.prevPoints[i].add(
+          new Vector2(0, this.height),
+        );
       }
 
       this.links = this.links.map(([i, j]) => {
@@ -244,6 +258,16 @@ class Lattice {
     }
   }
 
+  accelerate(dt: number, options: Options) {
+    for (let i = 0; i < this.points.length; i++) {
+      const p = this.points[i];
+      const prevP = this.prevPoints[i];
+      const diff = p.sub(prevP);
+      this.points[i] = p.add(diff.mult(Math.pow(options.accStrength, 0.05)));
+      this.prevPoints[i] = p;
+    }
+  }
+
   // interactPoints(dt: number) {
   //   for (const [i, j] of this.links) {
   //     const p1 = this.points[i];
@@ -273,12 +297,11 @@ export default createCanvasComponent({
     const ctx = canvas.getContext('2d')!;
 
     function newLattice(options: Options) {
-      const sixty = ceilMultiple(60, options.spacing);
-      const oneTwenty = ceilMultiple(120, options.spacing);
+      const offset = ceilMultiple(120, options.spacing);
       return new Lattice(
-        new Vector2(-sixty, -sixty),
-        ceilMultiple(canvas.width, options.spacing) + oneTwenty,
-        ceilMultiple(canvas.height, options.spacing) + oneTwenty,
+        new Vector2(-offset, -offset),
+        ceilMultiple(canvas.width, options.spacing) + offset * 2,
+        ceilMultiple(canvas.height, options.spacing) + offset * 2,
         options.spacing,
       );
     }
@@ -334,6 +357,10 @@ export default createCanvasComponent({
           min: -100,
           max: 100,
         });
+        optionsFolder.addBinding(options, 'accStrength', {
+          min: 0,
+          max: 1,
+        });
       }
 
       const presetsFolder = pane.addFolder({
@@ -362,14 +389,36 @@ export default createCanvasComponent({
             mouseRepel: false,
           });
         });
+
+      presetsFolder
+        .addButton({
+          title: 'Wobbly',
+        })
+        .on('click', () => {
+          Object.assign(options, {
+            moveStrength: 2,
+            accStrength: 0.5,
+          });
+        });
+
+      presetsFolder
+        .addButton({
+          title: 'No Wobbly',
+        })
+        .on('click', () => {
+          Object.assign(options, {
+            moveStrength: 4,
+            accStrength: 0,
+          });
+        });
     }
     return {
       update(dt) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.strokeStyle = ctx.fillStyle = 'rgba(255, 255, 255)';
-        lattice.physics(Math.min(100, dt / 1000), mousePos, options);
+        lattice.physics(Math.min(1 / 30, dt / 1000), mousePos, options);
         lattice.drawPoints(ctx);
-        lattice.drawLines(ctx);
+        // lattice.drawLines(ctx);
 
         if (options.mouseGradient === 'none') return;
         const mouseGradient = ctx.createRadialGradient(
