@@ -1,3 +1,4 @@
+import { approxEquals, ceilMultiple, mod } from '../utils/mathUtils';
 import { Vector2 } from '../utils/vec';
 import createCanvasComponent from './CanvasComponent';
 import { Pane } from 'tweakpane';
@@ -9,6 +10,8 @@ const defaultOptions = {
   mouseDistance: 600,
   mouseStrength: 1,
   moveStrength: 4,
+  xSpeed: 100,
+  ySpeed: 0,
 };
 
 type Options = typeof defaultOptions;
@@ -16,10 +19,11 @@ type Options = typeof defaultOptions;
 class Lattice {
   public ogPoints: Array<Vector2>;
   public points: Array<Vector2>;
+  public offset: Vector2 = new Vector2(0, 0);
   public links: Array<[number, number]>;
 
   constructor(
-    origin: Vector2,
+    public origin: Vector2,
     public width: number,
     public height: number,
     public spacing: number,
@@ -46,16 +50,17 @@ class Lattice {
     }
   }
 
-  // drawLines(ctx: CanvasRenderingContext2D) {
-  //   ctx.beginPath();
-  //   for (const [i, j] of this.links) {
-  //     const p1 = this.points[i];
-  //     const p2 = this.points[j];
-  //     ctx.moveTo(p1.x, p1.y);
-  //     ctx.lineTo(p2.x, p2.y);
-  //   }
-  //   ctx.stroke();
-  // }
+  drawLines(ctx: CanvasRenderingContext2D) {
+    ctx.beginPath();
+    for (const [i, j] of this.links) {
+      const p1 = this.points[i];
+      const p2 = this.points[j];
+      if (!p1 || !p2) continue;
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+    }
+    ctx.stroke();
+  }
 
   drawPoints(ctx: CanvasRenderingContext2D) {
     ctx.beginPath();
@@ -67,12 +72,157 @@ class Lattice {
   }
 
   physics(dt: number, mousePos: Vector2, options: Options) {
-    this.movePoints(dt, options);
+    this.moveOffset(dt, options);
+    this.movePointsToOg(dt, options);
     this.moveFromMouse(dt, mousePos, options);
     // this.interactPoints(dt);
   }
 
-  movePoints(dt: number, options: Options) {
+  moveOffset(dt: number, options: Options) {
+    const diff = new Vector2(options.xSpeed, options.ySpeed).mult(dt);
+    this.offset = this.offset.add(diff);
+
+    this.points = this.points.map(p => p.add(diff));
+    this.ogPoints = this.ogPoints.map(p => p.add(diff));
+
+    if (this.offset.x > this.spacing) {
+      // Get the max x value of the lattice
+      const maxX = this.width + this.spacing + this.origin.x;
+
+      // Find the points that are out of bounds
+      const outOfBounds = new Set(
+        this.ogPoints
+          .map((p, i) => (p.x > maxX ? i : -1))
+          .filter(i => i !== -1),
+      );
+
+      // Move the out of bounds points to the other side
+      for (const i of outOfBounds) {
+        this.points[i] = this.points[i].sub(new Vector2(this.width, 0));
+        this.ogPoints[i] = this.ogPoints[i].sub(new Vector2(this.width, 0));
+      }
+
+      // Reconnect the links
+      this.links = this.links.map(([i, j]) => {
+        const pi = this.ogPoints[i];
+        const pj = this.ogPoints[j];
+        if (!pi || !pj || pi.y !== pj.y) return [i, j];
+
+        if (outOfBounds.has(i)) {
+          j = this.ogPoints.findIndex(
+            p =>
+              approxEquals(p.y, pi.y) && approxEquals(p.x, pi.x + this.spacing),
+          );
+        }
+        if (outOfBounds.has(j)) {
+          i = this.ogPoints.findIndex(
+            p =>
+              approxEquals(p.y, pj.y) && approxEquals(p.x, pj.x + this.spacing),
+          );
+        }
+        return [i, j];
+      });
+    } else if (this.offset.x < 0) {
+      const minX = this.origin.x - this.spacing;
+      const outOfBounds = new Set(
+        this.ogPoints
+          .map((p, i) => (p.x < minX ? i : -1))
+          .filter(i => i !== -1),
+      );
+      for (const i of outOfBounds) {
+        this.points[i] = this.points[i].add(new Vector2(this.width, 0));
+        this.ogPoints[i] = this.ogPoints[i].add(new Vector2(this.width, 0));
+      }
+
+      this.links = this.links.map(([i, j]) => {
+        const pi = this.ogPoints[i];
+        const pj = this.ogPoints[j];
+        if (!pi || !pj || pi.y !== pj.y) return [i, j];
+
+        if (outOfBounds.has(i)) {
+          j = this.ogPoints.findIndex(
+            p =>
+              approxEquals(p.y, pi.y) && approxEquals(p.x, pi.x - this.spacing),
+          );
+        }
+        if (outOfBounds.has(j)) {
+          i = this.ogPoints.findIndex(
+            p =>
+              approxEquals(p.y, pj.y) && approxEquals(p.x, pj.x - this.spacing),
+          );
+        }
+        return [i, j];
+      });
+    }
+
+    if (this.offset.y > this.spacing) {
+      const maxY = this.height + this.spacing + this.origin.y;
+      const outOfBounds = new Set(
+        this.ogPoints
+          .map((p, i) => (p.y > maxY ? i : -1))
+          .filter(i => i !== -1),
+      );
+      for (const i of outOfBounds) {
+        this.points[i] = this.points[i].sub(new Vector2(0, this.height));
+        this.ogPoints[i] = this.ogPoints[i].sub(new Vector2(0, this.height));
+      }
+
+      this.links = this.links.map(([i, j]) => {
+        const pi = this.ogPoints[i];
+        const pj = this.ogPoints[j];
+        if (!pi || !pj || pi.x !== pj.x) return [i, j];
+
+        if (outOfBounds.has(i)) {
+          j = this.ogPoints.findIndex(
+            p =>
+              approxEquals(p.x, pi.x) && approxEquals(p.y, pi.y + this.spacing),
+          );
+        }
+        if (outOfBounds.has(j)) {
+          i = this.ogPoints.findIndex(
+            p =>
+              approxEquals(p.x, pj.x) && approxEquals(p.y, pj.y + this.spacing),
+          );
+        }
+        return [i, j];
+      });
+    } else if (this.offset.y < 0) {
+      const minY = this.origin.y - this.spacing;
+      const outOfBounds = new Set(
+        this.ogPoints
+          .map((p, i) => (p.y < minY ? i : -1))
+          .filter(i => i !== -1),
+      );
+      for (const i of outOfBounds) {
+        this.points[i] = this.points[i].add(new Vector2(0, this.height));
+        this.ogPoints[i] = this.ogPoints[i].add(new Vector2(0, this.height));
+      }
+
+      this.links = this.links.map(([i, j]) => {
+        const pi = this.ogPoints[i];
+        const pj = this.ogPoints[j];
+        if (!pi || !pj || pi.x !== pj.x) return [i, j];
+
+        if (outOfBounds.has(i)) {
+          j = this.ogPoints.findIndex(
+            p =>
+              approxEquals(p.x, pi.x) && approxEquals(p.y, pi.y - this.spacing),
+          );
+        }
+        if (outOfBounds.has(j)) {
+          i = this.ogPoints.findIndex(
+            p =>
+              approxEquals(p.x, pj.x) && approxEquals(p.y, pj.y - this.spacing),
+          );
+        }
+        return [i, j];
+      });
+    }
+
+    this.offset = this.offset.mod(new Vector2(this.spacing, this.spacing));
+  }
+
+  movePointsToOg(dt: number, options: Options) {
     for (let i = 0; i < this.points.length; i++) {
       const p = this.points[i];
       const ogP = this.ogPoints[i];
@@ -123,10 +273,12 @@ export default createCanvasComponent({
     const ctx = canvas.getContext('2d')!;
 
     function newLattice(options: Options) {
+      const sixty = ceilMultiple(60, options.spacing);
+      const oneTwenty = ceilMultiple(120, options.spacing);
       return new Lattice(
-        new Vector2(-60, -60),
-        canvas.width + 120,
-        canvas.height + 120,
+        new Vector2(-sixty, -sixty),
+        ceilMultiple(canvas.width, options.spacing) + oneTwenty,
+        ceilMultiple(canvas.height, options.spacing) + oneTwenty,
         options.spacing,
       );
     }
@@ -156,6 +308,7 @@ export default createCanvasComponent({
           .addBinding(options, 'spacing', {
             min: 10,
             max: 100,
+            step: 1,
           })
           .on('change', () => {
             lattice = newLattice(options);
@@ -172,6 +325,14 @@ export default createCanvasComponent({
         optionsFolder.addBinding(options, 'moveStrength', {
           min: 0,
           max: 10,
+        });
+        optionsFolder.addBinding(options, 'xSpeed', {
+          min: -100,
+          max: 100,
+        });
+        optionsFolder.addBinding(options, 'ySpeed', {
+          min: -100,
+          max: 100,
         });
       }
 
@@ -206,8 +367,9 @@ export default createCanvasComponent({
       update(dt) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.strokeStyle = ctx.fillStyle = 'rgba(255, 255, 255)';
-        lattice.physics(dt / 1000, mousePos, options);
+        lattice.physics(Math.min(100, dt / 1000), mousePos, options);
         lattice.drawPoints(ctx);
+        lattice.drawLines(ctx);
 
         if (options.mouseGradient === 'none') return;
         const mouseGradient = ctx.createRadialGradient(

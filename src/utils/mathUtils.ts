@@ -145,6 +145,20 @@ export function gcd(a: number, b: number): number {
 }
 
 /**
+ * Approx equals function for numbers
+ */
+export function approxEquals(a: number, b: number, epsilon = 1e-6): boolean {
+  return Math.abs(a - b) < epsilon;
+}
+
+/**
+ * Ceil function that rounds to the next multiple of a number
+ */
+export function ceilMultiple(a: number, multiple: number): number {
+  return Math.ceil(a / multiple) * multiple;
+}
+
+/**
  * Calculates a point on a bezier curve
  * @param a The first point
  * @param b The second point

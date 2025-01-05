@@ -1,3 +1,5 @@
+import { mod } from './mathUtils';
+
 export class Vector3 {
   constructor(
     public readonly x: number,
@@ -120,6 +122,10 @@ export class Vector2 {
 
   divide(scalar: number): Vector2 {
     return new Vector2(this.x / scalar, this.y / scalar);
+  }
+
+  mod(other: Vector2): Vector2 {
+    return new Vector2(mod(this.x, other.x), mod(this.y, other.y));
   }
 
   length(): number {
