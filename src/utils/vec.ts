@@ -23,11 +23,19 @@ export class Vector3 {
     return new Vector3(this.x + other.x, this.y + other.y, this.z + other.z);
   }
 
-  subtract(other: Vector3): Vector3 {
+  add2(other: Vector2): Vector3 {
+    return new Vector3(this.x + other.x, this.y + other.y, this.z);
+  }
+
+  sub(other: Vector3): Vector3 {
     return new Vector3(this.x - other.x, this.y - other.y, this.z - other.z);
   }
 
-  multiply(scalar: number): Vector3 {
+  sub2(other: Vector2): Vector3 {
+    return new Vector3(this.x - other.x, this.y - other.y, this.z);
+  }
+
+  mult(scalar: number): Vector3 {
     return new Vector3(this.x * scalar, this.y * scalar, this.z * scalar);
   }
 
@@ -164,6 +172,10 @@ export class Vector2 {
 
   angleTo(other: Vector2): number {
     return other.sub(this).heading();
+  }
+
+  to3(z: number = 0): Vector3 {
+    return new Vector3(this.x, this.y, z);
   }
 
   clone(): Vector2 {

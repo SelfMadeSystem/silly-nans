@@ -1,5 +1,5 @@
-import { approxEquals, ceilMultiple, mod } from '../utils/mathUtils';
-import { Vector2 } from '../utils/vec';
+import { approxEquals, ceilMultiple } from '../utils/mathUtils';
+import { Vector2, Vector3 } from '../utils/vec';
 import createCanvasComponent from './CanvasComponent';
 import { Pane } from 'tweakpane';
 
@@ -11,16 +11,17 @@ const defaultOptions = {
   mouseStrength: 1,
   moveStrength: 4,
   accStrength: 0,
-  xSpeed: 100,
-  ySpeed: 0,
+  xSpeed: 50,
+  ySpeed: 15,
+  drawAsDist: true,
 };
 
 type Options = typeof defaultOptions;
 
 class Lattice {
   public ogPoints: Array<Vector2>;
-  public points: Array<Vector2>;
-  public prevPoints: Array<Vector2>;
+  public points: Array<Vector3>;
+  public prevPoints: Array<Vector3>;
   public offset: Vector2 = new Vector2(0, 0);
   public links: Array<[number, number]>;
 
@@ -36,9 +37,9 @@ class Lattice {
     this.links = [];
     for (let y = 0; y < height; y += spacing) {
       for (let x = 0; x < width; x += spacing) {
-        this.points.push(origin.add(new Vector2(x, y)));
         this.ogPoints.push(origin.add(new Vector2(x, y)));
-        this.prevPoints.push(origin.add(new Vector2(x, y)));
+        this.points.push(new Vector3(x, y, 0).add2(origin));
+        this.prevPoints.push(new Vector3(x, y, 0).add2(origin));
       }
     }
     for (let y = 0; y < height; y += spacing) {
@@ -66,17 +67,64 @@ class Lattice {
     ctx.stroke();
   }
 
-  drawPoints(ctx: CanvasRenderingContext2D) {
-    ctx.beginPath();
-    for (const p of this.points) {
-      ctx.moveTo(p.x, p.y);
-      ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+  drawPoints(ctx: CanvasRenderingContext2D, options: Options) {
+    const canvasWidth = ctx.canvas.width;
+    const canvasHeight = ctx.canvas.height;
+    if (options.drawAsDist && options.mouseGradient !== 'none') {
+      const maxDist = this.findMaxDistFromOg();
+
+      for (let i = 0; i < this.points.length; i++) {
+        const p = this.points[i];
+        if (
+          p.x < -1 ||
+          p.x > canvasWidth + 1 ||
+          p.y < -1 ||
+          p.y > canvasHeight + 1
+        )
+          continue;
+        const ogP = this.ogPoints[i];
+        const dist = p.sub2(ogP).length();
+        let color; // ]25, 255]
+        if (options.mouseGradient === 'inward') {
+          color = 25 + 230 * (1 - dist / maxDist);
+        } else {
+          color = 25 + 230 * (dist / maxDist);
+        }
+        ctx.fillStyle = `rgb(${color}, ${color}, ${color})`;
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else {
+      ctx.beginPath();
+      for (const p of this.points) {
+        if (
+          p.x < -1 ||
+          p.x > canvasWidth + 1 ||
+          p.y < -1 ||
+          p.y > canvasHeight + 1
+        )
+          continue;
+        ctx.moveTo(p.x, p.y);
+        ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+      }
+      ctx.fill();
     }
-    ctx.fill();
+  }
+
+  findMaxDistFromOg() {
+    let maxDist = 0;
+    for (let i = 0; i < this.points.length; i++) {
+      const p = this.points[i];
+      const ogP = this.ogPoints[i];
+      const dist = p.sub2(ogP).length();
+      if (dist > maxDist) maxDist = dist;
+    }
+    return maxDist;
   }
 
   physics(dt: number, mousePos: Vector2, options: Options) {
-    console.log(dt);
     this.moveOffset(dt, options);
     this.movePointsToOg(dt, options);
     this.moveFromMouse(dt, mousePos, options);
@@ -88,8 +136,9 @@ class Lattice {
     const diff = new Vector2(options.xSpeed, options.ySpeed).mult(dt);
     this.offset = this.offset.add(diff);
 
-    this.points = this.points.map(p => p.add(diff));
+    this.points = this.points.map(p => p.add2(diff));
     this.ogPoints = this.ogPoints.map(p => p.add(diff));
+    this.prevPoints = this.prevPoints.map(p => p.add2(diff));
 
     if (this.offset.x > this.spacing) {
       // Get the max x value of the lattice
@@ -104,9 +153,11 @@ class Lattice {
 
       // Move the out of bounds points to the other side
       for (const i of outOfBounds) {
-        this.points[i] = this.points[i].sub(new Vector2(this.width, 0));
         this.ogPoints[i] = this.ogPoints[i].sub(new Vector2(this.width, 0));
-        this.prevPoints[i] = this.prevPoints[i].sub(new Vector2(this.width, 0));
+        this.points[i] = this.points[i].sub2(new Vector2(this.width, 0));
+        this.prevPoints[i] = this.prevPoints[i].sub2(
+          new Vector2(this.width, 0),
+        );
       }
 
       // Reconnect the links
@@ -137,9 +188,11 @@ class Lattice {
           .filter(i => i !== -1),
       );
       for (const i of outOfBounds) {
-        this.points[i] = this.points[i].add(new Vector2(this.width, 0));
         this.ogPoints[i] = this.ogPoints[i].add(new Vector2(this.width, 0));
-        this.prevPoints[i] = this.prevPoints[i].add(new Vector2(this.width, 0));
+        this.points[i] = this.points[i].add2(new Vector2(this.width, 0));
+        this.prevPoints[i] = this.prevPoints[i].add2(
+          new Vector2(this.width, 0),
+        );
       }
 
       this.links = this.links.map(([i, j]) => {
@@ -171,9 +224,9 @@ class Lattice {
           .filter(i => i !== -1),
       );
       for (const i of outOfBounds) {
-        this.points[i] = this.points[i].sub(new Vector2(0, this.height));
         this.ogPoints[i] = this.ogPoints[i].sub(new Vector2(0, this.height));
-        this.prevPoints[i] = this.prevPoints[i].sub(
+        this.points[i] = this.points[i].sub2(new Vector2(0, this.height));
+        this.prevPoints[i] = this.prevPoints[i].sub2(
           new Vector2(0, this.height),
         );
       }
@@ -205,9 +258,9 @@ class Lattice {
           .filter(i => i !== -1),
       );
       for (const i of outOfBounds) {
-        this.points[i] = this.points[i].add(new Vector2(0, this.height));
         this.ogPoints[i] = this.ogPoints[i].add(new Vector2(0, this.height));
-        this.prevPoints[i] = this.prevPoints[i].add(
+        this.points[i] = this.points[i].add2(new Vector2(0, this.height));
+        this.prevPoints[i] = this.prevPoints[i].add2(
           new Vector2(0, this.height),
         );
       }
@@ -240,7 +293,7 @@ class Lattice {
     for (let i = 0; i < this.points.length; i++) {
       const p = this.points[i];
       const ogP = this.ogPoints[i];
-      const diff = ogP.sub(p);
+      const diff = ogP.to3().sub(p);
       this.points[i] = p.add(diff.mult(dt * options.moveStrength));
     }
   }
@@ -248,7 +301,9 @@ class Lattice {
   moveFromMouse(dt: number, mousePos: Vector2, options: Options) {
     for (let i = 0; i < this.points.length; i++) {
       const p = this.points[i];
-      const diff = mousePos.sub(p);
+      const diff = mousePos
+        .to3((options.mouseStrength * options.mouseDistance) / 2)
+        .sub(p);
       const dist = diff.length();
       const influence =
         Math.max(0, 1 - dist / options.mouseDistance) *
@@ -258,7 +313,7 @@ class Lattice {
     }
   }
 
-  accelerate(dt: number, options: Options) {
+  accelerate(_dt: number, options: Options) {
     for (let i = 0; i < this.points.length; i++) {
       const p = this.points[i];
       const prevP = this.prevPoints[i];
@@ -361,6 +416,7 @@ export default createCanvasComponent({
           min: 0,
           max: 1,
         });
+        optionsFolder.addBinding(options, 'drawAsDist');
       }
 
       const presetsFolder = pane.addFolder({
@@ -417,10 +473,11 @@ export default createCanvasComponent({
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.strokeStyle = ctx.fillStyle = 'rgba(255, 255, 255)';
         lattice.physics(Math.min(1 / 30, dt / 1000), mousePos, options);
-        lattice.drawPoints(ctx);
+        lattice.drawPoints(ctx, options);
         // lattice.drawLines(ctx);
 
-        if (options.mouseGradient === 'none') return;
+        if (options.mouseGradient === 'none' || options.drawAsDist)
+          return;
         const mouseGradient = ctx.createRadialGradient(
           mousePos.x,
           mousePos.y,

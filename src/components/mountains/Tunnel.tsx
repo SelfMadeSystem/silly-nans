@@ -24,10 +24,10 @@ class BezierCurve {
     const p2 = this.controlPoints[2];
     const p3 = this.controlPoints[3];
 
-    const a = p0.multiply(Math.pow(1 - t, 3));
-    const b = p1.multiply(3 * Math.pow(1 - t, 2) * t);
-    const c = p2.multiply(3 * (1 - t) * Math.pow(t, 2));
-    const d = p3.multiply(Math.pow(t, 3));
+    const a = p0.mult(Math.pow(1 - t, 3));
+    const b = p1.mult(3 * Math.pow(1 - t, 2) * t);
+    const c = p2.mult(3 * (1 - t) * Math.pow(t, 2));
+    const d = p3.mult(Math.pow(t, 3));
 
     return a.add(b).add(c).add(d);
   }
@@ -41,9 +41,9 @@ class BezierCurve {
     const p2 = this.controlPoints[2];
     const p3 = this.controlPoints[3];
 
-    const a = p1.subtract(p0).multiply(3 * Math.pow(1 - t, 2));
-    const b = p2.subtract(p1).multiply(6 * (1 - t) * t);
-    const c = p3.subtract(p2).multiply(3 * Math.pow(t, 2));
+    const a = p1.sub(p0).mult(3 * Math.pow(1 - t, 2));
+    const b = p2.sub(p1).mult(6 * (1 - t) * t);
+    const c = p3.sub(p2).mult(3 * Math.pow(t, 2));
 
     return a.add(b).add(c).normalize();
   }
