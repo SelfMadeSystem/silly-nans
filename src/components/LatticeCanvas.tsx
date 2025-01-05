@@ -13,7 +13,7 @@ const defaultOptions = {
   accStrength: 0,
   xSpeed: 50,
   ySpeed: 15,
-  drawAsDist: true,
+  drawAsDist: false,
 };
 
 type Options = typeof defaultOptions;
@@ -416,7 +416,9 @@ export default createCanvasComponent({
           min: 0,
           max: 1,
         });
-        optionsFolder.addBinding(options, 'drawAsDist');
+        optionsFolder
+          .addBinding(options, 'drawAsDist')
+          .label = 'drawAsDist (slow)';
       }
 
       const presetsFolder = pane.addFolder({
@@ -476,8 +478,7 @@ export default createCanvasComponent({
         lattice.drawPoints(ctx, options);
         // lattice.drawLines(ctx);
 
-        if (options.mouseGradient === 'none' || options.drawAsDist)
-          return;
+        if (options.mouseGradient === 'none' || options.drawAsDist) return;
         const mouseGradient = ctx.createRadialGradient(
           mousePos.x,
           mousePos.y,
