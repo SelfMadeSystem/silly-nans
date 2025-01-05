@@ -39,6 +39,10 @@ export class Vector3 {
     return new Vector3(this.x * scalar, this.y * scalar, this.z * scalar);
   }
 
+  mult3(other: Vector3): Vector3 {
+    return new Vector3(this.x * other.x, this.y * other.y, this.z * other.z);
+  }
+
   divide(scalar: number): Vector3 {
     return new Vector3(this.x / scalar, this.y / scalar, this.z / scalar);
   }
@@ -62,6 +66,10 @@ export class Vector3 {
       this.z * other.x - this.x * other.z,
       this.x * other.y - this.y * other.x,
     );
+  }
+
+  abs(): Vector3 {
+    return new Vector3(Math.abs(this.x), Math.abs(this.y), Math.abs(this.z));
   }
 
   rotateBy(rotation: Vector3): Vector3 {
@@ -95,6 +103,10 @@ export class Vector3 {
     point.y = y;
 
     return new Vector3(point.x, point.y, point.z);
+  }
+
+  xy(): Vector2 {
+    return new Vector2(this.x, this.y);
   }
 
   clone(): Vector3 {

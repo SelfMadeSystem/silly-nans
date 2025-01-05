@@ -9,6 +9,7 @@ const defaultOptions = {
   mouseRepel: true,
   mouseDistance: 600,
   mouseStrength: 1,
+  mouseZ: 50,
   moveStrength: 4,
   accStrength: 0,
   xSpeed: 50,
@@ -83,6 +84,10 @@ class Lattice {
         )
           continue;
         const ogP = this.ogPoints[i];
+        const diff = p
+          .sub2(ogP)
+          .mult(255 / maxDist)
+          .abs();
         const dist = p.sub2(ogP).length();
         let color; // ]25, 255]
         if (options.mouseGradient === 'inward') {
@@ -90,7 +95,7 @@ class Lattice {
         } else {
           color = 25 + 230 * (dist / maxDist);
         }
-        ctx.fillStyle = `rgb(${color}, ${color}, ${color})`;
+        ctx.fillStyle = `rgb(${diff.x}, ${diff.y}, ${diff.z})`;
         ctx.beginPath();
         ctx.moveTo(p.x, p.y);
         ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
@@ -301,19 +306,26 @@ class Lattice {
   moveFromMouse(dt: number, mousePos: Vector2, options: Options) {
     for (let i = 0; i < this.points.length; i++) {
       const p = this.points[i];
-      const diff = mousePos
-        .to3((options.mouseStrength * options.mouseDistance) / 2)
-        .sub(p);
-      const dist = diff.length();
+      const diff2 = mousePos.sub(p.xy());
+      const dist2 = diff2.length();
+      const diff3 = mousePos.to3(dist2 + options.mouseZ).sub(p);
+      const dist3 = diff3.length();
+      const norm = diff3.normalize();
       const influence =
-        Math.max(0, 1 - dist / options.mouseDistance) *
-        (options.mouseRepel ? -1 : 1) *
-        options.mouseStrength;
-      this.points[i] = p.add(diff.mult(dt * influence));
+        options.mouseStrength *
+        Math.max(0, 1 - dist3 / options.mouseDistance);
+      if (options.mouseRepel) {
+        this.points[i] = p.sub(norm.mult(dt * influence * 1000));
+      } else {
+        this.points[i] = p.add(
+          norm.mult(dt * influence * 1000).mult3(new Vector3(1, 1, -1)),
+        );
+      }
     }
   }
 
   accelerate(_dt: number, options: Options) {
+    (options.mouseStrength * options.mouseDistance) / 2;
     for (let i = 0; i < this.points.length; i++) {
       const p = this.points[i];
       const prevP = this.prevPoints[i];
@@ -400,6 +412,10 @@ export default createCanvasComponent({
           min: 0,
           max: 3,
         });
+        optionsFolder.addBinding(options, 'mouseZ', {
+          min: 0,
+          max: 100,
+        });
         optionsFolder.addBinding(options, 'moveStrength', {
           min: 0,
           max: 10,
@@ -416,9 +432,8 @@ export default createCanvasComponent({
           min: 0,
           max: 1,
         });
-        optionsFolder
-          .addBinding(options, 'drawAsDist')
-          .label = 'drawAsDist (slow)';
+        optionsFolder.addBinding(options, 'drawAsDist').label =
+          'drawAsDist (slow)';
       }
 
       const presetsFolder = pane.addFolder({
