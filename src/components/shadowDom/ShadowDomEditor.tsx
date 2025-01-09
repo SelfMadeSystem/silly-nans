@@ -38,6 +38,7 @@ export default function ShadowDomEditor() {
   const [data, setData] = useState<ExportData | undefined>(undefined);
   const [html, setHtml] = useState<string | undefined>(DEFAULT_HTML);
   const [css, setCss] = useState<string | undefined>(DEFAULT_CSS);
+  const [runScripts, setRunScripts] = useState(false);
   const [showCssEditor, setShowCssEditor] = useState(true);
   const isSvg = checkIfSvg(html ?? '');
 
@@ -193,6 +194,12 @@ export default function ShadowDomEditor() {
             </option>
           ))}
         </select>
+        <button
+          className="mx-auto block w-32 rounded bg-blue-500 py-2 text-white"
+          onClick={() => setRunScripts(!runScripts)}
+        >
+          {runScripts ? "Run't scripts" : 'Run scripts'}
+        </button>
       </div>
       <p className="mx-auto mt-5 max-w-3xl text-center">
         This is a demo of a CSS Shadow DOM. It supports the{' '}
@@ -205,6 +212,7 @@ export default function ShadowDomEditor() {
             rewriting={rewriting}
             css={css ?? ''}
             html={html ?? ''}
+            runScripts={runScripts}
             setExportData={setData}
           />
         </div>

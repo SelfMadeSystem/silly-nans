@@ -100,15 +100,18 @@ export function ShadowDomCreator({
   rewriting,
   css,
   html,
+  runScripts,
   setExportData,
 }: {
   rewriting: boolean;
   css: string;
   html: string;
+  runScripts: boolean;
   setExportData: (data: ExportData) => void;
 }) {
   const previewRef = useRef<HTMLDivElement>(null);
   const shadowRoot = useRef<ShadowRoot | null>(null);
+  const templateRef = useRef<HTMLTemplateElement>(null);
 
   useEffect(() => {
     if (!previewRef.current) {
@@ -116,7 +119,7 @@ export function ShadowDomCreator({
     }
 
     function renderDom(html: string, css: string) {
-      if (!previewRef.current) {
+      if (!previewRef.current || !templateRef.current) {
         return;
       }
       // Create the shadow root if it doesn't exist
@@ -129,7 +132,23 @@ export function ShadowDomCreator({
       style.textContent = CSS_PRELUDE + css;
       shadowRoot.current.innerHTML = '';
       shadowRoot.current.appendChild(style);
-      shadowRoot.current.innerHTML += html;
+      templateRef.current.innerHTML = html;
+      shadowRoot.current.appendChild(
+        templateRef.current.content.cloneNode(true),
+      );
+
+      if (runScripts) {
+        const scripts = templateRef.current.content.querySelectorAll('script');
+        scripts.forEach(script => {
+          const newScript = document.createElement('script');
+          newScript.textContent = script.textContent;
+          [...script.attributes].forEach(attr =>
+            newScript.setAttribute(attr.name, attr.value),
+          );
+          document.body.appendChild(newScript);
+          document.body.removeChild(newScript);
+        });
+      }
     }
 
     if (rewriting) {
@@ -200,12 +219,15 @@ export function ShadowDomCreator({
       // If there's an error, just render the DOM with the original CSS
       renderDom(html, css);
     }
-  }, [css, html, setExportData]);
+  }, [css, html, setExportData, runScripts]);
 
   return (
-    <div
-      className="isolate flex h-full w-full transform-cpu items-center justify-center overflow-hidden"
-      ref={previewRef}
-    ></div>
+    <>
+      <template ref={templateRef}></template>
+      <div
+        className="isolate flex h-full w-full transform-cpu items-center justify-center overflow-hidden"
+        ref={previewRef}
+      ></div>
+    </>
   );
 }
