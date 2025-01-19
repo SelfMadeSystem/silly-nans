@@ -1,3 +1,4 @@
+import type * as monaco from 'monaco-editor';
 import {
   DEFAULT_CSS,
   DEFAULT_HTML,
@@ -9,6 +10,7 @@ import Editor from '@monaco-editor/react';
 import classNames from 'classnames';
 import { emmetCSS, emmetHTML } from 'emmet-monaco-es';
 import { useEffect, useState } from 'react';
+import { toast } from 'react-toastify';
 
 /**
  * Checks if the given HTML string is an SVG. Does so by checking if the string
@@ -42,6 +44,7 @@ export default function ShadowDomEditor() {
   const [css, setCss] = useState<string | undefined>(DEFAULT_CSS);
   const [runScripts, setRunScripts] = useState(false);
   const [showCssEditor, setShowCssEditor] = useState(true);
+  const [myMonaco, setMonaco] = useState<typeof monaco | null>(null);
   const isSvg = checkIfSvg(html ?? '');
 
   const [selectedPreset, setSelectedPreset] = useState<Preset | undefined>();
@@ -62,7 +65,107 @@ export default function ShadowDomEditor() {
           console.error('Error fetching data:', error);
         });
     }
+
+    let saveCounter = 0;
+    let resetTimeout: NodeJS.Timeout;
+
+    const saveMessages = (
+      [
+        ["Saving isn't supported.", 3],
+        ['Stop trying to save.', 2],
+        ['I told you, saving is not supported.', 2],
+        ['Seriously, stop.', 1],
+        ["You're not listening, are you?", 1],
+        ['Last warning.', 1],
+        ['Okay, you asked for it.', 1],
+        ['Goodbye.', 1],
+      ] as const
+    )
+      .map(([message, times]) => Array(times).fill(message))
+      .flat();
+
+    const resetSaveCounter = () => {
+      saveCounter = 0;
+    };
+
+    const preventCtrlS = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+
+        if (saveCounter < saveMessages.length) {
+          toast.error(saveMessages[saveCounter]);
+          saveCounter++;
+        }
+
+        if (saveCounter >= saveMessages.length) {
+          setTimeout(() => {
+            // Evil since it also removes the state of the app lol
+            // Very ironic since saving is disabled
+            window.location.href =
+              'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+          }, 1000);
+        }
+
+        clearTimeout(resetTimeout);
+        resetTimeout = setTimeout(resetSaveCounter, 20000);
+      }
+    };
+
+    document.addEventListener('keydown', preventCtrlS);
+
+    return () => {
+      document.removeEventListener('keydown', preventCtrlS);
+    };
   }, []);
+
+  useEffect(() => {
+    if (!myMonaco) return;
+
+    const extractClassNames = (html: string) => {
+      const classNames = new Set<string>();
+      const regex = /class="([^"]*)"/g;
+      let match;
+      while ((match = regex.exec(html)) !== null) {
+        match[1].split(' ').forEach(className => classNames.add(className));
+      }
+      return Array.from(classNames);
+    };
+
+    const escapeClassName = (className: string) => {
+      return className.replace(/[^a-zA-Z0-9\-_]/g, '\\$&');
+    };
+
+    const provideCSSClassCompletions = (
+      _model: monaco.editor.ITextModel,
+      position: monaco.Position,
+    ) => {
+      const classNames = extractClassNames(html ?? '');
+      const suggestions = classNames.map(className => {
+        className = escapeClassName(className);
+        return {
+          label: `.${className}`,
+          kind: 5, // 5 is CSS class.
+          insertText: `.${className}`,
+          range: {
+            startLineNumber: position.lineNumber,
+            startColumn: position.column - 1,
+            endLineNumber: position.lineNumber,
+            endColumn: position.column,
+          },
+        };
+      });
+
+      return { suggestions };
+    };
+
+    const dispose = myMonaco.languages.registerCompletionItemProvider('css', {
+      provideCompletionItems: provideCSSClassCompletions,
+    });
+
+    return () => {
+      dispose.dispose();
+    };
+  }, [html, myMonaco]);
 
   const handlePresetChange = (preset: Preset) => {
     setHtml(preset.html);
@@ -249,8 +352,10 @@ export default function ShadowDomEditor() {
                 }}
                 value={css}
                 onChange={value => setCss(value)}
-                beforeMount={editor => {
-                  emmetCSS(editor);
+                beforeMount={monaco => {
+                  emmetCSS(monaco);
+                  emmetHTML(monaco);
+                  setMonaco(monaco);
                 }}
                 theme="vs-dark"
               />
@@ -264,9 +369,6 @@ export default function ShadowDomEditor() {
                 }}
                 value={html}
                 onChange={value => setHtml(value)}
-                beforeMount={editor => {
-                  emmetHTML(editor);
-                }}
                 theme="vs-dark"
               />
             </div>

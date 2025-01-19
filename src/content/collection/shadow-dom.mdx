@@ -11,6 +11,8 @@ footerClasses: 'before:bg-dot-grid before:inset-0 before:absolute before:-z-10 b
 
 import ShadowDomEditor from '../../components/shadowDom/ShadowDomEditor';
 import ShadowDomView from '../../components/shadowDom/ShadowDomView';
+import { ToastContainer } from 'react-toastify';
 
+<ToastContainer client:only="react" />
 <ShadowDomEditor client:only="react" />
 <ShadowDomView client:only="react" />
