@@ -6,6 +6,7 @@ import {
 } from './ShadowDomConsts';
 import { type ExportData, ShadowDomCreator } from './ShadowDomCreator';
 import Editor from '@monaco-editor/react';
+import classNames from 'classnames';
 import { useEffect, useState } from 'react';
 
 /**
@@ -218,12 +219,26 @@ export default function ShadowDomEditor() {
         </div>
         <div className="relative h-full w-full">
           <div className="absolute inset-0 flex flex-col">
-            <button
-              className="border border-gray-500 p-1 text-white"
-              onClick={() => setShowCssEditor(!showCssEditor)}
-            >
-              {showCssEditor ? 'Show HTML Editor' : 'Show CSS Editor'}
-            </button>
+            <div className="flex w-full flex-row justify-stretch">
+              <button
+                className={classNames(
+                  'grow border border-gray-500 p-1 text-white',
+                  !showCssEditor && 'bg-blue-800',
+                )}
+                onClick={() => setShowCssEditor(false)}
+              >
+                Show HTML Editor
+              </button>
+              <button
+                className={classNames(
+                  'grow border border-gray-500 p-1 text-white',
+                  showCssEditor && 'bg-blue-800',
+                )}
+                onClick={() => setShowCssEditor(true)}
+              >
+                Show CSS Editor
+              </button>
+            </div>
             <div className={showCssEditor ? 'grow' : 'hidden'}>
               <Editor
                 language="css"
