@@ -7,6 +7,7 @@ import {
 import { type ExportData, ShadowDomCreator } from './ShadowDomCreator';
 import Editor from '@monaco-editor/react';
 import classNames from 'classnames';
+import { emmetCSS, emmetHTML } from 'emmet-monaco-es';
 import { useEffect, useState } from 'react';
 
 /**
@@ -248,6 +249,9 @@ export default function ShadowDomEditor() {
                 }}
                 value={css}
                 onChange={value => setCss(value)}
+                beforeMount={editor => {
+                  emmetCSS(editor);
+                }}
                 theme="vs-dark"
               />
             </div>
@@ -260,6 +264,9 @@ export default function ShadowDomEditor() {
                 }}
                 value={html}
                 onChange={value => setHtml(value)}
+                beforeMount={editor => {
+                  emmetHTML(editor);
+                }}
                 theme="vs-dark"
               />
             </div>
