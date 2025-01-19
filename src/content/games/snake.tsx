@@ -601,24 +601,24 @@ export default function SnakeGame() {
         }
       };
 
+      const { signal, abort } = new AbortController();
+
       const onEnd = () => {
-        touchDiv.removeEventListener('touchmove', onMove);
-        touchDiv.removeEventListener('touchend', onEnd);
+        abort();
         joystickActive = false;
       };
 
-      touchDiv.addEventListener('touchmove', onMove);
-      touchDiv.addEventListener('touchend', onEnd);
+      touchDiv.addEventListener('touchmove', onMove, { signal });
+      touchDiv.addEventListener('touchend', onEnd, { signal });
     };
+
+    const { signal, abort } = new AbortController();
 
     resizeCanavas();
 
-    window.addEventListener('keydown', handleKeyDown);
-    touchDiv.addEventListener('touchstart', handleTouchStart);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      touchDiv.removeEventListener('touchstart', handleTouchStart);
-    };
+    window.addEventListener('keydown', handleKeyDown, { signal });
+    touchDiv.addEventListener('touchstart', handleTouchStart, { signal });
+    return abort;
   }, []);
 
   return (

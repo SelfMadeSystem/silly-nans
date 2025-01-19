@@ -12,8 +12,10 @@ export default function Header() {
       setIsScrolledFar(window.scrollY > window.innerHeight - 100);
     };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    const { signal, abort } = new AbortController();
+
+    window.addEventListener('scroll', handleScroll, { signal });
+    return abort;
   }, []);
 
   return (

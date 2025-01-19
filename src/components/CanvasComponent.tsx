@@ -1,3 +1,4 @@
+import { loopAnimationFrame } from '../utils/abortable';
 import { useEffect, useRef, useState } from 'react';
 
 type ReturnType = {
@@ -27,7 +28,7 @@ export default function createCanvasComponent({
 
     useEffect(() => {
       if (!didMount.current && canvas) {
-        const cleanup: (() => void)[] = [];
+        const { signal, abort } = new AbortController();
         if (autoResize) {
           canvas.width = canvas.clientWidth;
           canvas.height = canvas.clientHeight;
@@ -37,17 +38,15 @@ export default function createCanvasComponent({
 
         if (result?.update) {
           let lastTime = performance.now();
-          let animationFrame = 0;
-          const update = () => {
-            const now = performance.now();
-            const dt = now - lastTime;
-            lastTime = now;
-            result.update!(dt);
-            animationFrame = requestAnimationFrame(update);
-          };
-          update();
-
-          cleanup.push(() => cancelAnimationFrame(animationFrame));
+          loopAnimationFrame(
+            () => {
+              const now = performance.now();
+              const dt = now - lastTime;
+              lastTime = now;
+              result.update!(dt);
+            },
+            { signal },
+          );
         }
 
         if (result?.mouseMove) {
@@ -56,10 +55,7 @@ export default function createCanvasComponent({
             result.mouseMove!(e, e.clientX - rect.left, e.clientY - rect.top);
           };
 
-          window.addEventListener('mousemove', mouseMove);
-          cleanup.push(() =>
-            window.removeEventListener('mousemove', mouseMove),
-          );
+          window.addEventListener('mousemove', mouseMove, { signal });
         }
 
         if (result?.mouseDown) {
@@ -68,10 +64,7 @@ export default function createCanvasComponent({
             result.mouseDown!(e, e.clientX - rect.left, e.clientY - rect.top);
           };
 
-          window.addEventListener('mousedown', mouseDown);
-          cleanup.push(() =>
-            window.removeEventListener('mousedown', mouseDown),
-          );
+          window.addEventListener('mousedown', mouseDown, { signal });
         }
 
         if (result?.mouseUp) {
@@ -80,8 +73,7 @@ export default function createCanvasComponent({
             result.mouseUp!(e, e.clientX - rect.left, e.clientY - rect.top);
           };
 
-          window.addEventListener('mouseup', mouseUp);
-          cleanup.push(() => window.removeEventListener('mouseup', mouseUp));
+          window.addEventListener('mouseup', mouseUp, { signal });
         }
 
         if (result?.keyDown) {
@@ -89,8 +81,7 @@ export default function createCanvasComponent({
             result.keyDown!(e);
           };
 
-          window.addEventListener('keydown', keyDown);
-          cleanup.push(() => window.removeEventListener('keydown', keyDown));
+          window.addEventListener('keydown', keyDown, { signal });
         }
 
         if (result?.keyUp) {
@@ -98,8 +89,7 @@ export default function createCanvasComponent({
             result.keyUp!(e);
           };
 
-          window.addEventListener('keyup', keyUp);
-          cleanup.push(() => window.removeEventListener('keyup', keyUp));
+          window.addEventListener('keyup', keyUp, { signal });
         }
 
         if (autoResize) {
@@ -113,14 +103,13 @@ export default function createCanvasComponent({
           });
 
           observer.observe(canvas);
-          cleanup.push(() => observer.disconnect());
+          
+          signal.addEventListener('abort', () => {
+            observer.disconnect();
+          });
         }
 
-        return () => {
-          for (const fn of cleanup) {
-            fn();
-          }
-        };
+        return abort;
       }
     }, [canvas]);
 
