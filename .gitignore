@@ -1,3 +1,5 @@
+monaco-tailwindcss/
+
 # build output
 dist/
 # generated types
