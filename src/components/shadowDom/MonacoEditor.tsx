@@ -1,5 +1,5 @@
 import type * as m from 'monaco-editor';
-import loader from '@monaco-editor/loader';
+import loader, { type Monaco } from '@monaco-editor/loader';
 import { emmetCSS, emmetHTML } from 'emmet-monaco-es';
 import editorUrl from 'monaco-editor/esm/vs/editor/editor.worker.js?url';
 import cssUrl from 'monaco-editor/esm/vs/language/css/css.worker.js?url';
@@ -12,11 +12,15 @@ export const MonacoContext = createContext<{
   tailwindcss: MonacoTailwindcss | null;
   tailwindEnabled: boolean;
   setTailwindEnabled: (enabled: boolean) => void;
+  classList: string[];
+  setClassList: (classList: string[]) => void;
 }>({
   monaco: null,
   tailwindcss: null,
   tailwindEnabled: false,
   setTailwindEnabled: () => {},
+  classList: [],
+  setClassList: () => {},
 });
 
 export function MonacoProvider({ children }: { children: React.ReactNode }) {
@@ -26,6 +30,13 @@ export function MonacoProvider({ children }: { children: React.ReactNode }) {
   );
   const [tailwindEnabled, _setTailwindEnabled] = useState(false);
   const [hasEnabledTailwind, setHasEnabledTailwind] = useState(false);
+  const classListRef = useRef<string[]>([]);
+  const [classList, _setClassList] = useState<string[]>([]);
+
+  function setClassList(classList: string[]) {
+    classListRef.current = classList;
+    _setClassList(classList);
+  }
 
   useEffect(() => {
     function NewWorker(url: string) {
@@ -63,6 +74,83 @@ export function MonacoProvider({ children }: { children: React.ReactNode }) {
       setMonaco(monaco);
       emmetCSS(monaco);
       emmetHTML(monaco);
+
+      monaco.languages.registerCompletionItemProvider('css', {
+        provideCompletionItems(model, position, _context, _token) {
+          function getImmediateRulesetSelector() {
+            const text = model.getValueInRange({
+              startLineNumber: 0,
+              startColumn: 1,
+              endLineNumber: position.lineNumber,
+              endColumn: position.column,
+            });
+
+            let paren = 0;
+            let firstParenIndex = -1;
+            let lastParenIndex = -1;
+
+            for (let i = text.length - 1; i >= 0; i--) {
+              if (text[i] === '}') {
+                paren--;
+              } else if (text[i] === '{') {
+                paren++;
+
+                if (paren === 1) {
+                  lastParenIndex = i;
+                  continue;
+                }
+              }
+
+              if (lastParenIndex !== -1 && paren !== 1) {
+                firstParenIndex = i;
+                break;
+              }
+            }
+
+            if (firstParenIndex === -1 && lastParenIndex === -1) {
+              return '';
+            }
+
+            return text.slice(firstParenIndex + 1, lastParenIndex).trim();
+          }
+
+          function isWithinRulesetDefinition() {
+            const selector = getImmediateRulesetSelector();
+
+            const exceptAtRules = [
+              '@container',
+              '@layer',
+              '@media',
+              '@scope',
+              '@supports',
+            ];
+
+            console.log(selector);
+
+            return (
+              selector.length > 0 &&
+              !exceptAtRules.some(rule => selector.startsWith(rule))
+            );
+          }
+
+          if (isWithinRulesetDefinition()) return;
+
+          const suggestions =
+            classListRef.current.map<m.languages.CompletionItem>(className => ({
+              label: `.${className}`,
+              kind: monaco.languages.CompletionItemKind.Class,
+              insertText: `.${className}`,
+              range: new monaco.Range(
+                position.lineNumber,
+                position.column - 1,
+                position.lineNumber,
+                position.column,
+              ),
+            }));
+
+          return { suggestions };
+        },
+      });
 
       const { tailwindcssData } = await import('monaco-tailwindcss');
 
@@ -116,7 +204,14 @@ export function MonacoProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <MonacoContext.Provider
-      value={{ monaco, tailwindcss, tailwindEnabled, setTailwindEnabled }}
+      value={{
+        monaco,
+        tailwindcss,
+        tailwindEnabled,
+        setTailwindEnabled,
+        classList,
+        setClassList,
+      }}
     >
       {children}
     </MonacoContext.Provider>

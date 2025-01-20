@@ -11,6 +11,19 @@ import { useContext, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 
 /**
+ * Gets all the class names used in the given HTML string.
+ */
+function getClassNames(html: string) {
+  const classRegex = /class="([^"]+)"/g;
+  const classes = new Set<string>();
+  let match;
+  while ((match = classRegex.exec(html))) {
+    match[1].split(' ').forEach(c => classes.add(c));
+  }
+  return Array.from(classes);
+}
+
+/**
  * Checks if the given HTML string is an SVG. Does so by checking if the string
  * starts and ends with an SVG tag.
  */
@@ -31,7 +44,8 @@ function generateWranglerCommand(key: string, json: string): string {
 }
 
 export default function ShadowDomEditor() {
-  const { tailwindEnabled, setTailwindEnabled } = useContext(MonacoContext);
+  const { tailwindEnabled, setTailwindEnabled, setClassList } =
+    useContext(MonacoContext);
   const [rewriting, setRewriting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [copiedCli, setCopiedCli] = useState(false);
@@ -305,22 +319,25 @@ export default function ShadowDomEditor() {
                 Show CSS Editor
               </button>
             </div>
-              <div className={showCssEditor ? 'grow' : 'hidden'}>
-                <MonacoEditor
-                  language="css"
-                  readOnly={rewriting}
-                  value={css ?? ''}
-                  onChange={value => setCss(value)}
-                />
-              </div>
-              <div className={showCssEditor ? 'hidden' : 'grow'}>
-                <MonacoEditor
-                  language="html"
-                  readOnly={rewriting}
-                  value={html ?? ''}
-                  onChange={value => setHtml(value)}
-                />
-              </div>
+            <div className={showCssEditor ? 'grow' : 'hidden'}>
+              <MonacoEditor
+                language="css"
+                readOnly={rewriting}
+                value={css ?? ''}
+                onChange={value => setCss(value)}
+              />
+            </div>
+            <div className={showCssEditor ? 'hidden' : 'grow'}>
+              <MonacoEditor
+                language="html"
+                readOnly={rewriting}
+                value={html ?? ''}
+                onChange={value => {
+                  setHtml(value);
+                  setClassList(getClassNames(value));
+                }}
+              />
+            </div>
           </div>
         </div>
       </div>
