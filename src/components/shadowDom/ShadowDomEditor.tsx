@@ -53,11 +53,16 @@ export default function ShadowDomEditor() {
   const [copiedCss, setCopiedCss] = useState(false);
   const [copiedBase64, setCopiedBase64] = useState(false);
   const [data, setData] = useState<ExportData | undefined>(undefined);
-  const [html, setHtml] = useState<string | undefined>(DEFAULT_HTML);
+  const [html, _setHtml] = useState<string | undefined>(DEFAULT_HTML);
   const [css, setCss] = useState<string | undefined>(DEFAULT_CSS);
   const [runScripts, setRunScripts] = useState(false);
   const [showCssEditor, setShowCssEditor] = useState(true);
   const isSvg = checkIfSvg(html ?? '');
+
+  function setHtml(html: string) {
+    _setHtml(html);
+    setClassList(getClassNames(html));
+  }
 
   const [selectedPreset, setSelectedPreset] = useState<Preset | undefined>();
 
@@ -332,10 +337,7 @@ export default function ShadowDomEditor() {
                 language="html"
                 readOnly={rewriting}
                 value={html ?? ''}
-                onChange={value => {
-                  setHtml(value);
-                  setClassList(getClassNames(value));
-                }}
+                onChange={value => setHtml(value)}
               />
             </div>
           </div>
