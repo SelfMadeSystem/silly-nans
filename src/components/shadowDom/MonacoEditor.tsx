@@ -55,7 +55,10 @@ export function MonacoProvider({ children }: { children: React.ReactNode }) {
 
     loader.config({
       paths: {
-        vs: 'http://localhost:4321/node_modules/monaco-editor/min/vs',
+        vs: new URL(
+          '/node_modules/monaco-editor/min/vs',
+          import.meta.url,
+        ).href,
       },
     });
 
