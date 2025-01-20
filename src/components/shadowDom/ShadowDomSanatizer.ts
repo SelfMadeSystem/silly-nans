@@ -79,6 +79,7 @@ export async function sanitize(data: unknown): Promise<ExportData> {
   const sanitizedCss = sanitizeCss(data.css);
   const sanitizedProperties = sanitizeProperties(data.properties);
   return {
+    ogCss: data.css,
     html: sanitizedHtml,
     css: sanitizedCss,
     properties: sanitizedProperties,

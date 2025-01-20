@@ -92,6 +92,7 @@ function sanitizePropertyName(name: string) {
 }
 
 export type ExportData = {
+  ogCss: string;
   css: string;
   html: string;
   properties: PropertyDefinition[];
@@ -230,6 +231,7 @@ ${css}`,
       renderDom(replacedHtml, replacedCss);
 
       setExportData({
+        ogCss: css,
         css: replacedCss,
         html: replacedHtml,
         properties: replacedCssProperties,

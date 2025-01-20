@@ -56,7 +56,7 @@ export default function ShadowDomEditor() {
         .then(response => response.json())
         .then(data => {
           setHtml(data.html);
-          setCss(data.css);
+          setCss(data.ogCss ?? data.css);
           setSelectedPreset(data.preset);
         })
         .catch(error => {
