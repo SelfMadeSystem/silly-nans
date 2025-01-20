@@ -25,6 +25,7 @@ export function MonacoProvider({ children }: { children: React.ReactNode }) {
     null,
   );
   const [tailwindEnabled, _setTailwindEnabled] = useState(false);
+  const [hasEnabledTailwind, setHasEnabledTailwind] = useState(false);
 
   useEffect(() => {
     function NewWorker(url: string) {
@@ -54,10 +55,7 @@ export function MonacoProvider({ children }: { children: React.ReactNode }) {
 
     loader.config({
       paths: {
-        vs: new URL(
-          '/vs',
-          import.meta.url,
-        ).href,
+        vs: new URL('/vs', import.meta.url).href,
       },
     });
 
@@ -92,7 +90,8 @@ export function MonacoProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!monaco) return;
+    if (!monaco || hasEnabledTailwind) return;
+    setHasEnabledTailwind(true);
     // Sometimes, `tailwindEnabled` is set to true before `monaco` is loaded.
     if (tailwindEnabled && !tailwindcss) {
       setTailwindEnabled(true);
@@ -103,6 +102,7 @@ export function MonacoProvider({ children }: { children: React.ReactNode }) {
     _setTailwindEnabled(enabled);
     if (!monaco) return;
     if (enabled) {
+      setHasEnabledTailwind(true);
       const { configureMonacoTailwindcss } = await import('monaco-tailwindcss');
 
       // @ts-expect-error the types are (slightly) wrong
