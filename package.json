@@ -31,7 +31,7 @@
     "jsdom": "^25.0.1",
     "lit": "^3.2.1",
     "monaco-editor": "^0.52.2",
-    "monaco-tailwindcss": "^0.6.1",
+    "monaco-tailwindcss": "../monaco-tailwindcss/",
     "postcss-safe-parser": "^7.0.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

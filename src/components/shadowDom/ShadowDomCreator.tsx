@@ -1,7 +1,8 @@
+import { MonacoContext } from './MonacoEditor';
 import { CSS_PRELUDE } from './ShadowDomConsts';
 import postcss from 'postcss';
 import safe from 'postcss-safe-parser';
-import { useEffect, useRef } from 'react';
+import { useContext, useEffect, useRef } from 'react';
 
 /**
  * Finds all registered CSS properties in a PostCSS root.
@@ -109,6 +110,7 @@ export function ShadowDomCreator({
   runScripts: boolean;
   setExportData: (data: ExportData) => void;
 }) {
+  const { monaco, tailwindcss } = useContext(MonacoContext);
   const previewRef = useRef<HTMLDivElement>(null);
   const shadowRoot = useRef<ShadowRoot | null>(null);
   const templateRef = useRef<HTMLTemplateElement>(null);
@@ -157,8 +159,9 @@ export function ShadowDomCreator({
       return;
     }
 
-    try {
-      const postcssRoot = postcss().process(css, { parser: safe }).root;
+    (async () => {
+      const twCss = await tailwindcss?.generateStylesFromContent(css, [html]);
+      const postcssRoot = postcss().process(twCss ?? css, { parser: safe }).root;
       const cssProperties = findCssProperties(postcssRoot);
       const ids = cssProperties.map(
         ({ name, inherits, initialValue, syntax }) => {
@@ -222,10 +225,10 @@ export function ShadowDomCreator({
         html: replacedHtml,
         properties: replacedCssProperties,
       });
-    } catch (e) {
-      // If there's an error, just render the DOM with the original CSS
+    })().catch(e => {
+      console.error(e);
       renderDom(html, css);
-    }
+    });
   }, [css, html, setExportData, runScripts]);
 
   return (

@@ -4,35 +4,28 @@ import { emmetCSS, emmetHTML } from 'emmet-monaco-es';
 import editorUrl from 'monaco-editor/esm/vs/editor/editor.worker.js?url';
 import cssUrl from 'monaco-editor/esm/vs/language/css/css.worker.js?url';
 import htmlUrl from 'monaco-editor/esm/vs/language/html/html.worker.js?url';
+import type { MonacoTailwindcss } from 'monaco-tailwindcss';
 import tailwindUrl from 'monaco-tailwindcss/tailwindcss.worker.js?url';
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 
-const MonacoContext = createContext<{
+export const MonacoContext = createContext<{
   monaco: typeof m | null;
+  tailwindcss: MonacoTailwindcss | null;
 }>({
   monaco: null,
+  tailwindcss: null,
 });
 
 export function MonacoProvider({ children }: { children: React.ReactNode }) {
   const [monaco, setMonaco] = useState<typeof m | null>(null);
+  const [monacoTailwindcss, setMonacoTailwindcss] =
+    useState<MonacoTailwindcss | null>(null);
 
   useEffect(() => {
     function NewWorker(url: string) {
       const worker = new Worker(new URL(url, import.meta.url).href, {
         type: 'module',
       });
-
-      if (url.includes('tailwindcss')) {
-        worker.addEventListener('error', e => {
-          console.error(`Worker error: ${url}`, e);
-        });
-        worker.addEventListener('message', e => {
-          console.log(`Worker message: ${url}`, e.data);
-        });
-        worker.addEventListener('messageerror', e => {
-          console.error(`Worker message error: ${url}`, e);
-        });
-      }
 
       return worker;
     }
@@ -47,7 +40,7 @@ export function MonacoProvider({ children }: { children: React.ReactNode }) {
           case 'html':
             return NewWorker(htmlUrl);
           case 'tailwindcss':
-            return NewWorker('/tailwindcss.worker.js');
+            return NewWorker(tailwindUrl);
           default:
             throw new Error(`Unknown worker label: ${label}`);
         }
@@ -65,35 +58,23 @@ export function MonacoProvider({ children }: { children: React.ReactNode }) {
       emmetCSS(monaco);
       emmetHTML(monaco);
 
-      return; // no tailwindcss for now
+      const { configureMonacoTailwindcss, tailwindcssData } = await import(
+        'monaco-tailwindcss'
+      );
+
       monaco.languages.css.cssDefaults.setOptions({
         data: {
           dataProviders: {
-            twAtRules: {
+            tailwindcssData,
+            atProperty: {
               version: 1.1,
-              atDirectives: [
+              properties: [
                 {
-                  name: '@tailwind',
+                  name: '@property',
                   description: {
                     kind: 'markdown',
                     value:
-                      'Use the `@tailwind` directive to insert Tailwind’s `base`, `components`, `utilities` and `variants` styles into your CSS.',
-                  },
-                },
-                {
-                  name: '@layer',
-                  description: {
-                    kind: 'markdown',
-                    value:
-                      'Use the `@layer` directive to tell Tailwind which “bucket” a set of custom styles belong to. Valid layers are `base`, `components`, and `utilities`.',
-                  },
-                },
-                {
-                  name: '@apply',
-                  description: {
-                    kind: 'markdown',
-                    value:
-                      'Use `@apply` to inline any existing utility classes into your own custom CSS.',
+                      'The `@property` rule represents a custom property registration directly in a stylesheet',
                   },
                 },
               ],
@@ -102,13 +83,14 @@ export function MonacoProvider({ children }: { children: React.ReactNode }) {
         },
       });
 
-      const { configureMonacoTailwindcss } = await import('monaco-tailwindcss');
-      configureMonacoTailwindcss(monaco);
+      // @ts-expect-error the types are (slightly) wrong
+      const mtw = configureMonacoTailwindcss(monaco);
+      setMonacoTailwindcss(mtw);
     });
   }, []);
 
   return (
-    <MonacoContext.Provider value={{ monaco }}>
+    <MonacoContext.Provider value={{ monaco, tailwindcss: monacoTailwindcss }}>
       {children}
     </MonacoContext.Provider>
   );
@@ -130,7 +112,6 @@ export function MonacoEditor({
   const { monaco } = useContext(MonacoContext);
 
   useEffect(() => {
-    console.log('MonacoEditor', { monaco, value, language, readOnly });
     if (!monaco) return;
 
     editorRef.current = monaco.editor.create(divRef.current!, {
@@ -138,6 +119,7 @@ export function MonacoEditor({
       language,
       readOnly,
       automaticLayout: true,
+      wordWrap: 'on',
       theme: 'vs-dark',
     });
 
@@ -149,6 +131,14 @@ export function MonacoEditor({
       editorRef.current?.dispose();
     };
   }, [monaco]);
+
+  useEffect(() => {
+    if (!monaco || !editorRef.current) return;
+
+    if (value !== editorRef.current.getValue()) {
+      editorRef.current.setValue(value);
+    }
+  }, [monaco, value]);
 
   return <div ref={divRef} style={{ height: '100%' }} />;
 }

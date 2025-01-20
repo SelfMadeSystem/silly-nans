@@ -9,10 +9,10 @@ darkMode: true
 footerClasses: 'before:bg-dot-grid before:inset-0 before:absolute before:-z-10 before:backdrop-blur-lg before:backdrop-brightness-150 before:fade-t-xl'
 ---
 
-import ShadowDomEditor from '../../components/shadowDom/ShadowDomEditor';
+import ShadowDomEditorWrapper from '../../components/shadowDom/ShadowDomEditorWrapper';
 import ShadowDomView from '../../components/shadowDom/ShadowDomView';
 import { ToastContainer } from 'react-toastify';
 
 <ToastContainer client:only="react" />
-<ShadowDomEditor client:only="react" />
+<ShadowDomEditorWrapper client:only="react" />
 <ShadowDomView client:only="react" />

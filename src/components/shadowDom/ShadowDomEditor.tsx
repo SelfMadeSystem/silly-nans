@@ -1,4 +1,4 @@
-import { MonacoEditor, MonacoProvider } from './MonacoEditor';
+import { MonacoContext, MonacoEditor, MonacoProvider } from './MonacoEditor';
 import {
   DEFAULT_CSS,
   DEFAULT_HTML,
@@ -7,7 +7,7 @@ import {
 } from './ShadowDomConsts';
 import { type ExportData, ShadowDomCreator } from './ShadowDomCreator';
 import classNames from 'classnames';
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 
 /**
@@ -31,6 +31,7 @@ function generateWranglerCommand(key: string, json: string): string {
 }
 
 export default function ShadowDomEditor() {
+  const { monaco, tailwindcss } = useContext(MonacoContext);
   const [rewriting, setRewriting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [copiedCli, setCopiedCli] = useState(false);
@@ -291,7 +292,6 @@ export default function ShadowDomEditor() {
                 Show CSS Editor
               </button>
             </div>
-            <MonacoProvider>
               <div className={showCssEditor ? 'grow' : 'hidden'}>
                 <MonacoEditor
                   language="css"
@@ -308,7 +308,6 @@ export default function ShadowDomEditor() {
                   onChange={value => setHtml(value)}
                 />
               </div>
-            </MonacoProvider>
           </div>
         </div>
       </div>
