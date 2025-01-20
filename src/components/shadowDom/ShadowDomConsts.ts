@@ -184,6 +184,7 @@ export type Preset = {
   name: string;
   html: string;
   css: string;
+  tailwind?: boolean;
 };
 
 export const PRESETS: Preset[] = [
@@ -191,9 +192,9 @@ export const PRESETS: Preset[] = [
     name: 'Tailwind',
     html: `<button class="border-2 border-blue-500 bg-blue-500 text-white font-bold py-2 px-4 rounded">Button</button>`,
     css: `\
-@tailwind base;
-@tailwind components;
-@tailwind utilities;`,
+/* No need to add @tailwind base, components, or utilities here since it's automatically added when you click the \`Enable Tailwind\` button */    
+`,
+    tailwind: true,
   },
   {
     name: 'Button',

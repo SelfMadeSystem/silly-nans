@@ -83,6 +83,7 @@ export async function sanitize(data: unknown): Promise<ExportData> {
     html: sanitizedHtml,
     css: sanitizedCss,
     properties: sanitizedProperties,
+    tailwind: 'tailwind' in data ? !!data.tailwind : false,
   };
 }
 

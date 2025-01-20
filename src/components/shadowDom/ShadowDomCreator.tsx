@@ -92,10 +92,11 @@ function sanitizePropertyName(name: string) {
 }
 
 export type ExportData = {
-  ogCss: string;
+  ogCss?: string;
   css: string;
   html: string;
   properties: PropertyDefinition[];
+  tailwind?: boolean;
 };
 
 export function ShadowDomCreator({
@@ -111,7 +112,7 @@ export function ShadowDomCreator({
   runScripts: boolean;
   setExportData: (data: ExportData) => void;
 }) {
-  const { tailwindcss } = useContext(MonacoContext);
+  const { tailwindcss, tailwindEnabled } = useContext(MonacoContext);
   const previewRef = useRef<HTMLDivElement>(null);
   const shadowRoot = useRef<ShadowRoot | null>(null);
   const templateRef = useRef<HTMLTemplateElement>(null);
@@ -235,6 +236,7 @@ ${css}`,
         css: replacedCss,
         html: replacedHtml,
         properties: replacedCssProperties,
+        tailwind: tailwindEnabled,
       });
     })().catch(e => {
       console.error(e);

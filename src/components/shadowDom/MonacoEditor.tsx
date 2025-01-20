@@ -22,8 +22,9 @@ export const MonacoContext = createContext<{
 
 export function MonacoProvider({ children }: { children: React.ReactNode }) {
   const [monaco, setMonaco] = useState<typeof m | null>(null);
-  const [tailwindcss, setTailwindcss] =
-    useState<MonacoTailwindcss | null>(null);
+  const [tailwindcss, setTailwindcss] = useState<MonacoTailwindcss | null>(
+    null,
+  );
   const [tailwindEnabled, _setTailwindEnabled] = useState(false);
 
   useEffect(() => {
@@ -63,9 +64,7 @@ export function MonacoProvider({ children }: { children: React.ReactNode }) {
       emmetCSS(monaco);
       emmetHTML(monaco);
 
-      const { tailwindcssData } = await import(
-        'monaco-tailwindcss'
-      );
+      const { tailwindcssData } = await import('monaco-tailwindcss');
 
       monaco.languages.css.cssDefaults.setOptions({
         data: {
@@ -90,12 +89,19 @@ export function MonacoProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  useEffect(() => {
+    if (!monaco) return;
+    // Sometimes, `tailwindEnabled` is set to true before `monaco` is loaded.
+    if (tailwindEnabled && !tailwindcss) {
+      setTailwindEnabled(true);
+    }
+  }, [monaco, tailwindEnabled, tailwindcss]);
+
   async function setTailwindEnabled(enabled: boolean) {
     _setTailwindEnabled(enabled);
+    if (!monaco) return;
     if (enabled) {
-      const { configureMonacoTailwindcss } = await import(
-        'monaco-tailwindcss'
-      );
+      const { configureMonacoTailwindcss } = await import('monaco-tailwindcss');
 
       // @ts-expect-error the types are (slightly) wrong
       const mtw = configureMonacoTailwindcss(monaco);
@@ -107,7 +113,9 @@ export function MonacoProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <MonacoContext.Provider value={{ monaco, tailwindcss, tailwindEnabled, setTailwindEnabled }}>
+    <MonacoContext.Provider
+      value={{ monaco, tailwindcss, tailwindEnabled, setTailwindEnabled }}
+    >
       {children}
     </MonacoContext.Provider>
   );

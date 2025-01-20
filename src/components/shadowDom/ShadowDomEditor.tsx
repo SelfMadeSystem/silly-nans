@@ -55,9 +55,13 @@ export default function ShadowDomEditor() {
       fetch(`${NAN_URL}${idName}`)
         .then(response => response.json())
         .then(data => {
+          console.log('Fetched data:', data);
           setHtml(data.html);
           setCss(data.ogCss ?? data.css);
           setSelectedPreset(data.preset);
+          if ('tailwind' in data) {
+            setTailwindEnabled(!!data.tailwind);
+          }
         })
         .catch(error => {
           console.error('Error fetching data:', error);
@@ -120,6 +124,9 @@ export default function ShadowDomEditor() {
     setHtml(preset.html);
     setCss(preset.css);
     setSelectedPreset(preset);
+    if (preset.tailwind !== undefined) {
+      setTailwindEnabled(preset.tailwind);
+    }
   };
 
   const minifySvg = (svg: string) => {
