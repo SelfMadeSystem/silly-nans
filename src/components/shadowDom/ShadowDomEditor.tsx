@@ -73,7 +73,6 @@ export default function ShadowDomEditor() {
       fetch(`${NAN_URL}${idName}`)
         .then(response => response.json())
         .then(data => {
-          console.log('Fetched data:', data);
           setHtml(data.html);
           setCss(data.ogCss ?? data.css);
           setSelectedPreset(data.preset);

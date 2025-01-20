@@ -125,8 +125,6 @@ export function MonacoProvider({ children }: { children: React.ReactNode }) {
               '@supports',
             ];
 
-            console.log(selector);
-
             return (
               selector.length > 0 &&
               !exceptAtRules.some(rule => selector.startsWith(rule))
