@@ -5,7 +5,6 @@ import editorUrl from 'monaco-editor/esm/vs/editor/editor.worker.js?url';
 import cssUrl from 'monaco-editor/esm/vs/language/css/css.worker.js?url';
 import htmlUrl from 'monaco-editor/esm/vs/language/html/html.worker.js?url';
 import type { MonacoTailwindcss } from 'monaco-tailwindcss';
-import tailwindUrl from 'monaco-tailwindcss/tailwindcss.worker.js?url';
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 
 export const MonacoContext = createContext<{
@@ -56,7 +55,7 @@ export function MonacoProvider({ children }: { children: React.ReactNode }) {
     loader.config({
       paths: {
         vs: new URL(
-          '/node_modules/monaco-editor/min/vs',
+          '/vs',
           import.meta.url,
         ).href,
       },
