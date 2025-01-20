@@ -1,9 +1,6 @@
 import type * as m from 'monaco-editor';
-import loader, { type Monaco } from '@monaco-editor/loader';
+import loader from '@monaco-editor/loader';
 import { emmetCSS, emmetHTML } from 'emmet-monaco-es';
-import editorUrl from 'monaco-editor/esm/vs/editor/editor.worker.js?url';
-import cssUrl from 'monaco-editor/esm/vs/language/css/css.worker.js?url';
-import htmlUrl from 'monaco-editor/esm/vs/language/html/html.worker.js?url';
 import type { MonacoTailwindcss } from 'monaco-tailwindcss';
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 
@@ -51,11 +48,11 @@ export function MonacoProvider({ children }: { children: React.ReactNode }) {
       getWorker(_workerId, label) {
         switch (label) {
           case 'editorWorkerService':
-            return NewWorker(editorUrl);
+            return NewWorker('/esm/vs/editor/editor.worker.js');
           case 'css':
-            return NewWorker(cssUrl);
+            return NewWorker('/esm/vs/language/css/css.worker.js');
           case 'html':
-            return NewWorker(htmlUrl);
+            return NewWorker('/esm/vs/language/html/html.worker.js');
           case 'tailwindcss':
             return NewWorker('/tailwindcss.worker.js');
           default:
@@ -66,7 +63,7 @@ export function MonacoProvider({ children }: { children: React.ReactNode }) {
 
     loader.config({
       paths: {
-        vs: new URL('/vs', import.meta.url).href,
+        vs: new URL('/min/vs', import.meta.url).href,
       },
     });
 
