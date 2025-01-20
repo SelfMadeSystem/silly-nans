@@ -45,7 +45,7 @@ export function MonacoProvider({ children }: { children: React.ReactNode }) {
           case 'html':
             return NewWorker(htmlUrl);
           case 'tailwindcss':
-            return NewWorker(tailwindUrl);
+            return NewWorker('/tailwindcss.worker.js');
           default:
             throw new Error(`Unknown worker label: ${label}`);
         }
