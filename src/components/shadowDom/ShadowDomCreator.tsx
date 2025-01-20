@@ -110,7 +110,7 @@ export function ShadowDomCreator({
   runScripts: boolean;
   setExportData: (data: ExportData) => void;
 }) {
-  const { monaco, tailwindcss } = useContext(MonacoContext);
+  const { tailwindcss } = useContext(MonacoContext);
   const previewRef = useRef<HTMLDivElement>(null);
   const shadowRoot = useRef<ShadowRoot | null>(null);
   const templateRef = useRef<HTMLTemplateElement>(null);
@@ -160,8 +160,17 @@ export function ShadowDomCreator({
     }
 
     (async () => {
-      const twCss = await tailwindcss?.generateStylesFromContent(css, [html]);
-      const postcssRoot = postcss().process(twCss ?? css, { parser: safe }).root;
+      const twCss = await tailwindcss?.generateStylesFromContent(
+        `@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+${css}`,
+        [html],
+      );
+      const postcssRoot = postcss().process(twCss ?? css, {
+        parser: safe,
+      }).root;
       const cssProperties = findCssProperties(postcssRoot);
       const ids = cssProperties.map(
         ({ name, inherits, initialValue, syntax }) => {
@@ -229,7 +238,7 @@ export function ShadowDomCreator({
       console.error(e);
       renderDom(html, css);
     });
-  }, [css, html, setExportData, runScripts]);
+  }, [css, html, setExportData, runScripts, tailwindcss]);
 
   return (
     <>

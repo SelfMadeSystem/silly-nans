@@ -31,7 +31,7 @@ function generateWranglerCommand(key: string, json: string): string {
 }
 
 export default function ShadowDomEditor() {
-  const { monaco, tailwindcss } = useContext(MonacoContext);
+  const { tailwindEnabled, setTailwindEnabled } = useContext(MonacoContext);
   const [rewriting, setRewriting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [copiedCli, setCopiedCli] = useState(false);
@@ -253,6 +253,12 @@ export default function ShadowDomEditor() {
           onClick={() => setRunScripts(!runScripts)}
         >
           {runScripts ? "Run't scripts" : 'Run scripts'}
+        </button>
+        <button
+          className="mx-auto block w-48 rounded bg-blue-500 py-2 text-white"
+          onClick={() => setTailwindEnabled(!tailwindEnabled)}
+        >
+          {tailwindEnabled ? 'Disable Tailwind' : 'Enable Tailwind'}
         </button>
       </div>
       <p className="mx-auto mt-5 max-w-3xl text-center">

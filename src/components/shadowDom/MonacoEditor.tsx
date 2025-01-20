@@ -11,15 +11,20 @@ import { createContext, useContext, useEffect, useRef, useState } from 'react';
 export const MonacoContext = createContext<{
   monaco: typeof m | null;
   tailwindcss: MonacoTailwindcss | null;
+  tailwindEnabled: boolean;
+  setTailwindEnabled: (enabled: boolean) => void;
 }>({
   monaco: null,
   tailwindcss: null,
+  tailwindEnabled: false,
+  setTailwindEnabled: () => {},
 });
 
 export function MonacoProvider({ children }: { children: React.ReactNode }) {
   const [monaco, setMonaco] = useState<typeof m | null>(null);
-  const [monacoTailwindcss, setMonacoTailwindcss] =
+  const [tailwindcss, setTailwindcss] =
     useState<MonacoTailwindcss | null>(null);
+  const [tailwindEnabled, _setTailwindEnabled] = useState(false);
 
   useEffect(() => {
     function NewWorker(url: string) {
@@ -58,7 +63,7 @@ export function MonacoProvider({ children }: { children: React.ReactNode }) {
       emmetCSS(monaco);
       emmetHTML(monaco);
 
-      const { configureMonacoTailwindcss, tailwindcssData } = await import(
+      const { tailwindcssData } = await import(
         'monaco-tailwindcss'
       );
 
@@ -82,15 +87,27 @@ export function MonacoProvider({ children }: { children: React.ReactNode }) {
           },
         },
       });
-
-      // @ts-expect-error the types are (slightly) wrong
-      const mtw = configureMonacoTailwindcss(monaco);
-      setMonacoTailwindcss(mtw);
     });
   }, []);
 
+  async function setTailwindEnabled(enabled: boolean) {
+    _setTailwindEnabled(enabled);
+    if (enabled) {
+      const { configureMonacoTailwindcss } = await import(
+        'monaco-tailwindcss'
+      );
+
+      // @ts-expect-error the types are (slightly) wrong
+      const mtw = configureMonacoTailwindcss(monaco);
+      setTailwindcss(mtw);
+    } else {
+      setTailwindcss(null);
+      if (tailwindcss) tailwindcss?.dispose();
+    }
+  }
+
   return (
-    <MonacoContext.Provider value={{ monaco, tailwindcss: monacoTailwindcss }}>
+    <MonacoContext.Provider value={{ monaco, tailwindcss, tailwindEnabled, setTailwindEnabled }}>
       {children}
     </MonacoContext.Provider>
   );
@@ -109,7 +126,7 @@ export function MonacoEditor({
 }) {
   const divRef = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<m.editor.IStandaloneCodeEditor | null>(null);
-  const { monaco } = useContext(MonacoContext);
+  const { monaco, tailwindEnabled } = useContext(MonacoContext);
 
   useEffect(() => {
     if (!monaco) return;
@@ -139,6 +156,17 @@ export function MonacoEditor({
       editorRef.current.setValue(value);
     }
   }, [monaco, value]);
+
+  useEffect(() => {
+    if (!monaco || !editorRef.current || tailwindEnabled) return;
+
+    // Remove all existing decorations
+    const model = editorRef.current.getModel();
+    if (!model) return;
+
+    const decorations = model.getAllDecorations();
+    editorRef.current.removeDecorations(decorations.map(d => d.id));
+  }, [monaco, tailwindEnabled]);
 
   return <div ref={divRef} style={{ height: '100%' }} />;
 }
