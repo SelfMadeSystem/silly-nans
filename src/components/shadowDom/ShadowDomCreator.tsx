@@ -186,8 +186,15 @@ export function ShadowDomCreator({
         try {
           CSS.registerProperty(p);
         } catch (e) {
-          console.error(p, e);
-          throw new Error('Failed to register CSS property');
+          // Ignore `InvalidModificationError: Failed to execute 'registerProperty' on 'CSS': The name provided has already been registered`
+          if (
+            typeof e !== 'object' ||
+            !e ||
+            !('name' in e) ||
+            e.name !== 'InvalidModificationError'
+          ) {
+            console.error(e);
+          }
         }
       });
 

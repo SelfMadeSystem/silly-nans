@@ -1,4 +1,4 @@
-import type * as monaco from 'monaco-editor';
+import { MonacoEditor, MonacoProvider } from './MonacoEditor';
 import {
   DEFAULT_CSS,
   DEFAULT_HTML,
@@ -6,9 +6,7 @@ import {
   type Preset,
 } from './ShadowDomConsts';
 import { type ExportData, ShadowDomCreator } from './ShadowDomCreator';
-import Editor from '@monaco-editor/react';
 import classNames from 'classnames';
-import { emmetCSS, emmetHTML } from 'emmet-monaco-es';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 
@@ -44,17 +42,16 @@ export default function ShadowDomEditor() {
   const [css, setCss] = useState<string | undefined>(DEFAULT_CSS);
   const [runScripts, setRunScripts] = useState(false);
   const [showCssEditor, setShowCssEditor] = useState(true);
-  const [myMonaco, setMonaco] = useState<typeof monaco | null>(null);
   const isSvg = checkIfSvg(html ?? '');
 
   const [selectedPreset, setSelectedPreset] = useState<Preset | undefined>();
 
   useEffect(() => {
-    const URL = 'https://nan.shoghisimon.ca?id=';
+    const NAN_URL = 'https://nan.shoghisimon.ca?id=';
     const urlParams = new URLSearchParams(window.location.search);
     const idName = urlParams.get('id');
     if (idName) {
-      fetch(`${URL}${idName}`)
+      fetch(`${NAN_URL}${idName}`)
         .then(response => response.json())
         .then(data => {
           setHtml(data.html);
@@ -111,61 +108,12 @@ export default function ShadowDomEditor() {
       }
     };
 
-    document.addEventListener('keydown', preventCtrlS);
+    const { signal, abort } = new AbortController();
 
-    return () => {
-      document.removeEventListener('keydown', preventCtrlS);
-    };
+    document.addEventListener('keydown', preventCtrlS, { signal });
+
+    return abort;
   }, []);
-
-  useEffect(() => {
-    if (!myMonaco) return;
-
-    const extractClassNames = (html: string) => {
-      const classNames = new Set<string>();
-      const regex = /class="([^"]*)"/g;
-      let match;
-      while ((match = regex.exec(html)) !== null) {
-        match[1].split(' ').forEach(className => classNames.add(className));
-      }
-      return Array.from(classNames);
-    };
-
-    const escapeClassName = (className: string) => {
-      return className.replace(/[^a-zA-Z0-9\-_]/g, '\\$&');
-    };
-
-    const provideCSSClassCompletions = (
-      _model: monaco.editor.ITextModel,
-      position: monaco.Position,
-    ) => {
-      const classNames = extractClassNames(html ?? '');
-      const suggestions = classNames.map(className => {
-        className = escapeClassName(className);
-        return {
-          label: `.${className}`,
-          kind: 5, // 5 is CSS class.
-          insertText: `.${className}`,
-          range: {
-            startLineNumber: position.lineNumber,
-            startColumn: position.column - 1,
-            endLineNumber: position.lineNumber,
-            endColumn: position.column,
-          },
-        };
-      });
-
-      return { suggestions };
-    };
-
-    const dispose = myMonaco.languages.registerCompletionItemProvider('css', {
-      provideCompletionItems: provideCSSClassCompletions,
-    });
-
-    return () => {
-      dispose.dispose();
-    };
-  }, [html, myMonaco]);
 
   const handlePresetChange = (preset: Preset) => {
     setHtml(preset.html);
@@ -343,35 +291,24 @@ export default function ShadowDomEditor() {
                 Show CSS Editor
               </button>
             </div>
-            <div className={showCssEditor ? 'grow' : 'hidden'}>
-              <Editor
-                language="css"
-                options={{
-                  readOnly: rewriting,
-                  automaticLayout: true,
-                }}
-                value={css}
-                onChange={value => setCss(value)}
-                beforeMount={monaco => {
-                  emmetCSS(monaco);
-                  emmetHTML(monaco);
-                  setMonaco(monaco);
-                }}
-                theme="vs-dark"
-              />
-            </div>
-            <div className={showCssEditor ? 'hidden' : 'grow'}>
-              <Editor
-                language="html"
-                options={{
-                  readOnly: rewriting,
-                  automaticLayout: true,
-                }}
-                value={html}
-                onChange={value => setHtml(value)}
-                theme="vs-dark"
-              />
-            </div>
+            <MonacoProvider>
+              <div className={showCssEditor ? 'grow' : 'hidden'}>
+                <MonacoEditor
+                  language="css"
+                  readOnly={rewriting}
+                  value={css ?? ''}
+                  onChange={value => setCss(value)}
+                />
+              </div>
+              <div className={showCssEditor ? 'hidden' : 'grow'}>
+                <MonacoEditor
+                  language="html"
+                  readOnly={rewriting}
+                  value={html ?? ''}
+                  onChange={value => setHtml(value)}
+                />
+              </div>
+            </MonacoProvider>
           </div>
         </div>
       </div>

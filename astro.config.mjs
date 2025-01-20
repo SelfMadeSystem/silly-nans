@@ -11,4 +11,10 @@ export default defineConfig({
   site: 'https://shenanigans.shoghisimon.ca',
   integrations: [mdx(), sitemap(), react(), lit(), tailwind()],
   output: 'static',
+  server: {
+    headers: {
+      // Allow worker-src
+      // 'Content-Security-Policy': "default-src 'self' 'unsafe-inline' blob:",
+    },
+  },
 });
