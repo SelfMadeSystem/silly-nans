@@ -2,6 +2,7 @@ import { loopAnimationFrame } from '../utils/abortable';
 import { useEffect, useRef, useState } from 'react';
 
 type ReturnType = {
+  manualUpdate?: boolean;
   resize?: (width: number, height: number) => void;
   update?: (dt: number, time: number) => void;
   mouseMove?: (e: MouseEvent, x: number, y: number) => void;
@@ -9,12 +10,23 @@ type ReturnType = {
   mouseUp?: (e: MouseEvent, x: number, y: number) => void;
   keyDown?: (e: KeyboardEvent) => void;
   keyUp?: (e: KeyboardEvent) => void;
+  scroll?: (
+    e: Event,
+    opts: {
+      deltaX: number;
+      deltaY: number;
+      scrollX: number;
+      scrollY: number;
+      percentX: number;
+      percentY: number;
+    },
+  ) => void;
 };
 
 type CreateProps = {
   props: React.HTMLProps<HTMLCanvasElement>;
   autoResize?: boolean;
-  setup: (canvas: HTMLCanvasElement) => ReturnType | void;
+  setup: (canvas: HTMLCanvasElement, draw: () => void) => ReturnType | void;
 };
 
 export default function createCanvasComponent({
@@ -33,63 +45,109 @@ export default function createCanvasComponent({
           canvas.width = canvas.clientWidth;
           canvas.height = canvas.clientHeight;
         }
-        const result = setup(canvas);
+        let lastTime = performance.now();
+        function draw(t: number) {
+          const now = performance.now();
+          const dt = now - lastTime;
+          lastTime = now;
+          if (result?.update) result.update!(dt, t);
+        }
+
+        function drawNow() {
+          draw(document.timeline.currentTime as number);
+        }
+
+        const result = setup(canvas, drawNow);
         didMount.current = true;
 
-        if (result?.update) {
-          let lastTime = performance.now();
-          loopAnimationFrame(
-            (t) => {
-              const now = performance.now();
-              const dt = now - lastTime;
-              lastTime = now;
-              result.update!(dt, t);
+        if (!result?.manualUpdate) loopAnimationFrame(draw, { signal });
+        else requestAnimationFrame(draw);
+
+        if (result?.mouseMove) {
+          window.addEventListener(
+            'mousemove',
+            (e: MouseEvent) => {
+              const rect = canvas.getBoundingClientRect();
+              result.mouseMove!(e, e.clientX - rect.left, e.clientY - rect.top);
             },
             { signal },
           );
         }
 
-        if (result?.mouseMove) {
-          const mouseMove = (e: MouseEvent) => {
-            const rect = canvas.getBoundingClientRect();
-            result.mouseMove!(e, e.clientX - rect.left, e.clientY - rect.top);
-          };
-
-          window.addEventListener('mousemove', mouseMove, { signal });
-        }
-
         if (result?.mouseDown) {
-          const mouseDown = (e: MouseEvent) => {
-            const rect = canvas.getBoundingClientRect();
-            result.mouseDown!(e, e.clientX - rect.left, e.clientY - rect.top);
-          };
-
-          window.addEventListener('mousedown', mouseDown, { signal });
+          window.addEventListener(
+            'mousedown',
+            (e: MouseEvent) => {
+              const rect = canvas.getBoundingClientRect();
+              result.mouseDown!(e, e.clientX - rect.left, e.clientY - rect.top);
+            },
+            { signal },
+          );
         }
 
         if (result?.mouseUp) {
-          const mouseUp = (e: MouseEvent) => {
-            const rect = canvas.getBoundingClientRect();
-            result.mouseUp!(e, e.clientX - rect.left, e.clientY - rect.top);
-          };
-
-          window.addEventListener('mouseup', mouseUp, { signal });
+          window.addEventListener(
+            'mouseup',
+            (e: MouseEvent) => {
+              const rect = canvas.getBoundingClientRect();
+              result.mouseUp!(e, e.clientX - rect.left, e.clientY - rect.top);
+            },
+            { signal },
+          );
         }
 
         if (result?.keyDown) {
-          const keyDown = (e: KeyboardEvent) => {
-            result.keyDown!(e);
-          };
-
-          window.addEventListener('keydown', keyDown, { signal });
+          window.addEventListener(
+            'keydown',
+            (e: KeyboardEvent) => {
+              result.keyDown!(e);
+            },
+            { signal },
+          );
         }
 
         if (result?.keyUp) {
-          const keyUp = (e: KeyboardEvent) => {
-            result.keyUp!(e);
-          };
+          window.addEventListener(
+            'keyup',
+            (e: KeyboardEvent) => {
+              result.keyUp!(e);
+            },
+            { signal },
+          );
+        }
 
-          window.addEventListener('keyup', keyUp, { signal });
+        if (result?.scroll) {
+          window.addEventListener(
+            'scroll',
+            e => {
+              const rect = canvas.getBoundingClientRect();
+              let deltaX = 0;
+              let deltaY = 0;
+
+              if (e instanceof WheelEvent) {
+                deltaX = e.deltaX;
+                deltaY = e.deltaY;
+              } else if (e instanceof TouchEvent && e.touches.length === 1) {
+                const touch = e.touches[0];
+                deltaX = touch.clientX - rect.left;
+                deltaY = touch.clientY - rect.top;
+              }
+
+              const scrollX = window.scrollX;
+              const scrollY = window.scrollY;
+              const percentX = (scrollX - rect.left) / rect.width;
+              const percentY = (scrollY - rect.top) / rect.height;
+              result.scroll!(e, {
+                deltaX,
+                deltaY,
+                scrollX,
+                scrollY,
+                percentX,
+                percentY,
+              });
+            },
+            { signal },
+          );
         }
 
         if (autoResize) {
@@ -103,7 +161,7 @@ export default function createCanvasComponent({
           });
 
           observer.observe(canvas);
-          
+
           signal.addEventListener('abort', () => {
             observer.disconnect();
           });

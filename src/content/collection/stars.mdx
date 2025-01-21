@@ -1,0 +1,20 @@
+---
+title: 'Stars'
+description: 'A simple starfield simulation.'
+pubDate: '2025-01-21'
+heroImage: '/stars.png'
+source: 'https://github.com/SelfMadeSystem/silly-nans/blob/main/src/components/StarsCanvas.tsx'
+fullWidth: true
+darkMode: true
+isBackground: true
+---
+
+import StarsCanvas from '../../components/StarsCanvas';
+
+<div class="absolute inset-0 -z-10 bg-black" />
+<div class="h-screen"></div>
+<div class="h-screen"></div>
+<div class="h-screen"></div>
+<div class="h-screen"></div>
+<div class="fixed top-4 right-4 text-white" id="tl-pane"></div>
+<StarsCanvas className="z-10" client:load />
