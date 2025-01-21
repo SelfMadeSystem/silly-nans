@@ -146,29 +146,6 @@ export function MonacoProvider({ children }: { children: React.ReactNode }) {
           return { suggestions };
         },
       });
-
-      const { tailwindcssData } = await import('monaco-tailwindcss');
-
-      monaco.languages.css.cssDefaults.setOptions({
-        data: {
-          dataProviders: {
-            tailwindcssData,
-            atProperty: {
-              version: 1.1,
-              properties: [
-                {
-                  name: '@property',
-                  description: {
-                    kind: 'markdown',
-                    value:
-                      'The `@property` rule represents a custom property registration directly in a stylesheet',
-                  },
-                },
-              ],
-            },
-          },
-        },
-      });
     });
   }, []);
 
@@ -188,11 +165,13 @@ export function MonacoProvider({ children }: { children: React.ReactNode }) {
       setHasEnabledTailwind(true);
       const { configureMonacoTailwindcss } = await import('monaco-tailwindcss');
 
-      // @ts-expect-error the types are (slightly) wrong
+      // It appears that `tailwindcssData` is automatically loaded.
+
       const mtw = configureMonacoTailwindcss(monaco);
       setTailwindcss(mtw);
     } else {
       setTailwindcss(null);
+      monaco.languages.css.cssDefaults.setOptions({});
       if (tailwindcss) tailwindcss?.dispose();
     }
   }
