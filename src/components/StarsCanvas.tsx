@@ -9,7 +9,7 @@ import { Pane } from 'tweakpane';
 
 const defaultOptions = {
   spacing: 50,
-  count: 1000,
+  count: 400,
   zAmount: 1,
   scrollAmount: 1,
   shiftSpeedX: 0.4,
@@ -90,7 +90,13 @@ class StarPlane {
     return result;
   }
 
-  physics(t: number, scroll: number, mousePos: Vector2, options: Options) {
+  physics(
+    t: number,
+    scroll: number,
+    realScroll: number,
+    mousePos: Vector2,
+    options: Options,
+  ) {
     this.points = this.ogPoints.map(p => {
       const z = p.z;
       const gz = z * options.zAmount;
@@ -107,7 +113,8 @@ class StarPlane {
           scroll *
           options.scrollAmount *
           0.25 *
-          this.height;
+          this.height +
+        realScroll;
       return new Vector3(mod(x, this.width), mod(y, this.height), z);
     });
   }
@@ -205,8 +212,9 @@ export default createCanvasComponent({
       pane
         .addBinding(options, 'count', {
           label: 'Count',
-          min: 100,
-          max: 2000,
+          min: 25,
+          max: 4000,
+          step: 25,
         })
         .on('change', () => {
           starPlane = newStarPlane(options);
@@ -255,11 +263,12 @@ export default createCanvasComponent({
 
         const rect = canvas.getBoundingClientRect();
         const scrollY = window.scrollY;
-        const percentY = (scrollY - rect.top) / rect.height;
+        const percentY = scrollY / rect.height;
 
         starPlane.physics(
           t / 1000,
           percentY,
+          -rect.top,
           mousePos.divide(rect.width, rect.height),
           options,
         );

@@ -12,6 +12,12 @@ isBackground: true
 import StarsCanvas from '../../components/StarsCanvas';
 
 <div class="absolute inset-0 -z-10 bg-black" />
+
+<div class="absolute left-0 top-0 -z-10 h-full w-full">
+  <div class="sticky bottom-10 top-0 h-screen w-full">
+    <StarsCanvas client:load />
+  </div>
+</div>
+
 <div class="h-[400vh]"></div>
-<div class="fixed top-4 right-4 text-white" id="tl-pane"></div>
-<StarsCanvas className="-z-10" client:load />
+<div class="fixed right-4 top-4 text-white" id="tl-pane"></div>
