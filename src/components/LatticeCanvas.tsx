@@ -1,3 +1,4 @@
+import * as twgl from 'twgl.js';
 import { approxEquals, ceilMultiple } from '../utils/mathUtils';
 import { Vector2, Vector3 } from '../utils/vec';
 import createCanvasComponent from './CanvasComponent';
@@ -14,10 +15,20 @@ const defaultOptions = {
   accStrength: 0,
   xSpeed: 50,
   ySpeed: 15,
-  drawAsDist: false,
+  drawColored: false,
 };
 
 type Options = typeof defaultOptions;
+
+type DrawableDot = {
+  x: number;
+  y: number;
+  z: number;
+  alpha: number;
+  r: number;
+  g: number;
+  b: number;
+};
 
 class Lattice {
   public ogPoints: Array<Vector2>;
@@ -56,77 +67,85 @@ class Lattice {
     }
   }
 
-  drawLines(ctx: CanvasRenderingContext2D) {
-    ctx.beginPath();
-    for (const [i, j] of this.links) {
-      const p1 = this.points[i];
-      const p2 = this.points[j];
-      if (!p1 || !p2) continue;
-      ctx.moveTo(p1.x, p1.y);
-      ctx.lineTo(p2.x, p2.y);
-    }
-    ctx.stroke();
-  }
+  getDrawPoints(
+    canvas: {
+      width: number;
+      height: number;
+    },
+    options: Options,
+  ) {
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
+    const result: Array<DrawableDot> = [];
+    const [maxDist, maxDistZ] = this.findMaxDistFromOg();
 
-  drawPoints(ctx: CanvasRenderingContext2D, options: Options) {
-    const canvasWidth = ctx.canvas.width;
-    const canvasHeight = ctx.canvas.height;
-    if (options.drawAsDist && options.mouseGradient !== 'none') {
-      const maxDist = this.findMaxDistFromOg();
+    for (let i = 0; i < this.points.length; i++) {
+      const p = this.points[i];
+      if (
+        p.x < -1 ||
+        p.x > canvasWidth + 1 ||
+        p.y < -1 ||
+        p.y > canvasHeight + 1
+      )
+        continue;
+      const ogP = this.ogPoints[i];
+      const dist = p.sub2(ogP).length();
+      let alpha = 1; // ]0, 1]
+      const min = 0.1;
+      const imin = 1 - min;
+      if (!options.drawColored) {
+        switch (options.mouseGradient) {
+          case 'inward':
+            alpha = min + imin * (1 - dist / maxDist);
+            break;
+          case 'outward':
+            alpha = min + imin * (dist / maxDist);
+            break;
+          case 'none':
+            alpha = 1;
+            break;
+        }
+      }
 
-      for (let i = 0; i < this.points.length; i++) {
-        const p = this.points[i];
-        if (
-          p.x < -1 ||
-          p.x > canvasWidth + 1 ||
-          p.y < -1 ||
-          p.y > canvasHeight + 1
-        )
-          continue;
-        const ogP = this.ogPoints[i];
+      let r = 1;
+      let g = 1;
+      let b = 1;
+
+      if (options.drawColored) {
         const diff = p
           .sub2(ogP)
-          .mult(255 / maxDist)
+          .mult(imin / maxDist)
           .abs();
-        const dist = p.sub2(ogP).length();
-        let color; // ]25, 255]
-        if (options.mouseGradient === 'inward') {
-          color = 25 + 230 * (1 - dist / maxDist);
-        } else {
-          color = 25 + 230 * (dist / maxDist);
-        }
-        ctx.fillStyle = `rgb(${diff.x}, ${diff.y}, ${diff.z})`;
-        ctx.beginPath();
-        ctx.moveTo(p.x, p.y);
-        ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
-        ctx.fill();
+        r = diff.x + min;
+        g = diff.y + min;
+        b = diff.z + min;
       }
-    } else {
-      ctx.beginPath();
-      for (const p of this.points) {
-        if (
-          p.x < -1 ||
-          p.x > canvasWidth + 1 ||
-          p.y < -1 ||
-          p.y > canvasHeight + 1
-        )
-          continue;
-        ctx.moveTo(p.x, p.y);
-        ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
-      }
-      ctx.fill();
+
+      result.push({
+        x: p.x,
+        y: p.y,
+        z: Math.abs(p.z) / maxDistZ,
+        alpha,
+        r,
+        g,
+        b,
+      });
     }
+
+    return result;
   }
 
-  findMaxDistFromOg() {
+  findMaxDistFromOg(): [number, number] {
     let maxDist = 0;
+    let maxDistZ = 0;
     for (let i = 0; i < this.points.length; i++) {
       const p = this.points[i];
       const ogP = this.ogPoints[i];
       const dist = p.sub2(ogP).length();
       if (dist > maxDist) maxDist = dist;
+      if (Math.abs(p.z) > maxDistZ) maxDistZ = Math.abs(p.z);
     }
-    return maxDist;
+    return [maxDist, maxDistZ];
   }
 
   physics(dt: number, mousePos: Vector2, options: Options) {
@@ -312,8 +331,7 @@ class Lattice {
       const dist3 = diff3.length();
       const norm = diff3.normalize();
       const influence =
-        options.mouseStrength *
-        Math.max(0, 1 - dist3 / options.mouseDistance);
+        options.mouseStrength * Math.max(0, 1 - dist3 / options.mouseDistance);
       if (options.mouseRepel) {
         this.points[i] = p.sub(norm.mult(dt * influence * 1000));
       } else {
@@ -349,6 +367,42 @@ class Lattice {
   // }
 }
 
+const vs = /* glsl */ `
+  attribute vec3 pos;
+  attribute vec4 color;
+  attribute vec4 position;
+  attribute vec2 texcoord;
+
+  varying vec2 v_texcoord;
+  varying vec4 v_color;
+  varying float v_scale;
+  
+  void main() {
+    gl_Position = position + vec4(pos.x - 0.5, 0.5 - pos.y, 0, 0) * 2.;
+        
+    v_texcoord = texcoord;
+    v_color = color;
+    v_scale = pos.z * 0.8 + 0.2;
+  }`;
+
+const fs = /* glsl */ `
+  precision mediump float;
+  varying vec2 v_texcoord;
+  varying vec4 v_color;
+  varying float v_scale;
+  
+  float circle(in vec2 st, in float radius) {
+    vec2 dist = st - vec2(0.5);
+    float distSquared = dot(dist, dist) * 4.0;
+    return 1.0 - smoothstep(radius - 0.02, radius + 0.02, distSquared);
+  }
+  
+  void main() {
+    float c = circle(v_texcoord, v_scale);
+    gl_FragColor = v_color * c;
+  }
+  `;
+
 export default createCanvasComponent({
   props: {
     style: {
@@ -361,7 +415,21 @@ export default createCanvasComponent({
   },
   autoResize: true,
   setup(canvas) {
-    const ctx = canvas.getContext('2d')!;
+    const gl = canvas.getContext('webgl');
+    if (!gl) {
+      throw new Error('WebGL not supported');
+    }
+
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+    const ext = gl.getExtension('ANGLE_instanced_arrays');
+    if (!ext) {
+      throw new Error('ANGLE_instanced_arrays not supported');
+    }
+    twgl.addExtensionsToContext(gl);
+
+    const programInfo = twgl.createProgramInfo(gl, [vs, fs]);
 
     function newLattice(options: Options) {
       const offset = ceilMultiple(120, options.spacing);
@@ -432,8 +500,7 @@ export default createCanvasComponent({
           min: 0,
           max: 1,
         });
-        optionsFolder.addBinding(options, 'drawAsDist').label =
-          'drawAsDist (slow)';
+        optionsFolder.addBinding(options, 'drawColored');
       }
 
       const presetsFolder = pane.addFolder({
@@ -485,32 +552,45 @@ export default createCanvasComponent({
           });
         });
     }
+
     return {
       update(dt) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.strokeStyle = ctx.fillStyle = 'rgba(255, 255, 255)';
-        lattice.physics(Math.min(1 / 30, dt / 1000), mousePos, options);
-        lattice.drawPoints(ctx, options);
-        // lattice.drawLines(ctx);
+        gl.clearColor(0, 0, 0, 0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
 
-        if (options.mouseGradient === 'none' || options.drawAsDist) return;
-        const mouseGradient = ctx.createRadialGradient(
-          mousePos.x,
-          mousePos.y,
-          0,
-          mousePos.x,
-          mousePos.y,
-          options.mouseDistance,
-        );
-        if (options.mouseGradient === 'inward') {
-          mouseGradient.addColorStop(0, 'rgba(0,0,0, 0.9)');
-          mouseGradient.addColorStop(1, 'rgba(0,0,0, 0.2)');
-        } else {
-          mouseGradient.addColorStop(0, 'rgba(0,0,0, 0.2)');
-          mouseGradient.addColorStop(1, 'rgba(0,0,0, 0.9)');
-        }
-        ctx.fillStyle = mouseGradient;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        lattice.physics(Math.min(1 / 30, dt / 1000), mousePos, options);
+        const drawPoints = lattice.getDrawPoints(canvas, options);
+
+        const x = (5 / canvas.width) * 2;
+        const y = (5 / canvas.height) * 2;
+
+        const bufferInfo = twgl.createBufferInfoFromArrays(gl, {
+          position: {
+            numComponents: 2,
+            data: [-x, -y, x, -y, -x, y, -x, y, x, -y, x, y],
+          },
+          texcoord: {
+            numComponents: 2,
+            data: [0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0],
+          },
+          color: {
+            numComponents: 4,
+            data: drawPoints.map(p => [p.r, p.g, p.b, p.alpha]).flat(),
+            divisor: 1,
+          },
+          pos: {
+            numComponents: 3,
+            data: drawPoints
+              .map(p => [p.x / canvas.width, p.y / canvas.height, p.z])
+              .flat(),
+            divisor: 1,
+          },
+        });
+        twgl.setBuffersAndAttributes(gl, programInfo, bufferInfo);
+
+        gl.useProgram(programInfo.program);
+
+        ext.drawArraysInstancedANGLE(gl.TRIANGLES, 0, 6, drawPoints.length);
       },
 
       mouseMove(_e, x, y) {
@@ -519,6 +599,7 @@ export default createCanvasComponent({
 
       resize() {
         lattice = newLattice(options);
+        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
       },
     };
   },

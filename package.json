@@ -39,6 +39,7 @@
     "react-toastify": "^11.0.3",
     "tailwindcss": "^3.4.16",
     "tweakpane": "^4.0.5",
+    "twgl.js": "^5.5.4",
     "typescript": "^5.7.2",
     "uuid": "^11.0.3"
   },

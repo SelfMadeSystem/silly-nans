@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 
 type ReturnType = {
   resize?: (width: number, height: number) => void;
-  update?: (dt: number) => void;
+  update?: (dt: number, time: number) => void;
   mouseMove?: (e: MouseEvent, x: number, y: number) => void;
   mouseDown?: (e: MouseEvent, x: number, y: number) => void;
   mouseUp?: (e: MouseEvent, x: number, y: number) => void;
@@ -39,11 +39,11 @@ export default function createCanvasComponent({
         if (result?.update) {
           let lastTime = performance.now();
           loopAnimationFrame(
-            () => {
+            (t) => {
               const now = performance.now();
               const dt = now - lastTime;
               lastTime = now;
-              result.update!(dt);
+              result.update!(dt, t);
             },
             { signal },
           );
