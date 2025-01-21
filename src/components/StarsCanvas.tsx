@@ -103,7 +103,7 @@ class StarPlane {
       const x =
         p.x +
         mousePos.x * options.mouseShiftAmountX * gz +
-        Math.cos(t * options.shiftSpeedX) * gz;
+        Math.cos(t * options.shiftSpeedX) * gz * options.shiftAmountX;
       const y =
         p.y +
         mousePos.y * options.mouseShiftAmountY * gz +
