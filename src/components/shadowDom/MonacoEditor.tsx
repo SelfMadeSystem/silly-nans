@@ -1,6 +1,6 @@
 import type * as m from 'monaco-editor';
 import loader from '@monaco-editor/loader';
-import { emmetCSS, emmetHTML } from 'emmet-monaco-es';
+import { emmetCSS, emmetHTML, registerCustomSnippets } from 'emmet-monaco-es';
 import type { MonacoTailwindcss } from 'monaco-tailwindcss';
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 
@@ -71,6 +71,15 @@ export function MonacoProvider({ children }: { children: React.ReactNode }) {
       setMonaco(monaco);
       emmetCSS(monaco);
       emmetHTML(monaco);
+
+      registerCustomSnippets('css', {
+        '@property': `\
+@property --\${1:property} {
+  syntax: '\${2:value}';
+  inherits: \${3:initial};
+  initial-value: \${4:initial};
+}`,
+      });
 
       monaco.languages.registerCompletionItemProvider('css', {
         provideCompletionItems(model, position, _context, _token) {
