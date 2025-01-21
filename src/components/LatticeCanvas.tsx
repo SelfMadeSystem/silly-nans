@@ -85,10 +85,10 @@ class Lattice {
     for (let i = 0; i < this.points.length; i++) {
       const p = this.points[i];
       if (
-        p.x < -1 ||
-        p.x > canvasWidth + 1 ||
-        p.y < -1 ||
-        p.y > canvasHeight + 1
+        p.x < -5 ||
+        p.x > canvasWidth + 5 ||
+        p.y < -5 ||
+        p.y > canvasHeight + 5
       )
         continue;
       const ogP = this.ogPoints[i];
@@ -124,10 +124,16 @@ class Lattice {
         b = diff.z + min;
       }
 
+      let z = Math.abs(p.z) / maxDistZ;
+
+      if (options.mouseGradient === 'inward') {
+        z = 1 - z;
+      }
+
       result.push({
         x: p.x,
         y: p.y,
-        z: Math.abs(p.z) / maxDistZ,
+        z: z,
         alpha,
         r,
         g,
@@ -181,10 +187,9 @@ class Lattice {
       // Move the out of bounds points to the other side
       for (const i of outOfBounds) {
         this.ogPoints[i] = this.ogPoints[i].sub(new Vector2(this.width, 0));
-        this.points[i] = this.points[i].sub2(new Vector2(this.width, 0));
-        this.prevPoints[i] = this.prevPoints[i].sub2(
-          new Vector2(this.width, 0),
-        );
+        // Reset the state of the points so it doesn't go all wibbledy wobbledy
+        this.points[i] = this.ogPoints[i].to3();
+        this.prevPoints[i] = this.points[i];
       }
 
       // Reconnect the links
@@ -216,10 +221,8 @@ class Lattice {
       );
       for (const i of outOfBounds) {
         this.ogPoints[i] = this.ogPoints[i].add(new Vector2(this.width, 0));
-        this.points[i] = this.points[i].add2(new Vector2(this.width, 0));
-        this.prevPoints[i] = this.prevPoints[i].add2(
-          new Vector2(this.width, 0),
-        );
+        this.points[i] = this.ogPoints[i].to3();
+        this.prevPoints[i] = this.points[i];
       }
 
       this.links = this.links.map(([i, j]) => {
@@ -252,10 +255,8 @@ class Lattice {
       );
       for (const i of outOfBounds) {
         this.ogPoints[i] = this.ogPoints[i].sub(new Vector2(0, this.height));
-        this.points[i] = this.points[i].sub2(new Vector2(0, this.height));
-        this.prevPoints[i] = this.prevPoints[i].sub2(
-          new Vector2(0, this.height),
-        );
+        this.points[i] = this.ogPoints[i].to3();
+        this.prevPoints[i] = this.points[i];
       }
 
       this.links = this.links.map(([i, j]) => {
@@ -286,10 +287,8 @@ class Lattice {
       );
       for (const i of outOfBounds) {
         this.ogPoints[i] = this.ogPoints[i].add(new Vector2(0, this.height));
-        this.points[i] = this.points[i].add2(new Vector2(0, this.height));
-        this.prevPoints[i] = this.prevPoints[i].add2(
-          new Vector2(0, this.height),
-        );
+        this.points[i] = this.ogPoints[i].to3();
+        this.prevPoints[i] = this.points[i];
       }
 
       this.links = this.links.map(([i, j]) => {
@@ -339,7 +338,7 @@ class Lattice {
         this.points[i] = p.sub(norm.mult(dt * influence * 1000));
       } else {
         this.points[i] = p.add(
-          norm.mult(dt * influence * 1000).mult3(new Vector3(1, 1, -1)),
+          norm.mult(dt * influence * 500).mult3(new Vector3(1, 1, -1)),
         );
       }
     }
@@ -520,6 +519,7 @@ export default createCanvasComponent({
             mouseGradient: 'outward',
             mouseRepel: true,
           });
+          pane.refresh();
         });
 
       presetsFolder
@@ -531,6 +531,10 @@ export default createCanvasComponent({
             mouseGradient: 'inward',
             mouseRepel: false,
           });
+          if (options.accStrength > 0.3) {
+            options.accStrength = 0.3;
+          }
+          pane.refresh();
         });
 
       presetsFolder
@@ -540,8 +544,9 @@ export default createCanvasComponent({
         .on('click', () => {
           Object.assign(options, {
             moveStrength: 2,
-            accStrength: 0.5,
+            accStrength: options.mouseRepel ? 0.5 : 0.3,
           });
+          pane.refresh();
         });
 
       presetsFolder
@@ -553,6 +558,7 @@ export default createCanvasComponent({
             moveStrength: 4,
             accStrength: 0,
           });
+          pane.refresh();
         });
     }
 
