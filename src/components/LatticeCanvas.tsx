@@ -4,6 +4,9 @@ import { Vector2, Vector3 } from '../utils/vec';
 import createCanvasComponent from './CanvasComponent';
 import { Pane } from 'tweakpane';
 
+// Credit to: https://webglfundamentals.org/webgl/lessons/webgl-qna-the-fastest-way-to-draw-many-circles.html
+// for the concept behind how to draw thousands of circles in WebGL without a performance hit
+
 const defaultOptions = {
   mouseGradient: 'outward' as 'inward' | 'outward' | 'none',
   spacing: 30,
