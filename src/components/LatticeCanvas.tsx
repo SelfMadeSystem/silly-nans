@@ -531,9 +531,6 @@ export default createCanvasComponent({
             mouseGradient: 'inward',
             mouseRepel: false,
           });
-          if (options.accStrength > 0.3) {
-            options.accStrength = 0.3;
-          }
           pane.refresh();
         });
 
@@ -544,7 +541,7 @@ export default createCanvasComponent({
         .on('click', () => {
           Object.assign(options, {
             moveStrength: 2,
-            accStrength: options.mouseRepel ? 0.5 : 0.3,
+            accStrength: 0.5,
           });
           pane.refresh();
         });
