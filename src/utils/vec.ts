@@ -136,12 +136,12 @@ export class Vector2 {
     return new Vector2(this.x - other.x, this.y - other.y);
   }
 
-  mult(scalar: number): Vector2 {
-    return new Vector2(this.x * scalar, this.y * scalar);
+  mult(x: number, y = x): Vector2 {
+    return new Vector2(this.x * x, this.y * y);
   }
 
-  divide(scalar: number): Vector2 {
-    return new Vector2(this.x / scalar, this.y / scalar);
+  divide(x: number, y = x): Vector2 {
+    return new Vector2(this.x / x, this.y / y);
   }
 
   mod(other: Vector2): Vector2 {

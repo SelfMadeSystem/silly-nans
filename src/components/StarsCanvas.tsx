@@ -14,7 +14,9 @@ const defaultOptions = {
   scrollAmount: 1,
   shiftSpeedX: 0.4,
   shiftAmountX: 30,
-  shiftAmountY: 30,
+  shiftAmountY: 20,
+  mouseShiftAmountX: -50,
+  mouseShiftAmountY: -70,
 };
 
 type Options = typeof defaultOptions;
@@ -88,24 +90,25 @@ class StarPlane {
     return result;
   }
 
-  physics(t: number, scroll: number, _mousePos: Vector2, options: Options) {
+  physics(t: number, scroll: number, mousePos: Vector2, options: Options) {
     this.points = this.ogPoints.map(p => {
+      const z = p.z;
+      const gz = z * options.zAmount;
       const x =
         p.x +
-        Math.cos(t * options.shiftSpeedX) *
-          p.z *
-          options.zAmount *
-          options.shiftAmountX;
+        mousePos.x * options.mouseShiftAmountX * gz +
+        Math.cos(t * options.shiftSpeedX) * gz;
+      options.shiftAmountX;
       const y =
         p.y +
-        t * p.z * options.zAmount * options.shiftAmountY +
-        (1 - p.z) *
+        mousePos.y * options.mouseShiftAmountY * gz +
+        t * gz * options.shiftAmountY +
+        (1 - z) *
           options.zAmount *
           scroll *
           options.scrollAmount *
           0.25 *
           this.height;
-      const z = p.z;
       return new Vector3(mod(x, this.width), mod(y, this.height), z);
     });
   }
@@ -234,6 +237,16 @@ export default createCanvasComponent({
         min: 0,
         max: 500,
       });
+      pane.addBinding(options, 'mouseShiftAmountX', {
+        label: 'Mouse Shift Amount X',
+        min: -100,
+        max: 100,
+      });
+      pane.addBinding(options, 'mouseShiftAmountY', {
+        label: 'Mouse Shift Amount Y',
+        min: -100,
+        max: 100,
+      });
     }
 
     return {
@@ -245,7 +258,12 @@ export default createCanvasComponent({
         const scrollY = window.scrollY;
         const percentY = (scrollY - rect.top) / rect.height;
 
-        starPlane.physics(t / 1000, percentY, mousePos, options);
+        starPlane.physics(
+          t / 1000,
+          percentY,
+          mousePos.divide(rect.width, rect.height),
+          options,
+        );
         const drawPoints = starPlane.getDrawPoints(canvas);
 
         const x = (5 / canvas.width) * 2;

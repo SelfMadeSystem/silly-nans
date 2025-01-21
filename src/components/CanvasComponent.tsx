@@ -8,6 +8,9 @@ type ReturnType = {
   mouseMove?: (e: MouseEvent, x: number, y: number) => void;
   mouseDown?: (e: MouseEvent, x: number, y: number) => void;
   mouseUp?: (e: MouseEvent, x: number, y: number) => void;
+  touchStart?: (e: TouchEvent, x: number, y: number) => void;
+  touchMove?: (e: TouchEvent, x: number, y: number) => void;
+  touchEnd?: (e: TouchEvent, x: number, y: number) => void
   keyDown?: (e: KeyboardEvent) => void;
   keyUp?: (e: KeyboardEvent) => void;
   scroll?: (
@@ -91,6 +94,42 @@ export default function createCanvasComponent({
             (e: MouseEvent) => {
               const rect = canvas.getBoundingClientRect();
               result.mouseUp!(e, e.clientX - rect.left, e.clientY - rect.top);
+            },
+            { signal },
+          );
+        }
+
+        if (result?.touchStart) {
+          window.addEventListener(
+            'touchstart',
+            (e: TouchEvent) => {
+              const rect = canvas.getBoundingClientRect();
+              const touch = e.touches[0];
+              result.touchStart!(e, touch.clientX - rect.left, touch.clientY - rect.top);
+            },
+            { signal },
+          );
+        }
+
+        if (result?.touchMove) {
+          window.addEventListener(
+            'touchmove',
+            (e: TouchEvent) => {
+              const rect = canvas.getBoundingClientRect();
+              const touch = e.touches[0];
+              result.touchMove!(e, touch.clientX - rect.left, touch.clientY - rect.top);
+            },
+            { signal },
+          );
+        }
+
+        if (result?.touchEnd) {
+          window.addEventListener(
+            'touchend',
+            (e: TouchEvent) => {
+              const rect = canvas.getBoundingClientRect();
+              const touch = e.changedTouches[0];
+              result.touchEnd!(e, touch.clientX - rect.left, touch.clientY - rect.top);
             },
             { signal },
           );
