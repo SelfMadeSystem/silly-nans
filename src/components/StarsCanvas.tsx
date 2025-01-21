@@ -10,7 +10,8 @@ import { Pane } from 'tweakpane';
 const defaultOptions = {
   spacing: 50,
   count: 1000,
-  scrollAmount: 0.5,
+  zAmount: 1,
+  scrollAmount: 1,
   shiftSpeedX: 0.4,
   shiftAmountX: 30,
   shiftAmountY: 30,
@@ -51,15 +52,9 @@ class StarPlane {
       this.ogPoints.push(p);
       this.points.push(p);
     }
-    // for (let y = 0; y < height; y += spacing) {
-    //   for (let x = 0; x < width; x += spacing) {
-    //     this.ogPoints.push(origin.add(new Vector2(x, y)));
-    //     this.points.push(new Vector3(x, y, 0).add2(origin));
-    //   }
-    // }
   }
 
-  getDrawPoints(canvas: { width: number; height: number }, time: number) {
+  getDrawPoints(canvas: { width: number; height: number }) {
     const canvasWidth = canvas.width;
     const canvasHeight = canvas.height;
     const result: Array<DrawableDot> = [];
@@ -96,11 +91,20 @@ class StarPlane {
   physics(t: number, scroll: number, _mousePos: Vector2, options: Options) {
     this.points = this.ogPoints.map(p => {
       const x =
-        p.x + Math.cos(t * options.shiftSpeedX) * p.z * options.shiftAmountX;
+        p.x +
+        Math.cos(t * options.shiftSpeedX) *
+          p.z *
+          options.zAmount *
+          options.shiftAmountX;
       const y =
         p.y +
-        t * p.z * options.shiftAmountY +
-        (1 - p.z) * scroll * options.scrollAmount * this.height;
+        t * p.z * options.zAmount * options.shiftAmountY +
+        (1 - p.z) *
+          options.zAmount *
+          scroll *
+          options.scrollAmount *
+          0.25 *
+          this.height;
       const z = p.z;
       return new Vector3(mod(x, this.width), mod(y, this.height), z);
     });
@@ -130,8 +134,6 @@ const fs = /* glsl */ `
   varying vec2 v_texcoord;
   varying vec4 v_color;
   varying float v_scale;
-
-  uniform float u_time;
   
   float circle(vec2 st, float radius) {
     vec2 dist = st - vec2(0.5);
@@ -190,7 +192,7 @@ export default createCanvasComponent({
     const options = { ...defaultOptions };
 
     let mousePos = new Vector2(-99999, -99999);
-    
+
     {
       const pane = new Pane({
         title: 'Stars',
@@ -198,17 +200,24 @@ export default createCanvasComponent({
         container: document.getElementById('tl-pane')!,
       });
 
-      pane.addBinding(options, 'count', {
-        label: 'Count',
-        min: 100,
-        max: 2000,
-      }).on('change', () => {
-        starPlane = newStarPlane(options);
+      pane
+        .addBinding(options, 'count', {
+          label: 'Count',
+          min: 100,
+          max: 2000,
+        })
+        .on('change', () => {
+          starPlane = newStarPlane(options);
+        });
+      pane.addBinding(options, 'zAmount', {
+        label: 'Z Amount',
+        min: 0.5,
+        max: 2,
       });
       pane.addBinding(options, 'scrollAmount', {
         label: 'Scroll Amount',
         min: 0,
-        max: 1,
+        max: 2,
       });
       pane.addBinding(options, 'shiftSpeedX', {
         label: 'Shift Speed X',
@@ -237,7 +246,7 @@ export default createCanvasComponent({
         const percentY = (scrollY - rect.top) / rect.height;
 
         starPlane.physics(t / 1000, percentY, mousePos, options);
-        const drawPoints = starPlane.getDrawPoints(canvas, t);
+        const drawPoints = starPlane.getDrawPoints(canvas);
 
         const x = (5 / canvas.width) * 2;
         const y = (5 / canvas.height) * 2;
@@ -265,10 +274,6 @@ export default createCanvasComponent({
           },
         });
         twgl.setBuffersAndAttributes(gl, programInfo, bufferInfo);
-
-        twgl.setUniforms(programInfo, {
-          u_time: t / 1000,
-        });
 
         gl.useProgram(programInfo.program);
 
