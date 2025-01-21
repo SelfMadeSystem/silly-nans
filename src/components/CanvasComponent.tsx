@@ -33,7 +33,7 @@ export default function createCanvasComponent({
   props,
   autoResize,
   setup,
-}: CreateProps): React.FC {
+}: CreateProps): React.FC<React.HTMLProps<HTMLCanvasElement>> {
   return function CanvasComponent(props2: React.HTMLProps<HTMLCanvasElement>) {
     const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
     const didMount = useRef(false);
