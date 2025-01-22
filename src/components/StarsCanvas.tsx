@@ -14,13 +14,14 @@ const defaultOptions = {
   zAmount: 1,
   scrollAmount: 1,
   shiftSpeedX: 0.4,
-  shiftAmountX: 30,
-  shiftAmountY: 20,
-  mouseShiftAmountX: -50,
-  mouseShiftAmountY: -70,
-  minVanishSpeed: 0.1,
-  maxVanishSpeed: 1,
+  shiftAmountX: 10,
+  shiftAmountY: 5,
+  mouseShiftAmountX: -10,
+  mouseShiftAmountY: -10,
+  minVanishSpeed: 0.05,
+  maxVanishSpeed: 0.2,
   vanishOffset: 2,
+  vanishScrollSpeed: 1,
 };
 
 type Options = typeof defaultOptions;
@@ -62,6 +63,7 @@ class StarPlane {
   getDrawPoints(
     canvas: { width: number; height: number },
     time: number,
+    scroll: number,
     options: Options,
   ): Array<DrawableDot> {
     const canvasWidth = canvas.width;
@@ -78,18 +80,18 @@ class StarPlane {
       )
         continue;
       const alpha = clamp(
-        (Math.sin(
+        Math.sin(
           time *
             lerp(
               options.minVanishSpeed,
               options.maxVanishSpeed,
               i / (this.points.length - 1),
             ) +
+            options.vanishScrollSpeed * scroll +
             i,
         ) *
-          0.5 +
-          0.25) *
-          options.vanishOffset,
+          options.vanishOffset +
+          0.5,
         0,
         1,
       );
@@ -308,6 +310,11 @@ export default createCanvasComponent({
         min: 1,
         max: 4,
       });
+      pane.addBinding(options, 'vanishScrollSpeed', {
+        label: 'Vanish Scroll Speed',
+        min: 0,
+        max: 2,
+      });
     }
 
     return {
@@ -326,7 +333,7 @@ export default createCanvasComponent({
           mousePos.divide(rect.width, rect.height),
           options,
         );
-        const drawPoints = starPlane.getDrawPoints(canvas, t / 1000, options);
+        const drawPoints = starPlane.getDrawPoints(canvas, t / 1000, percentY, options);
 
         const maxSize = Math.max(options.minSize, options.maxSize);
         const x = (maxSize / canvas.width) * 2;
