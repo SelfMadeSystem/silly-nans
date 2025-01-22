@@ -1,5 +1,5 @@
 import * as twgl from 'twgl.js';
-import { ceilMultiple, mod } from '../utils/mathUtils';
+import { ceilMultiple, clamp, lerp, mod } from '../utils/mathUtils';
 import { Vector2, Vector3 } from '../utils/vec';
 import createCanvasComponent from './CanvasComponent';
 import { Pane } from 'tweakpane';
@@ -8,8 +8,9 @@ import { Pane } from 'tweakpane';
 // for the concept behind how to draw thousands of circles in WebGL without a performance hit
 
 const defaultOptions = {
-  spacing: 50,
-  count: 400,
+  density: 0.5,
+  minSize: 2,
+  maxSize: 2,
   zAmount: 1,
   scrollAmount: 1,
   shiftSpeedX: 0.4,
@@ -17,6 +18,9 @@ const defaultOptions = {
   shiftAmountY: 20,
   mouseShiftAmountX: -50,
   mouseShiftAmountY: -70,
+  minVanishSpeed: 0.1,
+  maxVanishSpeed: 1,
+  vanishOffset: 2,
 };
 
 type Options = typeof defaultOptions;
@@ -39,7 +43,6 @@ class StarPlane {
     public origin: Vector2,
     public width: number,
     public height: number,
-    public spacing: number,
     count: number,
   ) {
     this.points = [];
@@ -56,7 +59,11 @@ class StarPlane {
     }
   }
 
-  getDrawPoints(canvas: { width: number; height: number }) {
+  getDrawPoints(
+    canvas: { width: number; height: number },
+    time: number,
+    options: Options,
+  ): Array<DrawableDot> {
     const canvasWidth = canvas.width;
     const canvasHeight = canvas.height;
     const result: Array<DrawableDot> = [];
@@ -70,7 +77,22 @@ class StarPlane {
         p.y > canvasHeight + 5
       )
         continue;
-      let alpha = 1;
+      const alpha = clamp(
+        (Math.sin(
+          time *
+            lerp(
+              options.minVanishSpeed,
+              options.maxVanishSpeed,
+              i / (this.points.length - 1),
+            ) +
+            i,
+        ) *
+          0.5 +
+          0.25) *
+          options.vanishOffset,
+        0,
+        1,
+      );
 
       let r = 1;
       let g = 1;
@@ -98,7 +120,7 @@ class StarPlane {
     options: Options,
   ) {
     this.points = this.ogPoints.map(p => {
-      const z = p.z;
+      let z = p.z; // [0, 1]
       const gz = z * options.zAmount;
       const x =
         p.x +
@@ -107,15 +129,20 @@ class StarPlane {
       const y =
         p.y +
         mousePos.y * options.mouseShiftAmountY * gz +
-        t * gz * options.shiftAmountY +
-        (1 - z) *
-          options.zAmount *
-          scroll *
-          options.scrollAmount *
-          0.25 *
-          this.height +
+        t * gz * options.shiftAmountY -
+        gz * scroll * options.scrollAmount * 0.25 * this.height +
         realScroll;
-      return new Vector3(mod(x, this.width), mod(y, this.height), z);
+      const minSize = Math.min(options.minSize, options.maxSize);
+      const maxSize = Math.max(options.minSize, options.maxSize);
+      const sizeRatio = minSize / maxSize;
+      if (options.minSize > options.maxSize) {
+        z = 1 - z;
+      }
+      return new Vector3(
+        mod(x, this.width),
+        mod(y, this.height),
+        sizeRatio + (1 - sizeRatio) * z,
+      );
     });
   }
 }
@@ -186,13 +213,16 @@ export default createCanvasComponent({
     const programInfo = twgl.createProgramInfo(gl, [vs, fs]);
 
     function newStarPlane(options: Options) {
-      const offset = ceilMultiple(120, options.spacing);
+      const margin = 50;
+      const offset = ceilMultiple(120, margin);
+      const count = Math.floor(
+        (canvas.width * canvas.height * options.density) / 1000,
+      );
       return new StarPlane(
         new Vector2(-offset, -offset),
-        ceilMultiple(canvas.width, options.spacing) + offset * 2,
-        ceilMultiple(canvas.height, options.spacing) + offset * 2,
-        options.spacing,
-        options.count,
+        ceilMultiple(canvas.width, margin) + offset * 2,
+        ceilMultiple(canvas.height, margin) + offset * 2,
+        count,
       );
     }
 
@@ -210,15 +240,24 @@ export default createCanvasComponent({
       });
 
       pane
-        .addBinding(options, 'count', {
-          label: 'Count',
-          min: 25,
-          max: 4000,
-          step: 25,
+        .addBinding(options, 'density', {
+          label: 'Density',
+          min: 0.1,
+          max: 1,
         })
         .on('change', () => {
           starPlane = newStarPlane(options);
         });
+      pane.addBinding(options, 'minSize', {
+        label: 'Min Size',
+        min: 0,
+        max: 10,
+      });
+      pane.addBinding(options, 'maxSize', {
+        label: 'Max Size',
+        min: 0.1,
+        max: 10,
+      });
       pane.addBinding(options, 'zAmount', {
         label: 'Z Amount',
         min: 0.5,
@@ -254,6 +293,21 @@ export default createCanvasComponent({
         min: -100,
         max: 100,
       });
+      pane.addBinding(options, 'minVanishSpeed', {
+        label: 'Min Vanish Speed',
+        min: 0,
+        max: 4,
+      });
+      pane.addBinding(options, 'maxVanishSpeed', {
+        label: 'Max Vanish Speed',
+        min: 0,
+        max: 4,
+      });
+      pane.addBinding(options, 'vanishOffset', {
+        label: 'Vanish Offset',
+        min: 1,
+        max: 4,
+      });
     }
 
     return {
@@ -272,10 +326,11 @@ export default createCanvasComponent({
           mousePos.divide(rect.width, rect.height),
           options,
         );
-        const drawPoints = starPlane.getDrawPoints(canvas);
+        const drawPoints = starPlane.getDrawPoints(canvas, t / 1000, options);
 
-        const x = (5 / canvas.width) * 2;
-        const y = (5 / canvas.height) * 2;
+        const maxSize = Math.max(options.minSize, options.maxSize);
+        const x = (maxSize / canvas.width) * 2;
+        const y = (maxSize / canvas.height) * 2;
 
         const bufferInfo = twgl.createBufferInfoFromArrays(gl, {
           position: {
