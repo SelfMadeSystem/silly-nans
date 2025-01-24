@@ -16,14 +16,15 @@ const defaultOptions = {
   shiftSpeedX: 0.4,
   shiftAmountX: 10,
   shiftAmountY: 5,
-  mouseShiftAmountX: -10,
-  mouseShiftAmountY: -10,
+  mouseShiftAmountX: -50,
+  mouseShiftAmountY: -50,
   touchShiftAmountX: -70,
   touchShiftAmountY: -70,
   minVanishSpeed: 0.05,
   maxVanishSpeed: 0.2,
   vanishOffset: 2,
   vanishScrollSpeed: 1,
+  mouseEase: 0.8,
   mobileEase: 0.5,
 };
 
@@ -90,7 +91,7 @@ class StarPlane {
               options.maxVanishSpeed,
               i / (this.points.length - 1),
             ) +
-            options.vanishScrollSpeed * p.y / 100+
+            (options.vanishScrollSpeed * p.y) / 100 +
             i,
         ) *
           options.vanishOffset +
@@ -337,6 +338,11 @@ export default createCanvasComponent({
         min: 0,
         max: 2,
       });
+      pane.addBinding(options, 'mouseEase', {
+        label: 'Mouse Ease',
+        min: 0,
+        max: 1,
+      });
       pane.addBinding(options, 'mobileEase', {
         label: 'Mobile Ease',
         min: 0,
@@ -353,10 +359,8 @@ export default createCanvasComponent({
         const scrollY = window.scrollY;
         const percentY = scrollY / rect.height;
 
-        if (isMobile) {
-          const lerpFactor = 1 - Math.exp((-options.mobileEase * dt) / 400);
-          mousePos = mousePos.lerp(targetMousePos, lerpFactor);
-        }
+        const lerpFactor = Math.pow(isMobile ? options.mobileEase : options.mouseEase, dt);
+        mousePos = mousePos.lerp(targetMousePos, lerpFactor);
 
         starPlane.physics(
           t / 1000,
@@ -407,11 +411,7 @@ export default createCanvasComponent({
       },
 
       mouseMove(_e, x, y) {
-        if (isMobile) {
-          targetMousePos = new Vector2(x, y);
-        } else {
-          mousePos = new Vector2(x, y);
-        }
+        targetMousePos = new Vector2(x, y);
       },
 
       touchStart() {
