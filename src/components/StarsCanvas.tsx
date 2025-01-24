@@ -18,10 +18,13 @@ const defaultOptions = {
   shiftAmountY: 5,
   mouseShiftAmountX: -10,
   mouseShiftAmountY: -10,
+  touchShiftAmountX: -70,
+  touchShiftAmountY: -70,
   minVanishSpeed: 0.05,
   maxVanishSpeed: 0.2,
   vanishOffset: 2,
   vanishScrollSpeed: 1,
+  mobileEase: 0.5,
 };
 
 type Options = typeof defaultOptions;
@@ -120,17 +123,24 @@ class StarPlane {
     realScroll: number,
     mousePos: Vector2,
     options: Options,
+    isMobile: boolean,
   ) {
     this.points = this.ogPoints.map(p => {
       let z = p.z; // [0, 1]
       const gz = z * options.zAmount;
+      const shiftX = isMobile
+        ? options.touchShiftAmountX
+        : options.mouseShiftAmountX;
+      const shiftY = isMobile
+        ? options.touchShiftAmountY
+        : options.mouseShiftAmountY;
       const x =
         p.x +
-        mousePos.x * options.mouseShiftAmountX * gz +
+        mousePos.x * shiftX * gz +
         Math.cos(t * options.shiftSpeedX) * gz * options.shiftAmountX;
       const y =
         p.y +
-        mousePos.y * options.mouseShiftAmountY * gz +
+        mousePos.y * shiftY * gz +
         t * gz * options.shiftAmountY -
         gz * scroll * options.scrollAmount * 0.25 * this.height +
         realScroll;
@@ -227,12 +237,14 @@ export default createCanvasComponent({
         count,
       );
     }
+    let isMobile = false;
 
     let starPlane = newStarPlane(defaultOptions);
 
     const options = { ...defaultOptions };
 
-    let mousePos = new Vector2(-99999, -99999);
+    let mousePos = new Vector2(0, 0);
+    let targetMousePos = new Vector2(0, 0);
 
     {
       const pane = new Pane({
@@ -295,6 +307,16 @@ export default createCanvasComponent({
         min: -100,
         max: 100,
       });
+      pane.addBinding(options, 'touchShiftAmountX', {
+        label: 'Touch Shift Amount X',
+        min: -100,
+        max: 100,
+      });
+      pane.addBinding(options, 'touchShiftAmountY', {
+        label: 'Touch Shift Amount Y',
+        min: -100,
+        max: 100,
+      });
       pane.addBinding(options, 'minVanishSpeed', {
         label: 'Min Vanish Speed',
         min: 0,
@@ -315,6 +337,11 @@ export default createCanvasComponent({
         min: 0,
         max: 2,
       });
+      pane.addBinding(options, 'mobileEase', {
+        label: 'Mobile Ease',
+        min: 0,
+        max: 1,
+      });
     }
 
     return {
@@ -326,14 +353,25 @@ export default createCanvasComponent({
         const scrollY = window.scrollY;
         const percentY = scrollY / rect.height;
 
+        if (isMobile) {
+          const lerpFactor = 1 - Math.exp((-options.mobileEase * dt) / 400);
+          mousePos = mousePos.lerp(targetMousePos, lerpFactor);
+        }
+
         starPlane.physics(
           t / 1000,
           percentY,
           -rect.top,
           mousePos.divide(rect.width, rect.height),
           options,
+          isMobile,
         );
-        const drawPoints = starPlane.getDrawPoints(canvas, t / 1000, percentY, options);
+        const drawPoints = starPlane.getDrawPoints(
+          canvas,
+          t / 1000,
+          percentY,
+          options,
+        );
 
         const maxSize = Math.max(options.minSize, options.maxSize);
         const x = (maxSize / canvas.width) * 2;
@@ -369,7 +407,19 @@ export default createCanvasComponent({
       },
 
       mouseMove(_e, x, y) {
-        mousePos = new Vector2(x, y);
+        if (isMobile) {
+          targetMousePos = new Vector2(x, y);
+        } else {
+          mousePos = new Vector2(x, y);
+        }
+      },
+
+      touchStart() {
+        isMobile = true;
+      },
+
+      touchMove(_e, x, y) {
+        targetMousePos = new Vector2(x, y);
       },
 
       resize() {

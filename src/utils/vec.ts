@@ -186,6 +186,10 @@ export class Vector2 {
     return other.sub(this).heading();
   }
 
+  lerp(other: Vector2, amount: number): Vector2 {
+    return this.add(other.sub(this).mult(amount));
+  }
+
   to3(z: number = 0): Vector3 {
     return new Vector3(this.x, this.y, z);
   }
