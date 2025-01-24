@@ -90,7 +90,7 @@ class StarPlane {
               options.maxVanishSpeed,
               i / (this.points.length - 1),
             ) +
-            options.vanishScrollSpeed * scroll +
+            options.vanishScrollSpeed * p.y / 100+
             i,
         ) *
           options.vanishOffset +
