@@ -17,7 +17,7 @@ To build and run the animations locally, you'll need to have [bun](https://bun.s
 If you'd like to run the animations locally, you can clone the repository, install the dependencies, and run the development server.
 
 ```bash
-git clone
+git clone https://github.com/SelfMadeSystem/silly-nans.git
 cd silly-nans
 bun i
 bun dev
