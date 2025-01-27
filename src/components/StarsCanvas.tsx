@@ -198,6 +198,7 @@ const fs = /* glsl */ `
   `;
 
 export default createCanvasComponent({
+  useFadeShader: true,
   props: {
     style: {
       position: 'absolute',
@@ -205,9 +206,10 @@ export default createCanvasComponent({
       left: 0,
       width: '100%',
       height: '100%',
+      scale: '1 -1',
     },
   },
-  autoResize: true,
+  autoResize: false,
   setup(canvas) {
     const gl = canvas.getContext('webgl');
     if (!gl) {
@@ -359,7 +361,10 @@ export default createCanvasComponent({
         const scrollY = window.scrollY;
         const percentY = scrollY / rect.height;
 
-        const lerpFactor = Math.pow(isMobile ? options.mobileEase : options.mouseEase, dt);
+        const lerpFactor = Math.pow(
+          isMobile ? options.mobileEase : options.mouseEase,
+          dt,
+        );
         mousePos = mousePos.lerp(targetMousePos, lerpFactor);
 
         starPlane.physics(

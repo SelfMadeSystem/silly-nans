@@ -1,4 +1,5 @@
 import { loopAnimationFrame } from '../utils/abortable';
+import { FadeShaderCanvas } from './FadeShaderCanvas';
 import { useEffect, useRef, useState } from 'react';
 
 type ReturnType = {
@@ -10,7 +11,7 @@ type ReturnType = {
   mouseUp?: (e: MouseEvent, x: number, y: number) => void;
   touchStart?: (e: TouchEvent, x: number, y: number) => void;
   touchMove?: (e: TouchEvent, x: number, y: number) => void;
-  touchEnd?: (e: TouchEvent, x: number, y: number) => void
+  touchEnd?: (e: TouchEvent, x: number, y: number) => void;
   keyDown?: (e: KeyboardEvent) => void;
   keyUp?: (e: KeyboardEvent) => void;
   scroll?: (
@@ -29,20 +30,23 @@ type ReturnType = {
 type CreateProps = {
   props: React.HTMLProps<HTMLCanvasElement>;
   autoResize?: boolean;
+  useFadeShader?: boolean;
   setup: (canvas: HTMLCanvasElement, draw: () => void) => ReturnType | void;
 };
 
 export default function createCanvasComponent({
   props,
   autoResize,
+  useFadeShader,
   setup,
 }: CreateProps): React.FC<React.HTMLProps<HTMLCanvasElement>> {
   return function CanvasComponent(props2: React.HTMLProps<HTMLCanvasElement>) {
-    const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
     const didMount = useRef(false);
 
     useEffect(() => {
-      if (!didMount.current && canvas) {
+      if (!didMount.current) {
+        const canvas = canvasRef.current!;
         const { signal, abort } = new AbortController();
         if (autoResize) {
           canvas.width = canvas.clientWidth;
@@ -105,7 +109,11 @@ export default function createCanvasComponent({
             (e: TouchEvent) => {
               const rect = canvas.getBoundingClientRect();
               const touch = e.touches[0];
-              result.touchStart!(e, touch.clientX - rect.left, touch.clientY - rect.top);
+              result.touchStart!(
+                e,
+                touch.clientX - rect.left,
+                touch.clientY - rect.top,
+              );
             },
             { signal },
           );
@@ -117,7 +125,11 @@ export default function createCanvasComponent({
             (e: TouchEvent) => {
               const rect = canvas.getBoundingClientRect();
               const touch = e.touches[0];
-              result.touchMove!(e, touch.clientX - rect.left, touch.clientY - rect.top);
+              result.touchMove!(
+                e,
+                touch.clientX - rect.left,
+                touch.clientY - rect.top,
+              );
             },
             { signal },
           );
@@ -129,7 +141,11 @@ export default function createCanvasComponent({
             (e: TouchEvent) => {
               const rect = canvas.getBoundingClientRect();
               const touch = e.changedTouches[0];
-              result.touchEnd!(e, touch.clientX - rect.left, touch.clientY - rect.top);
+              result.touchEnd!(
+                e,
+                touch.clientX - rect.left,
+                touch.clientY - rect.top,
+              );
             },
             { signal },
           );
@@ -208,8 +224,17 @@ export default function createCanvasComponent({
 
         return abort;
       }
-    }, [canvas]);
+    });
 
-    return <canvas {...props} {...props2} ref={setCanvas} />;
+    if (useFadeShader) {
+      return (
+        <>
+          <canvas className="invisible" ref={canvasRef} />
+          <FadeShaderCanvas {...props} {...props2} source={canvasRef} />
+        </>
+      );
+    } else {
+      return <canvas {...props} {...props2} ref={canvasRef} />;
+    }
   };
 }
