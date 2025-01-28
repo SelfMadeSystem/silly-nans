@@ -65,6 +65,20 @@ export default function ShadowDomEditor() {
 
   const [selectedPreset, setSelectedPreset] = useState<Preset | undefined>();
 
+  function saveToStorage() {
+    const data = { html, css, tailwind: tailwindEnabled };
+    localStorage.setItem('shadowDomData', JSON.stringify(data));
+    toast.success('Saved to local storage!');
+  }
+
+  function clearStorage() {
+    localStorage.removeItem('shadowDomData');
+    setHtml(DEFAULT_HTML);
+    setCss(DEFAULT_CSS);
+    setTailwindEnabled(false);
+    toast.success('Cleared local storage!');
+  }
+
   useEffect(() => {
     const NAN_URL = 'https://nan.shoghisimon.ca?id=';
     const urlParams = new URLSearchParams(window.location.search);
@@ -83,6 +97,16 @@ export default function ShadowDomEditor() {
         .catch(error => {
           console.error('Error fetching data:', error);
         });
+    } else {
+      const localData = localStorage.getItem('shadowDomData');
+      if (localData) {
+        const parsedData = JSON.parse(localData);
+        setHtml(parsedData.html);
+        setCss(parsedData.css);
+        if ('tailwind' in parsedData) {
+          setTailwindEnabled(!!parsedData.tailwind);
+        }
+      }
     }
 
     let saveCounter = 0;
@@ -283,6 +307,18 @@ export default function ShadowDomEditor() {
           onClick={() => setTailwindEnabled(!tailwindEnabled)}
         >
           {tailwindEnabled ? 'Disable Tailwind' : 'Enable Tailwind'}
+        </button>
+        <button
+          className="mx-auto block w-32 rounded bg-blue-500 py-2 text-white"
+          onClick={saveToStorage}
+        >
+          Save
+        </button>
+        <button
+          className="mx-auto block w-32 rounded bg-blue-500 py-2 text-white"
+          onClick={clearStorage}
+        >
+          Clear
         </button>
       </div>
       <p className="mx-auto mt-5 max-w-3xl text-center">
