@@ -1,4 +1,4 @@
-import { MonacoContext, MonacoEditor, MonacoProvider } from './MonacoEditor';
+import { MonacoContext, MonacoEditor } from './MonacoEditor';
 import {
   DEFAULT_CSS,
   DEFAULT_HTML,
@@ -80,6 +80,24 @@ export default function ShadowDomEditor() {
   }
 
   useEffect(() => {
+    const ctrlS = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+
+        saveToStorage();
+      }
+    };
+
+    const controller = new AbortController();
+
+    document.addEventListener('keydown', ctrlS, { signal: controller.signal });
+
+    return () => {
+      controller.abort();
+    };
+  }, [html, css, tailwindEnabled]);
+
+  useEffect(() => {
     const NAN_URL = 'https://nan.shoghisimon.ca?id=';
     const urlParams = new URLSearchParams(window.location.search);
     const idName = urlParams.get('id');
@@ -108,20 +126,6 @@ export default function ShadowDomEditor() {
         }
       }
     }
-
-    const ctrlS = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key === 's') {
-        e.preventDefault();
-        
-        saveToStorage();
-      }
-    };
-
-    const { signal, abort } = new AbortController();
-
-    document.addEventListener('keydown', ctrlS, { signal });
-
-    return abort;
   }, []);
 
   const handlePresetChange = (preset: Preset) => {
