@@ -109,54 +109,17 @@ export default function ShadowDomEditor() {
       }
     }
 
-    let saveCounter = 0;
-    let resetTimeout: NodeJS.Timeout;
-
-    const saveMessages = (
-      [
-        ["Saving isn't supported.", 3],
-        ['Stop trying to save.', 2],
-        ['I told you, saving is not supported.', 2],
-        ['Seriously, stop.', 1],
-        ["You're not listening, are you?", 1],
-        ['Last warning.', 1],
-        ['Okay, you asked for it.', 1],
-        ['Goodbye.', 1],
-      ] as const
-    )
-      .map(([message, times]) => Array(times).fill(message))
-      .flat();
-
-    const resetSaveCounter = () => {
-      saveCounter = 0;
-    };
-
-    const preventCtrlS = (e: KeyboardEvent) => {
+    const ctrlS = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.key === 's') {
         e.preventDefault();
-
-        if (saveCounter < saveMessages.length) {
-          toast.error(saveMessages[saveCounter]);
-          saveCounter++;
-        }
-
-        if (saveCounter >= saveMessages.length) {
-          setTimeout(() => {
-            // Evil since it also removes the state of the app lol
-            // Very ironic since saving is disabled
-            window.location.href =
-              'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
-          }, 1000);
-        }
-
-        clearTimeout(resetTimeout);
-        resetTimeout = setTimeout(resetSaveCounter, 20000);
+        
+        saveToStorage();
       }
     };
 
     const { signal, abort } = new AbortController();
 
-    document.addEventListener('keydown', preventCtrlS, { signal });
+    document.addEventListener('keydown', ctrlS, { signal });
 
     return abort;
   }, []);
