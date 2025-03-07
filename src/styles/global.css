@@ -1,9 +1,75 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
-:root {
-  --bg-dot-grid-alpha: 1;
+@config '../../tailwind.config.ts';
+
+@theme {
+  --animation-backdrop-hue-rotate: backdrop-hue-rotate 20s linear infinite;
+
+  @keyframes backdrop-hue-rotate {
+    from {
+      --tw-animate-backdrop-hue-rotate: 0deg;
+    }
+    to {
+      --tw-animate-backdrop-hue-rotate: 360deg;
+    }
+  }
+
+  --fade-size-1: 0.25em;
+  --fade-size-2: 0.5em;
+  --fade-size-4: 1em;
+  --fade-size-8: 2em;
+  --fade-size-12: 3em;
+  --fade-size-16: 4em;
+  --fade-size-xs: var(--fade-size-1);
+  --fade-size-sm: var(--fade-size-2);
+  --fade-size-base: var(--fade-size-4);
+  --fade-size-lg: var(--fade-size-8);
+  --fade-size-xl: var(--fade-size-12);
+}
+
+@utility animate-backdrop-hue-rotate {
+  animation: backdrop-hue-rotate 20s linear infinite;
+  --tw-backdrop-hue-rotate: hue-rotate(var(--tw-animate-backdrop-hue-rotate));
+}
+
+@utility fade-t {
+  mask: linear-gradient(to bottom, transparent 0%, black var(--fade-size-base));
+}
+
+@utility fade-t-* {
+  mask: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black --value(--fade-size- *)
+  );
+}
+
+@utility fade-b {
+  mask: linear-gradient(to top, transparent 0%, black var(--fade-size-base));
+}
+
+@utility fade-b-* {
+  mask: linear-gradient(to top, transparent 0%, black --value(--fade-size- *));
+}
+
+@utility fade-y {
+  mask: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black var(--fade-size-base),
+    black calc(100% - var(--fade-size-base)),
+    transparent 100%
+  );
+}
+
+@utility fade-y-* {
+  mask: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black --value(--fade-size- *),
+    black calc(100% - --value(--fade-size- *)),
+    transparent 100%
+  );
 }
 
 @property --tw-animate-backdrop-hue-rotate {
@@ -12,7 +78,11 @@
   initial-value: 0deg;
 }
 
-/* Remove scrollbar on all browsers */
+:root {
+  --bg-dot-grid-alpha: 1;
+}
+
+/* Remove scrollbar on all browsers*/
 .scrollbar-hidden {
   scrollbar-width: none;
   -ms-overflow-style: none;

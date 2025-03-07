@@ -315,7 +315,7 @@ export default function BlobBg({
               Count:
               <input
                 type="number"
-                className="rounded-t-lg border-2 bg-transparent p-1 outline-none"
+                className="rounded-t-lg border-2 bg-transparent p-1 outline-hidden"
                 defaultValue={count}
                 onChange={e => setCount(parseInt(e.target.value))}
               />
@@ -324,7 +324,7 @@ export default function BlobBg({
               Min Width:
               <input
                 type="number"
-                className="border-2 bg-transparent p-1 outline-none"
+                className="border-2 bg-transparent p-1 outline-hidden"
                 defaultValue={minWidth}
                 onChange={e => setMinWidth(parseInt(e.target.value))}
               />
@@ -333,7 +333,7 @@ export default function BlobBg({
               Max Width:
               <input
                 type="number"
-                className="border-2 bg-transparent p-1 outline-none"
+                className="border-2 bg-transparent p-1 outline-hidden"
                 defaultValue={maxWidth}
                 onChange={e => setMaxWidth(parseInt(e.target.value))}
               />
@@ -342,7 +342,7 @@ export default function BlobBg({
               Min Height:
               <input
                 type="number"
-                className="border-2 bg-transparent p-1 outline-none"
+                className="border-2 bg-transparent p-1 outline-hidden"
                 defaultValue={minHeight}
                 onChange={e => setMinHeight(parseInt(e.target.value))}
               />
@@ -351,7 +351,7 @@ export default function BlobBg({
               Max Height:
               <input
                 type="number"
-                className="border-2 bg-transparent p-1 outline-none"
+                className="border-2 bg-transparent p-1 outline-hidden"
                 defaultValue={maxHeight}
                 onChange={e => setMaxHeight(parseInt(e.target.value))}
               />
@@ -360,7 +360,7 @@ export default function BlobBg({
               Animation Duration:
               <input
                 type="number"
-                className="border-2 bg-transparent p-1 outline-none"
+                className="border-2 bg-transparent p-1 outline-hidden"
                 defaultValue={animDur}
                 onChange={e => setAnimDur(parseInt(e.target.value))}
               />
@@ -369,7 +369,7 @@ export default function BlobBg({
               Min Speed X:
               <input
                 type="number"
-                className="border-2 bg-transparent p-1 outline-none"
+                className="border-2 bg-transparent p-1 outline-hidden"
                 defaultValue={minSpeedX}
                 onChange={e => setMinSpeedX(parseInt(e.target.value))}
               />
@@ -378,7 +378,7 @@ export default function BlobBg({
               Max Speed X:
               <input
                 type="number"
-                className="border-2 bg-transparent p-1 outline-none"
+                className="border-2 bg-transparent p-1 outline-hidden"
                 defaultValue={maxSpeedX}
                 onChange={e => setMaxSpeedX(parseInt(e.target.value))}
               />
@@ -387,7 +387,7 @@ export default function BlobBg({
               Min Speed Y:
               <input
                 type="number"
-                className="border-2 bg-transparent p-1 outline-none"
+                className="border-2 bg-transparent p-1 outline-hidden"
                 defaultValue={minSpeedY}
                 onChange={e => setMinSpeedY(parseInt(e.target.value))}
               />
@@ -396,7 +396,7 @@ export default function BlobBg({
               Max Speed Y:
               <input
                 type="number"
-                className="border-2 bg-transparent p-1 outline-none"
+                className="border-2 bg-transparent p-1 outline-hidden"
                 defaultValue={maxSpeedY}
                 onChange={e => setMaxSpeedY(parseInt(e.target.value))}
               />
@@ -405,7 +405,7 @@ export default function BlobBg({
               Time:
               <input
                 type="number"
-                className="border-2 bg-transparent p-1 outline-none"
+                className="border-2 bg-transparent p-1 outline-hidden"
                 defaultValue={time}
                 onChange={e => setTime(parseInt(e.target.value))}
               />
@@ -414,7 +414,7 @@ export default function BlobBg({
               Min Gradient Width:
               <input
                 type="number"
-                className="border-2 bg-transparent p-1 outline-none"
+                className="border-2 bg-transparent p-1 outline-hidden"
                 defaultValue={minGradientWidth}
                 onChange={e => setMinGradientWidth(parseInt(e.target.value))}
               />
@@ -423,7 +423,7 @@ export default function BlobBg({
               Max Gradient Width:
               <input
                 type="number"
-                className="border-2 bg-transparent p-1 outline-none"
+                className="border-2 bg-transparent p-1 outline-hidden"
                 defaultValue={maxGradientWidth}
                 onChange={e => setMaxGradientWidth(parseInt(e.target.value))}
               />
@@ -432,7 +432,7 @@ export default function BlobBg({
               Min Gradient Height:
               <input
                 type="number"
-                className="border-2 bg-transparent p-1 outline-none"
+                className="border-2 bg-transparent p-1 outline-hidden"
                 defaultValue={minGradientHeight}
                 onChange={e => setGradientHeight(parseInt(e.target.value))}
               />
@@ -441,7 +441,7 @@ export default function BlobBg({
               Max Gradient Height:
               <input
                 type="number"
-                className="border-2 bg-transparent p-1 outline-none"
+                className="border-2 bg-transparent p-1 outline-hidden"
                 defaultValue={maxGradientHeight}
                 onChange={e => setMaxGradientHeight(parseInt(e.target.value))}
               />
@@ -450,7 +450,7 @@ export default function BlobBg({
               Color:
               <input
                 type="text"
-                className="rounded-b-lg border-2 bg-transparent p-1 outline-none"
+                className="rounded-b-lg border-2 bg-transparent p-1 outline-hidden"
                 defaultValue={color}
                 onChange={e => setColor(e.target.value)}
               />

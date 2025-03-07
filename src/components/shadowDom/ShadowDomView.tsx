@@ -26,7 +26,7 @@ export default function Home() {
       </h1>
       <button
         onClick={paste}
-        className="mx-auto block w-20 rounded bg-blue-500 py-2 text-white"
+        className="mx-auto block w-20 rounded-xs bg-blue-500 py-2 text-white"
       >
         {pasted ? 'Pasted!' : 'Paste'}
       </button>

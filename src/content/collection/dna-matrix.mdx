@@ -7,18 +7,21 @@ source: 'https://github.com/SelfMadeSystem/silly-nans/blob/main/src/components/M
 fullWidth: true
 isBackground: true
 darkMode: true
-headerClasses: 'bf-bg-dot before:backdrop-blur-lg before:backdrop-brightness-[4] before:animate-backdrop-hue-rotate before:fade-b'
-contentClasses: 'bf-bg-dot before:backdrop-blur-lg before:backdrop-brightness-[4] before:animate-backdrop-hue-rotate before:fade-y'
-footerClasses: 'bf-bg-dot before:backdrop-blur-[3px] before:backdrop-brightness-[2] before:fade-t-xl'
+headerClasses: 'bf-bg-dot before:backdrop-blur-lg before:backdrop-brightness-400 before:animate-backdrop-hue-rotate before:fade-b'
+contentClasses: 'bf-bg-dot before:backdrop-blur-lg before:backdrop-brightness-400 before:animate-backdrop-hue-rotate before:fade-y'
+footerClasses: 'bf-bg-dot before:backdrop-blur-[3px] before:backdrop-brightness-200 before:fade-t-xl'
 ---
 
 import MatrixHelix from '../../components/MatrixHelix';
 
-<div class="mx-auto w-fit max-w-xl rounded-xl p-4 text-white bf-bg-dot before:backdrop-blur-[3px] before:backdrop-brightness-[2] fade-y">
-  I made this DNA matrix effect for an initial version of the [UdeMHacks](https://udemhacks.com/) website. We ended up
-  not using it, but I still think it looks cool. It uses two layers of matrix effects, one for the darker "behind" part
-  and one for the lighter "in front" part. The helix shape is set as the clip path, and the matrix effect is applied to
-  the whole thing. I add some moving offset to the matrix effect to make it look like the helix is spinning.
+<div class="bf-bg-dot fade-y mx-auto w-fit max-w-xl rounded-xl p-4 text-white before:backdrop-blur-[3px] before:backdrop-brightness-200">
+  I made this DNA matrix effect for an initial version of the
+  [UdeMHacks](https://udemhacks.com/) website. We ended up not using it, but I
+  still think it looks cool. It uses two layers of matrix effects, one for the
+  darker "behind" part and one for the lighter "in front" part. The helix shape
+  is set as the clip path, and the matrix effect is applied to the whole thing.
+  I add some moving offset to the matrix effect to make it look like the helix
+  is spinning.
 </div>
 
 <div class="absolute inset-0 -z-10 bg-black">

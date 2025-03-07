@@ -178,7 +178,7 @@ export default function ShadowDomEditor() {
     <div className="mx-auto flex flex-col justify-center gap-4 text-white">
       <div className="mx-auto flex w-fit max-w-3xl flex-row flex-wrap gap-8">
         <button
-          className="mx-auto block w-20 rounded bg-blue-500 py-2 text-white"
+          className="mx-auto block w-20 rounded-xs bg-blue-500 py-2 text-white"
           onClick={() => {
             navigator.clipboard.writeText(JSON.stringify(data));
             setCopied(true);
@@ -188,7 +188,7 @@ export default function ShadowDomEditor() {
           {copied ? 'Copied!' : 'Copy'}
         </button>
         <button
-          className="mx-auto block w-32 rounded bg-blue-500 py-2 text-white"
+          className="mx-auto block w-32 rounded-xs bg-blue-500 py-2 text-white"
           onClick={() => {
             const id = (
               window.prompt('Enter a unique ID for the data:') ?? ''
@@ -207,7 +207,7 @@ export default function ShadowDomEditor() {
           {copiedCli ? 'Copied!' : 'Copy CLI'}
         </button>
         <button
-          className="mx-auto block w-32 rounded bg-blue-500 py-2 text-white"
+          className="mx-auto block w-32 rounded-xs bg-blue-500 py-2 text-white"
           onClick={() => {
             navigator.clipboard.writeText(html ?? '');
             setCopiedHtml(true);
@@ -217,7 +217,7 @@ export default function ShadowDomEditor() {
           {copiedHtml ? 'Copied!' : 'Copy HTML'}
         </button>
         <button
-          className="mx-auto block w-28 rounded bg-blue-500 py-2 text-white"
+          className="mx-auto block w-28 rounded-xs bg-blue-500 py-2 text-white"
           onClick={() => {
             navigator.clipboard.writeText(css ?? '');
             setCopiedCss(true);
@@ -227,7 +227,7 @@ export default function ShadowDomEditor() {
           {copiedCss ? 'Copied!' : 'Copy CSS'}
         </button>
         <button
-          className="mx-auto block w-32 rounded bg-blue-500 py-2 text-white"
+          className="mx-auto block w-32 rounded-xs bg-blue-500 py-2 text-white"
           onClick={() => {
             navigator.clipboard.writeText(toBase64());
             setCopiedBase64(true);
@@ -237,7 +237,7 @@ export default function ShadowDomEditor() {
           {copiedBase64 ? 'Copied!' : 'Copy Base64'}
         </button>
         <button
-          className="mx-auto block rounded bg-blue-500 px-4 py-2 text-white"
+          className="mx-auto block rounded-xs bg-blue-500 px-4 py-2 text-white"
           onClick={() => rewriteCssWithDelay(css ?? '', 50)}
         >
           Rewrite CSS
@@ -248,7 +248,7 @@ export default function ShadowDomEditor() {
             const preset = PRESETS.find(p => p.name === e.target.value);
             if (preset) handlePresetChange(preset);
           }}
-          className="mx-auto block rounded border-2 border-blue-500 bg-transparent px-4 py-2 text-white outline-none"
+          className="mx-auto block rounded-xs border-2 border-blue-500 bg-transparent px-4 py-2 text-white outline-hidden"
         >
           <option value="" className="hidden">
             Presets
@@ -264,25 +264,25 @@ export default function ShadowDomEditor() {
           ))}
         </select>
         <button
-          className="mx-auto block w-32 rounded bg-blue-500 py-2 text-white"
+          className="mx-auto block w-32 rounded-xs bg-blue-500 py-2 text-white"
           onClick={() => setRunScripts(!runScripts)}
         >
           {runScripts ? "Run't scripts" : 'Run scripts'}
         </button>
         <button
-          className="mx-auto block w-48 rounded bg-blue-500 py-2 text-white"
+          className="mx-auto block w-48 rounded-xs bg-blue-500 py-2 text-white"
           onClick={() => setTailwindEnabled(!tailwindEnabled)}
         >
           {tailwindEnabled ? 'Disable Tailwind' : 'Enable Tailwind'}
         </button>
         <button
-          className="mx-auto block w-32 rounded bg-blue-500 py-2 text-white"
+          className="mx-auto block w-32 rounded-xs bg-blue-500 py-2 text-white"
           onClick={saveToStorage}
         >
           Save
         </button>
         <button
-          className="mx-auto block w-32 rounded bg-blue-500 py-2 text-white"
+          className="mx-auto block w-32 rounded-xs bg-blue-500 py-2 text-white"
           onClick={clearStorage}
         >
           Clear

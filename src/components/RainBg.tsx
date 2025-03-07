@@ -257,13 +257,13 @@ export default function RainBg({ options }: { options?: Options }) {
   return (
     <>
       <style>{css}</style>
-      <details className="mx-auto my-4 flex max-w-md flex-col rounded-lg p-4 text-white bf-bg-dot before:backdrop-blur-lg before:backdrop-brightness-[3] before:fade-y">
+      <details className="bf-bg-dot before:fade-y mx-auto my-4 flex max-w-md flex-col rounded-lg p-4 text-white before:backdrop-blur-lg before:backdrop-brightness-300">
         <summary>Options</summary>
         <label className="flex flex-row justify-between">
           Count:
           <input
             type="number"
-            className="rounded-t-lg border-2 bg-transparent p-1 outline-none"
+            className="rounded-t-lg border-2 bg-transparent p-1 outline-hidden"
             value={count}
             onChange={e => setCount(parseInt(e.target.value))}
           />
@@ -272,7 +272,7 @@ export default function RainBg({ options }: { options?: Options }) {
           Width:
           <input
             type="number"
-            className="border-2 bg-transparent p-1 outline-none"
+            className="border-2 bg-transparent p-1 outline-hidden"
             value={width}
             onChange={e => setWidth(parseInt(e.target.value))}
           />
@@ -281,7 +281,7 @@ export default function RainBg({ options }: { options?: Options }) {
           Min Height:
           <input
             type="number"
-            className="border-2 bg-transparent p-1 outline-none"
+            className="border-2 bg-transparent p-1 outline-hidden"
             value={minHeight}
             onChange={e => setMinHeight(parseInt(e.target.value))}
           />
@@ -290,7 +290,7 @@ export default function RainBg({ options }: { options?: Options }) {
           Max Height:
           <input
             type="number"
-            className="border-2 bg-transparent p-1 outline-none"
+            className="border-2 bg-transparent p-1 outline-hidden"
             value={maxHeight}
             onChange={e => setMaxHeight(parseInt(e.target.value))}
           />
@@ -299,7 +299,7 @@ export default function RainBg({ options }: { options?: Options }) {
           Animation Duration:
           <input
             type="number"
-            className="border-2 bg-transparent p-1 outline-none"
+            className="border-2 bg-transparent p-1 outline-hidden"
             value={animDur}
             onChange={e => setAnimDur(parseInt(e.target.value))}
           />
@@ -308,7 +308,7 @@ export default function RainBg({ options }: { options?: Options }) {
           Min Speed:
           <input
             type="number"
-            className="border-2 bg-transparent p-1 outline-none"
+            className="border-2 bg-transparent p-1 outline-hidden"
             value={minSpeed}
             onChange={e => setMinSpeed(parseInt(e.target.value))}
           />
@@ -317,7 +317,7 @@ export default function RainBg({ options }: { options?: Options }) {
           Max Speed:
           <input
             type="number"
-            className="border-2 bg-transparent p-1 outline-none"
+            className="border-2 bg-transparent p-1 outline-hidden"
             value={maxSpeed}
             onChange={e => setMaxSpeed(parseInt(e.target.value))}
           />
@@ -326,7 +326,7 @@ export default function RainBg({ options }: { options?: Options }) {
           Time:
           <input
             type="number"
-            className="border-2 bg-transparent p-1 outline-none"
+            className="border-2 bg-transparent p-1 outline-hidden"
             value={time}
             onChange={e => setTime(parseInt(e.target.value))}
           />
@@ -335,7 +335,7 @@ export default function RainBg({ options }: { options?: Options }) {
           Drop Width:
           <input
             type="number"
-            className="border-2 bg-transparent p-1 outline-none"
+            className="border-2 bg-transparent p-1 outline-hidden"
             value={dropWidth}
             onChange={e => setDropWidth(parseInt(e.target.value))}
           />
@@ -344,7 +344,7 @@ export default function RainBg({ options }: { options?: Options }) {
           Gradient Width:
           <input
             type="number"
-            className="border-2 bg-transparent p-1 outline-none"
+            className="border-2 bg-transparent p-1 outline-hidden"
             value={gradientWidth}
             onChange={e => setGradientWidth(parseInt(e.target.value))}
           />
@@ -353,7 +353,7 @@ export default function RainBg({ options }: { options?: Options }) {
           Gradient Height:
           <input
             type="number"
-            className="border-2 bg-transparent p-1 outline-none"
+            className="border-2 bg-transparent p-1 outline-hidden"
             value={gradientHeight}
             onChange={e => setGradientHeight(parseInt(e.target.value))}
           />
@@ -362,13 +362,13 @@ export default function RainBg({ options }: { options?: Options }) {
           Color:
           <input
             type="text"
-            className="rounded-b-lg border-2 bg-transparent p-1 outline-none"
+            className="rounded-b-lg border-2 bg-transparent p-1 outline-hidden"
             value={color}
             onChange={e => setColor(e.target.value)}
           />
         </label>
       </details>
-      <details className="mx-auto my-4 flex max-w-md flex-col rounded-lg p-4 text-white bf-bg-dot before:backdrop-blur-lg before:backdrop-brightness-[3] before:fade-y">
+      <details className="bf-bg-dot before:fade-y mx-auto my-4 flex max-w-md flex-col rounded-lg p-4 text-white before:backdrop-blur-lg before:backdrop-brightness-300">
         <summary>Generated CSS</summary>
         {PrismSyntaxHighlighter && (
           <div className="scrollbar-hidden relative max-h-[75vh] overflow-auto">
@@ -382,7 +382,7 @@ export default function RainBg({ options }: { options?: Options }) {
           </div>
         )}
         <button
-          className="absolute right-8 top-12 mt-2 rounded-lg bg-blue-500/90 p-2 text-white"
+          className="absolute top-12 right-8 mt-2 rounded-lg bg-blue-500/90 p-2 text-white"
           onClick={copyToClipboard}
         >
           Copy CSS

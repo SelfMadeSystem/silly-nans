@@ -132,9 +132,6 @@ export function generateCircuit(width: number, height: number): Circuit {
       });
 
       if (possibleDirections.length === 0) {
-        if (path.length === 1) {
-          console.log("Failed to generate a circuit");
-        }
         break;
       }
 
