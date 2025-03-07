@@ -1,4 +1,4 @@
-import { loopAnimationFrame } from '../utils/abortable';
+import { loopAnimationFrame } from '../utils/loopAnimationFrame';
 import { useEffect, useRef, useState } from 'react';
 
 type ReturnType = {
@@ -10,7 +10,7 @@ type ReturnType = {
   mouseUp?: (e: MouseEvent, x: number, y: number) => void;
   touchStart?: (e: TouchEvent, x: number, y: number) => void;
   touchMove?: (e: TouchEvent, x: number, y: number) => void;
-  touchEnd?: (e: TouchEvent, x: number, y: number) => void
+  touchEnd?: (e: TouchEvent, x: number, y: number) => void;
   keyDown?: (e: KeyboardEvent) => void;
   keyUp?: (e: KeyboardEvent) => void;
   scroll?: (
@@ -105,7 +105,11 @@ export default function createCanvasComponent({
             (e: TouchEvent) => {
               const rect = canvas.getBoundingClientRect();
               const touch = e.touches[0];
-              result.touchStart!(e, touch.clientX - rect.left, touch.clientY - rect.top);
+              result.touchStart!(
+                e,
+                touch.clientX - rect.left,
+                touch.clientY - rect.top,
+              );
             },
             { signal },
           );
@@ -117,7 +121,11 @@ export default function createCanvasComponent({
             (e: TouchEvent) => {
               const rect = canvas.getBoundingClientRect();
               const touch = e.touches[0];
-              result.touchMove!(e, touch.clientX - rect.left, touch.clientY - rect.top);
+              result.touchMove!(
+                e,
+                touch.clientX - rect.left,
+                touch.clientY - rect.top,
+              );
             },
             { signal },
           );
@@ -129,7 +137,11 @@ export default function createCanvasComponent({
             (e: TouchEvent) => {
               const rect = canvas.getBoundingClientRect();
               const touch = e.changedTouches[0];
-              result.touchEnd!(e, touch.clientX - rect.left, touch.clientY - rect.top);
+              result.touchEnd!(
+                e,
+                touch.clientX - rect.left,
+                touch.clientY - rect.top,
+              );
             },
             { signal },
           );

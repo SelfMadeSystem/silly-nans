@@ -28,6 +28,8 @@
     "classnames": "^2.5.1",
     "dompurify": "^3.2.3",
     "emmet-monaco-es": "^5.5.0",
+    "eslint-plugin-react": "^7.37.4",
+    "eslint-plugin-react-hooks": "^5.2.0",
     "jsdom": "^25.0.1",
     "lit": "^3.2.1",
     "monaco-editor": "^0.52.2",

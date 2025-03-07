@@ -3,8 +3,7 @@
   "compilerOptions": {
     "strictNullChecks": true,
     "jsx": "react-jsx",
-    "moduleResolution": "nodenext",
     "jsxImportSource": "react"
   },
-  "exclude": ["nans-storage", "public"]
+  "exclude": ["dist", "node_modules", "public"]
 }
