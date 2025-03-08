@@ -430,45 +430,16 @@ export default function ShaderSlideshow({
     let downTime = 0;
     let downImageIndex = 0;
 
-    const handlePointerDown = (event: PointerEvent) => {
-      startX = event.clientX;
+    const handleStart = (clientX: number) => {
+      startX = clientX;
       downTime = Date.now();
       downImageIndex = currentImageIndex;
-
-      window.addEventListener('pointerup', handlePointerUp);
-      window.addEventListener('pointermove', handlePointerMove);
     };
 
-    const handlePointerUp = (event: PointerEvent) => {
-      window.removeEventListener('pointerup', handlePointerUp);
-      window.removeEventListener('pointermove', handlePointerMove);
-
-      if (startX === null) return;
-      const dx = event.clientX - startX;
-      const dt = Date.now() - downTime;
-      if (Math.abs(dx) < 50 && dt < 200) {
-        return;
-      }
-
-      if (dx > 0) {
-        setUserState({
-          transition: 1 - dx / width,
-          direction: -1,
-          held: false,
-        });
-      } else {
-        setUserState({
-          transition: -dx / width,
-          direction: 1,
-          held: false,
-        });
-      }
-    };
-
-    const handlePointerMove = (event: PointerEvent) => {
+    const handleMove = (clientX: number) => {
       if (startX === null) return;
       setDontAnimate(false);
-      const dx = event.clientX - startX;
+      const dx = clientX - startX;
 
       if (dx > 0) {
         setUserState({
@@ -489,10 +460,71 @@ export default function ShaderSlideshow({
       }
     };
 
+    const handleEnd = (clientX: number) => {
+      if (startX === null) return;
+      const dx = clientX - startX;
+      const dt = Date.now() - downTime;
+      if (Math.abs(dx) < 50 && dt < 200) {
+        return;
+      }
+
+      if (dx > 0) {
+        setUserState({
+          transition: 1 - dx / width,
+          direction: -1,
+          held: false,
+        });
+      } else {
+        setUserState({
+          transition: -dx / width,
+          direction: 1,
+          held: false,
+        });
+      }
+    };
+
+    const handlePointerDown = (event: PointerEvent) => {
+      handleStart(event.clientX);
+      window.addEventListener('pointerup', handlePointerUp);
+      window.addEventListener('pointermove', handlePointerMove);
+    };
+
+    const handlePointerMove = (event: PointerEvent) => {
+      handleMove(event.clientX);
+    };
+
+    const handlePointerUp = (event: PointerEvent) => {
+      handleEnd(event.clientX);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointermove', handlePointerMove);
+    };
+
+    const handleTouchStart = (event: TouchEvent) => {
+      if (event.touches.length === 1) {
+        handleStart(event.touches[0].clientX);
+        window.addEventListener('touchend', handleTouchEnd);
+        window.addEventListener('touchmove', handleTouchMove, {
+          passive: true,
+        });
+      }
+    };
+
+    const handleTouchMove = (event: TouchEvent) => {
+      handleMove(event.touches[0].clientX);
+    };
+
+    const handleTouchEnd = (event: TouchEvent) => {
+      handleEnd(event.changedTouches[0].clientX);
+      window.removeEventListener('touchend', handleTouchEnd);
+      window.removeEventListener('touchmove', handleTouchMove);
+    };
+
     canvas.addEventListener('pointerdown', handlePointerDown);
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: true });
 
     return () => {
       canvas.removeEventListener('pointerdown', handlePointerDown);
+      canvas.removeEventListener('touchstart', handleTouchStart);
     };
   }, [currentImageIndex, images.length]);
   //#endregion
