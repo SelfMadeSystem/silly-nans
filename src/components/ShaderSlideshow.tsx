@@ -2,13 +2,26 @@ import { useEffectIfFalsey } from '../utils/hooks';
 import { loopAnimationFrame } from '../utils/loopAnimationFrame';
 import { Vector2 } from '../utils/vec';
 import { useEffect, useRef, useState } from 'react';
+import { Pane } from 'tweakpane';
 
 export type ImageType = string | HTMLImageElement;
 
 export type ShaderSlideshowProps = {
   images: ImageType[];
-  duration?: number;
-  transitionDuration?: number;
+};
+
+export const initialConfig = {
+  duration: 5000,
+  transitionDuration: 1000,
+  intensity: { x: 0.1, y: 0.1 },
+  luminanceIntensity: 1,
+  noiseIntensity: 20,
+  offsetIn: { x: 0, y: 0 },
+  offsetOut: { x: 0, y: 0 },
+  zoomIn: { x: 1, y: 1 },
+  zoomOut: { x: 1, y: 1 },
+  rotationIn: 0,
+  rotationOut: 0,
 };
 
 const vertexShaderSource = /* glsl */ `
@@ -31,6 +44,19 @@ uniform float u_transitionTime;
 uniform vec2 u_canvasSize;
 varying vec2 v_texCoord;
 
+// Config
+uniform vec2 c_intensity;
+uniform float c_luminanceIntensity;
+uniform float c_noiseIntensity;
+uniform vec2 c_offsetIn;
+uniform vec2 c_offsetOut;
+uniform vec2 c_zoomIn;
+uniform vec2 c_zoomOut;
+uniform float c_rotationIn;
+uniform float c_rotationOut;
+
+#define PI 3.14159265359
+
 float rand(float n) {return fract(sin(n) * 43758.5453123);}
 
 float rand(vec2 n) { 
@@ -46,17 +72,42 @@ float noise(float p) {
 float noise(vec2 n) {
   const vec2 d = vec2(0.0, 1.0);
   vec2 b = floor(n), f = smoothstep(vec2(0.0), vec2(1.0), fract(n));
-  return mix(mix(rand(b), rand(b + d.yx), f.x), mix(rand(b + d.xy), rand(b + d.yy), f.x), f.y);
+  return mix(
+    mix(rand(b), rand(b + d.yx), f.x),
+    mix(rand(b + d.xy), rand(b + d.yy), f.x),
+    f.y
+  );
 }
 
-vec2 transformTexCoord(vec2 pos, float t, float intensity) {
+vec2 rotateAround(vec2 pos, vec2 center, float angle) {
+  float s = sin(angle);
+  float c = cos(angle);
+  vec2 translated = pos - center;
+  vec2 rotated = vec2(
+    translated.x * c - translated.y * s,
+    translated.x * s + translated.y * c
+  );
+  return rotated + center;
+}
+
+vec2 transformTexCoord(
+  vec2 pos,
+  float t,
+  float intensity,
+  vec2 coffset,
+  vec2 czoom,
+  float crotation
+) {
+    vec2 center = u_canvasSize * 0.5;
     vec2 turbulence = vec2(
-      noise(vec2(pos.x, pos.y) * 0.1),
-      noise(vec2(pos.x, pos.y + 1000.0) * 0.1)
+      noise(vec2(pos.x, pos.y) * c_intensity),
+      noise(vec2(pos.x, pos.y + 1000.0) * c_intensity)
     );
-    vec2 offset = (turbulence - 0.5) * 20.0 * intensity;
-    vec2 offsetTexCoord = pos + offset;
-    return mix(pos, offsetTexCoord, t);
+    vec2 offset = (turbulence - 0.5) * c_noiseIntensity * intensity;
+    vec2 offsetTexCoord = pos + offset + coffset;
+    offsetTexCoord = (offsetTexCoord - center) * czoom + center;
+    vec2 newPos = mix(pos, offsetTexCoord, t);
+    return rotateAround(newPos, center, mix(0.0, crotation, t));
 }
 
 float easeInOut(float t) {
@@ -110,10 +161,25 @@ void main() {
   vec4 ogColor1 = texture2D(u_texture1, texCoord1);
   vec4 ogColor2 = texture2D(u_texture2, texCoord2);
 
-  float intensity = luminance(ogColor1) + luminance(ogColor2);
+  float intensity = (luminance(ogColor1) + luminance(ogColor2)) * c_luminanceIntensity
+  + max(0.0, 1.0 - c_luminanceIntensity);
 
-  texCoord1 = transformTexCoord(texCoord1 * u_canvasSize, t, intensity) / u_canvasSize;
-  texCoord2 = transformTexCoord(texCoord2 * u_canvasSize, 1.0 - t, intensity) / u_canvasSize;
+  texCoord1 = transformTexCoord(
+    texCoord1 * u_canvasSize,
+    t,
+    intensity,
+    c_offsetOut,
+    c_zoomOut,
+    -c_rotationOut
+  ) / u_canvasSize;
+  texCoord2 = transformTexCoord(
+    texCoord2 * u_canvasSize,
+    1.0 - t,
+    intensity,
+    c_offsetIn,
+    c_zoomIn,
+    c_rotationIn
+  ) / u_canvasSize;
 
   texCoord1 = mirrorRepeat(texCoord1);
   texCoord2 = mirrorRepeat(texCoord2);
@@ -148,11 +214,10 @@ type UserInteractionState = {
 
 export default function ShaderSlideshow({
   images: sources,
-  duration = 5000,
-  transitionDuration = 1000,
   ...props
 }: ShaderSlideshowProps & React.HTMLAttributes<HTMLCanvasElement>) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [config] = useState(() => ({ ...initialConfig }));
   const [images, setImages] = useState<HTMLImageElement[]>([]);
   const [prevImageIndex, setPrevImageIndex] = useState(sources.length - 1);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -168,6 +233,185 @@ export default function ShaderSlideshow({
   useEffect(() => {
     loadImages(sources).then(setImages);
   }, [sources]);
+
+  useEffect(() => {
+    if (!gl || !program) return;
+    // setup tweakpane
+    const pane = new Pane();
+
+    //#region Config
+    const conf = pane.addFolder({ title: 'Shader Slideshow' });
+
+    conf.addBinding(config, 'duration', {
+      label: 'Duration',
+      min: 0,
+    });
+    conf.addBinding(config, 'transitionDuration', {
+      label: 'Transition Duration',
+      min: 0,
+    });
+    conf
+      .addBinding(config, 'intensity', {
+        label: 'Intensity',
+        x: { min: 0, max: 10 },
+        y: { min: 0, max: 10 },
+      })
+      .on('change', ({ value }) => {
+        gl.useProgram(program);
+        gl.uniform2fv(gl.getUniformLocation(program, 'c_intensity'), [
+          value.x,
+          value.y,
+        ]);
+      });
+    conf
+      .addBinding(config, 'luminanceIntensity', {
+        label: 'Luminance Intensity',
+        min: 0,
+      })
+      .on('change', ({ value }) => {
+        gl.useProgram(program);
+        gl.uniform1f(
+          gl.getUniformLocation(program, 'c_luminanceIntensity'),
+          value,
+        );
+      });
+    conf
+      .addBinding(config, 'noiseIntensity', {
+        label: 'Noise Intensity',
+        min: 0,
+      })
+      .on('change', ({ value }) => {
+        gl.useProgram(program);
+        gl.uniform1f(gl.getUniformLocation(program, 'c_noiseIntensity'), value);
+      });
+    conf
+      .addBinding(config, 'offsetIn', {
+        label: 'Offset In',
+      })
+      .on('change', ({ value }) => {
+        gl.useProgram(program);
+        gl.uniform2fv(gl.getUniformLocation(program, 'c_offsetIn'), [
+          value.x,
+          value.y,
+        ]);
+      });
+    conf
+      .addBinding(config, 'offsetOut', {
+        label: 'Offset Out',
+      })
+      .on('change', ({ value }) => {
+        gl.useProgram(program);
+        gl.uniform2fv(gl.getUniformLocation(program, 'c_offsetOut'), [
+          value.x,
+          value.y,
+        ]);
+      });
+    conf
+      .addBinding(config, 'zoomIn', {
+        label: 'Zoom In',
+      })
+      .on('change', ({ value }) => {
+        gl.useProgram(program);
+        gl.uniform2fv(gl.getUniformLocation(program, 'c_zoomIn'), [
+          value.x,
+          value.y,
+        ]);
+      });
+    conf
+      .addBinding(config, 'zoomOut', {
+        label: 'Zoom Out',
+      })
+      .on('change', ({ value }) => {
+        gl.useProgram(program);
+        gl.uniform2fv(gl.getUniformLocation(program, 'c_zoomOut'), [
+          value.x,
+          value.y,
+        ]);
+      });
+    conf
+      .addBinding(config, 'rotationIn', {
+        label: 'Rotation In',
+        min: -2 * Math.PI,
+        max: 2 * Math.PI,
+      })
+      .on('change', ({ value }) => {
+        gl.useProgram(program);
+        gl.uniform1f(gl.getUniformLocation(program, 'c_rotationIn'), value);
+      });
+    conf
+      .addBinding(config, 'rotationOut', {
+        label: 'Rotation Out',
+        min: -2 * Math.PI,
+        max: 2 * Math.PI,
+      })
+      .on('change', ({ value }) => {
+        gl.useProgram(program);
+        gl.uniform1f(gl.getUniformLocation(program, 'c_rotationOut'), value);
+      });
+    //#endregion
+
+    //#region Presets
+    const presets = pane.addFolder({ title: 'Presets', expanded: false });
+    presets.addButton({ title: 'Default' }).on('click', () => {
+      Object.assign(config, initialConfig);
+      pane.refresh();
+    });
+    presets.addButton({ title: 'Move' }).on('click', () => {
+      Object.assign(config, {
+        offsetIn: { x: -200, y: 50 },
+        offsetOut: { x: 200, y: -50 },
+      });
+      pane.refresh();
+    });
+    presets.addButton({ title: 'Move Opposite' }).on('click', () => {
+      Object.assign(config, {
+        offsetIn: { x: -200, y: 50 },
+        offsetOut: { x: -200, y: 50 },
+      });
+      pane.refresh();
+    });
+    presets.addButton({ title: 'Zoom' }).on('click', () => {
+      Object.assign(config, {
+        zoomIn: { x: 0.5, y: 0.5 },
+        zoomOut: { x: 2, y: 2 },
+      });
+      pane.refresh();
+    });
+    presets.addButton({ title: 'Rotate' }).on('click', () => {
+      Object.assign(config, {
+        rotationIn: Math.PI / 2,
+        rotationOut: Math.PI / 2,
+      });
+      pane.refresh();
+    });
+    presets.addButton({ title: 'Vertical Stripes' }).on('click', () => {
+      Object.assign(config, {
+        intensity: { x: 0.5, y: 0.1 },
+      });
+      pane.refresh();
+    });
+    presets.addButton({ title: 'Horizontal Stripes' }).on('click', () => {
+      Object.assign(config, {
+        intensity: { x: 0.1, y: 0.5 },
+      });
+      pane.refresh();
+    });
+    presets.addButton({ title: 'Wobble' }).on('click', () => {
+      Object.assign(config, {
+        intensity: { x: 0.05, y: 0.05 },
+        noiseIntensity: 100,
+      });
+      pane.refresh();
+    });
+    presets.addButton({ title: 'Noise' }).on('click', () => {
+      Object.assign(config, {
+        intensity: { x: 1.0, y: 1.0 },
+        noiseIntensity: 100,
+      });
+      pane.refresh();
+    });
+    //#endregion
+  }, [config, gl, program]);
 
   useEffectIfFalsey(() => {
     const canvas = canvasRef.current;
@@ -269,6 +513,45 @@ export default function ShaderSlideshow({
 
     setTexture1(texture1);
     setTexture2(texture2);
+
+    // set default config
+    gl.useProgram(program);
+    gl.uniform2fv(gl.getUniformLocation(program, 'c_intensity'), [
+      config.intensity.x,
+      config.intensity.y,
+    ]);
+    gl.uniform1f(
+      gl.getUniformLocation(program, 'c_luminanceIntensity'),
+      config.luminanceIntensity,
+    );
+    gl.uniform1f(
+      gl.getUniformLocation(program, 'c_noiseIntensity'),
+      config.noiseIntensity,
+    );
+    gl.uniform2fv(gl.getUniformLocation(program, 'c_offsetIn'), [
+      config.offsetIn.x,
+      config.offsetIn.y,
+    ]);
+    gl.uniform2fv(gl.getUniformLocation(program, 'c_offsetOut'), [
+      config.offsetOut.x,
+      config.offsetOut.y,
+    ]);
+    gl.uniform2fv(gl.getUniformLocation(program, 'c_zoomIn'), [
+      config.zoomIn.x,
+      config.zoomIn.y,
+    ]);
+    gl.uniform2fv(gl.getUniformLocation(program, 'c_zoomOut'), [
+      config.zoomOut.x,
+      config.zoomOut.y,
+    ]);
+    gl.uniform1f(
+      gl.getUniformLocation(program, 'c_rotationIn'),
+      config.rotationIn,
+    );
+    gl.uniform1f(
+      gl.getUniformLocation(program, 'c_rotationOut'),
+      config.rotationOut,
+    );
   }, [gl]);
   //#endregion
 
@@ -343,6 +626,7 @@ export default function ShaderSlideshow({
   //#region Transition
   useEffect(() => {
     if (!gl || !program || !texture1 || !texture2) return;
+    const { duration, transitionDuration } = config;
     const controller = new AbortController();
     const { signal } = controller;
 
@@ -417,15 +701,14 @@ export default function ShaderSlideshow({
   }, [
     canvasSize.x,
     canvasSize.y,
+    config,
     currentImageIndex,
     dontAnimate,
-    duration,
     gl,
     images.length,
     program,
     texture1,
     texture2,
-    transitionDuration,
     userState,
   ]);
   //#endregion
