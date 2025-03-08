@@ -130,6 +130,12 @@ function loadImages(sources: ImageType[]): Promise<HTMLImageElement[]> {
   );
 }
 
+type UserInteractionState = {
+  transition: number;
+  direction: 1 | -1;
+  held: boolean;
+};
+
 export default function ShaderSlideshow({
   images: sources,
   duration = 5000,
@@ -145,6 +151,8 @@ export default function ShaderSlideshow({
   const [program, setProgram] = useState<WebGLProgram | null>(null);
   const [texture1, setTexture1] = useState<WebGLTexture | null>(null);
   const [texture2, setTexture2] = useState<WebGLTexture | null>(null);
+  const [userState, setUserState] = useState<UserInteractionState | null>(null);
+  const [dontAnimate, setDontAnimate] = useState(false);
 
   //#region Load stuff
   useEffect(() => {
@@ -327,18 +335,36 @@ export default function ShaderSlideshow({
     const controller = new AbortController();
     const { signal } = controller;
 
-    let startTime = Date.now();
+    let elapsed = 0;
+    let prevTime = -1;
 
-    const render = () => {
-      const currentTime = Date.now();
-      const elapsedTime = currentTime - startTime;
+    if (userState) {
+      elapsed = userState.transition;
+    }
 
-      if (elapsedTime > transitionDuration) {
-        return false;
+    const render = (time: number) => {
+      if (prevTime === -1) {
+        prevTime = time;
       }
-      console.log(elapsedTime, transitionDuration);
+      const dt = time - prevTime;
+      prevTime = time;
 
-      const transitionTime = Math.min(elapsedTime / transitionDuration, 1);
+      if (!userState?.held) {
+        if (elapsed > 1) {
+          return false;
+        }
+        if (elapsed < 0) {
+          setDontAnimate(true);
+          setPrevImageIndex(currentImageIndex);
+          setCurrentImageIndex(
+            (currentImageIndex - 1 + images.length) % images.length,
+          );
+          return false;
+        }
+        elapsed += (dt / transitionDuration) * (userState?.direction ?? 1);
+      }
+
+      const transitionTime = Math.max(Math.min(elapsed, 1), 0);
 
       gl.useProgram(program);
 
@@ -362,12 +388,15 @@ export default function ShaderSlideshow({
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     };
 
-    loopAnimationFrame(render, { signal });
+    if (!dontAnimate) {
+      loopAnimationFrame(render, { signal });
+    }
 
     const timeout = setTimeout(() => {
       setPrevImageIndex(currentImageIndex);
       setCurrentImageIndex((currentImageIndex + 1) % images.length);
-      startTime = Date.now();
+      setDontAnimate(false);
+      setUserState(null);
     }, duration);
 
     return () => {
@@ -378,6 +407,7 @@ export default function ShaderSlideshow({
     canvasSize.x,
     canvasSize.y,
     currentImageIndex,
+    dontAnimate,
     duration,
     gl,
     images.length,
@@ -385,7 +415,86 @@ export default function ShaderSlideshow({
     texture1,
     texture2,
     transitionDuration,
+    userState,
   ]);
+  //#endregion
+
+  //#region User interaction
+  useEffect(() => {
+    if (!canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+    const width = canvas.width;
+
+    let startX: number | null = null;
+    let downTime = 0;
+    let downImageIndex = 0;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      startX = event.clientX;
+      downTime = Date.now();
+      downImageIndex = currentImageIndex;
+
+      window.addEventListener('pointerup', handlePointerUp);
+      window.addEventListener('pointermove', handlePointerMove);
+    };
+
+    const handlePointerUp = (event: PointerEvent) => {
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointermove', handlePointerMove);
+
+      if (startX === null) return;
+      const dx = event.clientX - startX;
+      const dt = Date.now() - downTime;
+      if (Math.abs(dx) < 50 && dt < 200) {
+        return;
+      }
+
+      if (dx > 0) {
+        setUserState({
+          transition: 1 - dx / width,
+          direction: -1,
+          held: false,
+        });
+      } else {
+        setUserState({
+          transition: -dx / width,
+          direction: 1,
+          held: false,
+        });
+      }
+    };
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (startX === null) return;
+      setDontAnimate(false);
+      const dx = event.clientX - startX;
+
+      if (dx > 0) {
+        setUserState({
+          transition: 1 - dx / width,
+          direction: -1,
+          held: true,
+        });
+        setPrevImageIndex((downImageIndex + images.length - 1) % images.length);
+        setCurrentImageIndex(downImageIndex);
+      } else {
+        setUserState({
+          transition: -dx / width,
+          direction: 1,
+          held: true,
+        });
+        setPrevImageIndex(downImageIndex);
+        setCurrentImageIndex((downImageIndex + 1) % images.length);
+      }
+    };
+
+    canvas.addEventListener('pointerdown', handlePointerDown);
+
+    return () => {
+      canvas.removeEventListener('pointerdown', handlePointerDown);
+    };
+  }, [currentImageIndex, images.length]);
   //#endregion
 
   return (
