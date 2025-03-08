@@ -31,13 +31,13 @@ uniform float u_transitionTime;
 uniform vec2 u_canvasSize;
 varying vec2 v_texCoord;
 
-float rand(float n){return fract(sin(n) * 43758.5453123);}
+float rand(float n) {return fract(sin(n) * 43758.5453123);}
 
 float rand(vec2 n) { 
   return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
 }
 
-float noise(float p){
+float noise(float p) {
   float fl = floor(p);
   float fc = fract(p);
   return mix(rand(fl), rand(fl + 1.0), fc);
@@ -93,6 +93,13 @@ float luminance(vec4 color) {
   return dot(color.rgb, vec3(0.299, 0.587, 0.114));
 }
 
+vec2 mirrorRepeat(vec2 coord) {
+  vec2 mirroredCoord = mod(coord, 2.0);
+  if (mirroredCoord.x > 1.0) mirroredCoord.x = 2.0 - mirroredCoord.x;
+  if (mirroredCoord.y > 1.0) mirroredCoord.y = 2.0 - mirroredCoord.y;
+  return mirroredCoord;
+}
+
 void main() {
   float progress = min(u_transitionTime, 1.0);
   float t = easeInOut(progress);
@@ -107,6 +114,9 @@ void main() {
 
   texCoord1 = transformTexCoord(texCoord1 * u_canvasSize, t, intensity) / u_canvasSize;
   texCoord2 = transformTexCoord(texCoord2 * u_canvasSize, 1.0 - t, intensity) / u_canvasSize;
+
+  texCoord1 = mirrorRepeat(texCoord1);
+  texCoord2 = mirrorRepeat(texCoord2);
 
   vec4 color1 = texture2D(u_texture1, texCoord1);
   vec4 color2 = texture2D(u_texture2, texCoord2);
@@ -247,6 +257,7 @@ export default function ShaderSlideshow({
 
     for (const texture of [texture1, texture2]) {
       gl.bindTexture(gl.TEXTURE_2D, texture);
+      // Can't repeat textures with non-power-of-two dimensions
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
