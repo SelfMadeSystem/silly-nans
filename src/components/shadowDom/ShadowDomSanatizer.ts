@@ -5,7 +5,7 @@ import safe from 'postcss-safe-parser';
 
 function sanitizeHtml(html: string) {
   const purify = dompurify();
-  
+
   // Remove links from style attributes
   purify.addHook('afterSanitizeAttributes', node => {
     if (node.hasAttribute('style')) {
@@ -65,19 +65,22 @@ export async function sanitize(data: unknown): Promise<ExportData> {
   if (!data) {
     throw new Error('Invalid data');
   }
-  if (!('html' in data) || !('css' in data) || !('properties' in data)) {
+  if (!('html' in data) || !('css' in data)) {
     throw new Error('Invalid data format');
   }
   if (typeof data.html !== 'string' || typeof data.css !== 'string') {
     throw new Error('Invalid data format');
   }
-  if (!Array.isArray(data.properties)) {
+  if ('properties' in data && !Array.isArray(data.properties)) {
     throw new Error('Invalid data format');
   }
 
   const sanitizedHtml = sanitizeHtml(data.html);
   const sanitizedCss = sanitizeCss(data.css);
-  const sanitizedProperties = sanitizeProperties(data.properties);
+  const sanitizedProperties =
+    'properties' in data
+      ? sanitizeProperties(data.properties as unknown[])
+      : [];
   return {
     ogCss: data.css,
     html: sanitizedHtml,
