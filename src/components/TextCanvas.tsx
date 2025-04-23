@@ -1,5 +1,4 @@
 import * as twgl from 'twgl.js';
-import { approxEquals, ceilMultiple } from '../utils/mathUtils';
 import { Vector2, Vector3 } from '../utils/vec';
 import createCanvasComponent from './CanvasComponent';
 import { Pane } from 'tweakpane';
@@ -8,6 +7,8 @@ import { Pane } from 'tweakpane';
 // for the concept behind how to draw thousands of circles in WebGL without a performance hit
 
 const defaultOptions = {
+  text: 'Hello World',
+  maxPoints: 10000,
   mouseRepel: 160.0,
   velocityInfluence: 10000.0,
   mouseRepelDistance: 100,
@@ -32,21 +33,33 @@ class PointsManager {
   public velocity: Array<Vector3>;
   public ogPoints: Array<Vector3>;
 
-  constructor(
-    drawFn: (ctx: CanvasRenderingContext2D) => void,
-    width: number,
-    height: number,
-  ) {
+  constructor(options: Options, width: number, height: number) {
     this.points = [];
     this.velocity = [];
     this.ogPoints = [];
-    this.populateFromPath(drawFn, width, height);
+    this.rethingOptions(options, width, height);
+  }
+
+  rethingOptions(options: Options, width: number, height: number) {
+    this.populateFromPath(
+      ctx => {
+        ctx.font = '160px Arial';
+        ctx.fillStyle = 'white';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(options.text, width / 2, height / 2);
+      },
+      width,
+      height,
+      options.maxPoints,
+    );
   }
 
   populateFromPath(
     drawFn: (ctx: CanvasRenderingContext2D) => void,
     width: number,
     height: number,
+    maxPoints: number,
   ) {
     const points = [];
 
@@ -75,19 +88,16 @@ class PointsManager {
         points.push(new Vector3(x, y, 1));
       }
     }
-    const maxPoints = 10000;
+
     if (points.length > maxPoints) {
-      const step = Math.floor(points.length / maxPoints);
-      const newPoints = [];
-      for (
-        let i = Math.floor(Math.random() * step);
-        i < points.length;
-        i += step
-      ) {
-        newPoints.push(points[i]);
+      // Fisher-Yates shuffle and take first maxPoints elements
+      // (random selection without replacement)
+      for (let i = points.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [points[i], points[j]] = [points[j], points[i]];
       }
-      points.length = 0;
-      points.push(...newPoints);
+      // Truncate to keep only the first maxPoints elements
+      points.length = maxPoints;
     }
 
     this.points = [...points];
@@ -166,8 +176,18 @@ class PointsManager {
         if (velocityMag > 1) {
           // Only consider significant movements
           const normVelocity = mouseVelocity.normalize();
-          forceX += normVelocity.x * force * velocityInfluence * dt * Math.sqrt(velocityMag);
-          forceY += normVelocity.y * force * velocityInfluence * dt * Math.sqrt(velocityMag);
+          forceX +=
+            normVelocity.x *
+            force *
+            velocityInfluence *
+            dt *
+            Math.sqrt(velocityMag);
+          forceY +=
+            normVelocity.y *
+            force *
+            velocityInfluence *
+            dt *
+            Math.sqrt(velocityMag);
         }
 
         velo[i] = new Vector3(velo[i].x + forceX, velo[i].y + forceY, 0);
@@ -219,6 +239,7 @@ const vs = /* glsl */ `
   attribute vec4 color;
   attribute vec4 position;
   attribute vec2 texcoord;
+  uniform vec2 u_resolution;
 
   varying vec2 v_texcoord;
   varying vec4 v_color;
@@ -229,7 +250,7 @@ const vs = /* glsl */ `
         
     v_texcoord = texcoord;
     v_color = color;
-    v_scale = 0.2;
+    v_scale = 50.0 / min(u_resolution.x, u_resolution.y);
   }`;
 
 const fs = /* glsl */ `
@@ -246,6 +267,7 @@ const fs = /* glsl */ `
   
   void main() {
     float c = circle(v_texcoord, v_scale);
+    if (c < 0.01) discard;
     gl_FragColor = v_color * c;
   }
   `;
@@ -279,19 +301,7 @@ export default createCanvasComponent({
     const programInfo = twgl.createProgramInfo(gl, [vs, fs]);
 
     function newLattice(options: Options) {
-      const path = new Path2D();
-      console.log(canvas.width, canvas.height);
-      return new PointsManager(
-        ctx => {
-          ctx.font = '160px Arial';
-          ctx.fillStyle = 'white';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText('Hello World', canvas.width / 2, canvas.height / 2);
-        },
-        canvas.width,
-        canvas.height,
-      );
+      return new PointsManager(options, canvas.width, canvas.height);
     }
 
     let lattice = newLattice(defaultOptions);
@@ -311,7 +321,25 @@ export default createCanvasComponent({
           expanded: false,
         });
 
-        // Add controls for all available options
+        optionsFolder
+          .addBinding(options, 'text', {
+            label: 'Text',
+          })
+          .on('change', () => {
+            lattice.rethingOptions(options, canvas.width, canvas.height);
+            pane.refresh();
+          });
+        optionsFolder
+          .addBinding(options, 'maxPoints', {
+            min: 1000,
+            max: 50000,
+            step: 1,
+            label: 'Max Points',
+          })
+          .on('change', () => {
+            lattice.rethingOptions(options, canvas.width, canvas.height);
+            pane.refresh();
+          });
         optionsFolder.addBinding(options, 'mouseRepel', {
           min: 0,
           max: 1000,
@@ -447,6 +475,9 @@ export default createCanvasComponent({
         twgl.setBuffersAndAttributes(gl, programInfo, bufferInfo);
 
         gl.useProgram(programInfo.program);
+        twgl.setUniforms(programInfo, {
+          u_resolution: [gl.canvas.width, gl.canvas.height],
+        });
 
         ext.drawArraysInstancedANGLE(gl.TRIANGLES, 0, 6, drawPoints.length);
       },
