@@ -9,7 +9,7 @@ import { Pane } from 'tweakpane';
 
 const defaultOptions = {
   mouseRepel: 160.0,
-  velocityInfluence: 24000.0,
+  velocityInfluence: 10000.0,
   mouseRepelDistance: 100,
   accel: 20.0,
   velocityDamp: 0.99,
@@ -107,14 +107,17 @@ class PointsManager {
     const result: Array<DrawableDot> = [];
 
     for (let i = 0; i < this.points.length; i++) {
+      const point = this.points[i];
+      const ogPoint = this.ogPoints[i];
+      const velocity = this.velocity[i];
       result.push({
-        x: this.points[i].x,
-        y: this.points[i].y,
+        x: point.x,
+        y: point.y,
         z: 1,
         alpha: 1,
-        r: this.points[i].x / canvasWidth,
-        g: this.points[i].y / canvasHeight,
-        b: this.points[i].z,
+        r: 1 - Math.abs(ogPoint.x - point.x) / 255,
+        g: 1 - Math.abs(ogPoint.y - point.y) / 255,
+        b: 1 - velocity.length() / 690,
       });
     }
 
@@ -163,8 +166,8 @@ class PointsManager {
         if (velocityMag > 1) {
           // Only consider significant movements
           const normVelocity = mouseVelocity.normalize();
-          forceX += normVelocity.x * force * velocityInfluence * dt;
-          forceY += normVelocity.y * force * velocityInfluence * dt;
+          forceX += normVelocity.x * force * velocityInfluence * dt * Math.sqrt(velocityMag);
+          forceY += normVelocity.y * force * velocityInfluence * dt * Math.sqrt(velocityMag);
         }
 
         velo[i] = new Vector3(velo[i].x + forceX, velo[i].y + forceY, 0);
@@ -323,7 +326,7 @@ export default createCanvasComponent({
         });
         optionsFolder.addBinding(options, 'velocityInfluence', {
           min: 0,
-          max: 100000,
+          max: 30000,
           step: 1,
           label: 'Velocity Influence',
         });
@@ -358,9 +361,9 @@ export default createCanvasComponent({
       presetsFolder.addButton({ title: 'Floaty' }).on('click', () => {
         Object.assign(options, {
           mouseRepel: 200.0,
-          velocityInfluence: 30000.0,
+          velocityInfluence: 5000.0,
           mouseRepelDistance: 150,
-          accel: 10.0,
+          accel: 8.0,
           velocityDamp: 0.995,
         });
         pane.refresh();
@@ -368,9 +371,9 @@ export default createCanvasComponent({
 
       presetsFolder.addButton({ title: 'Reactive' }).on('click', () => {
         Object.assign(options, {
-          mouseRepel: 300.0,
-          velocityInfluence: 40000.0,
-          mouseRepelDistance: 120,
+          mouseRepel: 1000.0,
+          velocityInfluence: 10000.0,
+          mouseRepelDistance: 200,
           accel: 30.0,
           velocityDamp: 0.98,
         });
@@ -391,7 +394,7 @@ export default createCanvasComponent({
       presetsFolder.addButton({ title: 'Chaotic' }).on('click', () => {
         Object.assign(options, {
           mouseRepel: 400.0,
-          velocityInfluence: 45000.0,
+          velocityInfluence: 30000.0,
           mouseRepelDistance: 200,
           accel: 15.0,
           velocityDamp: 0.992,
@@ -449,6 +452,10 @@ export default createCanvasComponent({
       },
 
       mouseMove(_e, x, y) {
+        mousePos = new Vector2(x, y);
+      },
+
+      touchMove(_e, x, y) {
         mousePos = new Vector2(x, y);
       },
 
