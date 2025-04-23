@@ -125,9 +125,9 @@ class PointsManager {
         y: point.y,
         z: 1,
         alpha: 1,
-        r: 1 - Math.abs(ogPoint.x - point.x) / 255,
-        g: 1 - Math.abs(ogPoint.y - point.y) / 255,
-        b: 1 - velocity.length() / 690,
+        r: 1,
+        g: 1,
+        b: 1,
       });
     }
 
