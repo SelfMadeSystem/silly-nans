@@ -451,19 +451,18 @@ export default createCanvasComponent({
         gl.clearColor(0, 0, 0, 0);
         gl.clear(gl.COLOR_BUFFER_BIT);
 
-        if (!mousePos || !prevMousePos) {
-          return;
+        if (mousePos && prevMousePos) {
+          mouseVelocity = mousePos.sub(prevMousePos).mult(1 / dt);
+          prevMousePos = mousePos.clone();
+
+          lattice.physics(
+            Math.min(1 / 30, dt / 1000),
+            mousePos,
+            mouseVelocity,
+            options,
+          );
         }
 
-        mouseVelocity = mousePos.sub(prevMousePos).mult(1 / dt);
-        prevMousePos = mousePos.clone();
-
-        lattice.physics(
-          Math.min(1 / 30, dt / 1000),
-          mousePos,
-          mouseVelocity,
-          options,
-        );
         const drawPoints = lattice.getDrawPoints(canvas, options);
 
         const x = (5 / canvas.width) * 2;
