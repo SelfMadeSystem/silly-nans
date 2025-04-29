@@ -11,6 +11,7 @@ const defaultOptions = {
   maxPoints: 10000,
   mouseRepel: 160.0,
   velocityInfluence: 10000.0,
+  randomInfluence: 0.1,
   mouseRepelDistance: 100,
   accel: 20.0,
   velocityDamp: 0.99,
@@ -153,7 +154,12 @@ class PointsManager {
   ) {
     const points = this.points;
     const velo = this.velocity;
-    const { mouseRepel, mouseRepelDistance, velocityInfluence } = options;
+    const {
+      mouseRepel,
+      mouseRepelDistance,
+      velocityInfluence,
+      randomInfluence,
+    } = options;
 
     // Scale factor for velocity influence
     const velocityMag = mouseVelocity.length();
@@ -181,13 +187,15 @@ class PointsManager {
             force *
             velocityInfluence *
             dt *
-            Math.sqrt(velocityMag);
+            Math.sqrt(velocityMag) *
+            (1 + randomInfluence - Math.random() * randomInfluence * 2);
           forceY +=
             normVelocity.y *
             force *
             velocityInfluence *
             dt *
-            Math.sqrt(velocityMag);
+            Math.sqrt(velocityMag) *
+            (1 + randomInfluence - Math.random() * randomInfluence * 2);
         }
 
         velo[i] = new Vector3(velo[i].x + forceX, velo[i].y + forceY, 0);
@@ -357,6 +365,12 @@ export default createCanvasComponent({
           max: 30000,
           step: 1,
           label: 'Velocity Influence',
+        });
+        optionsFolder.addBinding(options, 'randomInfluence', {
+          min: 0,
+          max: 2,
+          step: 0.01,
+          label: 'Random Influence',
         });
         optionsFolder.addBinding(options, 'accel', {
           min: 0,
