@@ -11,7 +11,7 @@ const defaultOptions = {
   maxPoints: 10000,
   mouseRepel: 160.0,
   velocityInfluence: 10000.0,
-  randomInfluence: 0.1,
+  randomInfluence: 0.4,
   mouseRepelDistance: 100,
   accel: 20.0,
   velocityDamp: 0.99,
@@ -121,13 +121,14 @@ class PointsManager {
       const point = this.points[i];
       const ogPoint = this.ogPoints[i];
       const velocity = this.velocity[i];
+      const dist = point.sub(ogPoint).length();
       result.push({
         x: point.x,
         y: point.y,
         z: 1,
         alpha: 1,
-        r: 1,
-        g: 1,
+        r: 1 - dist / 400,
+        g: 1 - velocity.length() / 800,
         b: 1,
       });
     }
@@ -316,8 +317,8 @@ export default createCanvasComponent({
 
     const options = { ...defaultOptions };
 
-    let mousePos = new Vector2(-99999, -99999);
-    let prevMousePos = new Vector2(-99999, -99999);
+    let mousePos: Vector2 | null = null;
+    let prevMousePos: Vector2 | null = null;
     let mouseVelocity = new Vector2(0, 0);
 
     {
@@ -450,6 +451,10 @@ export default createCanvasComponent({
         gl.clearColor(0, 0, 0, 0);
         gl.clear(gl.COLOR_BUFFER_BIT);
 
+        if (!mousePos || !prevMousePos) {
+          return;
+        }
+
         mouseVelocity = mousePos.sub(prevMousePos).mult(1 / dt);
         prevMousePos = mousePos.clone();
 
@@ -498,10 +503,16 @@ export default createCanvasComponent({
 
       mouseMove(_e, x, y) {
         mousePos = new Vector2(x, y);
+        if (!prevMousePos) {
+          prevMousePos = mousePos.clone();
+        }
       },
 
       touchMove(_e, x, y) {
         mousePos = new Vector2(x, y);
+        if (!prevMousePos) {
+          prevMousePos = mousePos.clone();
+        }
       },
 
       resize() {
