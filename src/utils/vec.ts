@@ -119,13 +119,27 @@ export class Vector3 {
 }
 
 export class Vector2 {
-  constructor(
-    public readonly x: number,
-    public readonly y: number,
-  ) {}
+  public readonly x: number;
+  public readonly y: number;
 
-  static fromAngle(angle: number): Vector2 {
-    return new Vector2(Math.cos(angle), Math.sin(angle));
+  constructor(
+    ...args: [number] | [number, number] | [{ x: number; y: number }]
+  ) {
+    if (args[0] instanceof Object) {
+      this.x = args[0].x;
+      this.y = args[0].y;
+      return;
+    }
+
+    this.x = args[0];
+    this.y = args[1] ?? args[0];
+  }
+
+  static fromAngle(angle: number, magnitude: number = 1): Vector2 {
+    return new Vector2(
+      Math.cos(angle) * magnitude,
+      Math.sin(angle) * magnitude,
+    );
   }
 
   add(other: Vector2): Vector2 {
@@ -136,20 +150,42 @@ export class Vector2 {
     return new Vector2(this.x - other.x, this.y - other.y);
   }
 
-  mult(x: number, y = x): Vector2 {
-    return new Vector2(this.x * x, this.y * y);
+  mult(x: number | Vector2, y?: number): Vector2 {
+    if (x instanceof Vector2) {
+      return new Vector2(this.x * x.x, this.y * x.y);
+    }
+    return new Vector2(this.x * x, this.y * (y ?? x));
   }
 
-  divide(x: number, y = x): Vector2 {
-    return new Vector2(this.x / x, this.y / y);
+  div(x: number | Vector2, y?: number): Vector2 {
+    if (x instanceof Vector2) {
+      return new Vector2(this.x / x.x, this.y / x.y);
+    }
+    return new Vector2(this.x / x, this.y / (y ?? x));
   }
 
   mod(other: Vector2): Vector2 {
     return new Vector2(mod(this.x, other.x), mod(this.y, other.y));
   }
 
+  directionTo(other: Vector2): Vector2 {
+    return other.sub(this).normalize();
+  }
+
+  isNaN(): boolean {
+    return isNaN(this.x) || isNaN(this.y);
+  }
+
   length(): number {
     return Math.sqrt(this.x * this.x + this.y * this.y);
+  }
+
+  setLength(length: number): Vector2 {
+    return this.normalize().mult(length);
+  }
+
+  lenSq(): number {
+    return this.x * this.x + this.y * this.y;
   }
 
   normalize(): Vector2 {
@@ -161,7 +197,7 @@ export class Vector2 {
     return this.x * other.x + this.y * other.y;
   }
 
-  rotateBy(rotation: number): Vector2 {
+  rotate(rotation: number): Vector2 {
     const cos = Math.cos(rotation);
     const sin = Math.sin(rotation);
     return new Vector2(
@@ -170,11 +206,19 @@ export class Vector2 {
     );
   }
 
+  cw90(): Vector2 {
+    return new Vector2(this.y, -this.x);
+  }
+
+  ccw90(): Vector2 {
+    return new Vector2(-this.y, this.x);
+  }
+
   setMag(magnitude: number): Vector2 {
     return this.normalize().mult(magnitude);
   }
 
-  heading(): number {
+  angle(): number {
     return Math.atan2(this.y, this.x);
   }
 
@@ -182,12 +226,44 @@ export class Vector2 {
     return this.sub(other).length();
   }
 
+  distSq(other: Vector2): number {
+    return this.sub(other).lenSq();
+  }
+
+  cross(other: Vector2): number {
+    return this.x * other.y - this.y * other.x;
+  }
+
+  isPerpendicular(other: Vector2): boolean {
+    return this.dot(other) === 0;
+  }
+
+  isParallel(other: Vector2): boolean {
+    return this.cross(other) === 0;
+  }
+
   angleTo(other: Vector2): number {
-    return other.sub(this).heading();
+    return other.sub(this).angle();
   }
 
   lerp(other: Vector2, amount: number): Vector2 {
     return this.add(other.sub(this).mult(amount));
+  }
+
+  avg(other: Vector2) {
+    return this.add(other).mult(0.5);
+  }
+
+  swap(): Vector2 {
+    return new Vector2(this.y, this.x);
+  }
+
+  abs(): Vector2 {
+    return new Vector2(Math.abs(this.x), Math.abs(this.y));
+  }
+
+  sign(): Vector2 {
+    return new Vector2(Math.sign(this.x), Math.sign(this.y));
   }
 
   to3(z: number = 0): Vector3 {
@@ -206,7 +282,7 @@ export class Vector2 {
     return this.x === other.x && this.y === other.y;
   }
 
-  a(): [number, number] {
+  get a(): [number, number] {
     return [this.x, this.y];
   }
 }

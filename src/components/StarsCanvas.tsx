@@ -1,7 +1,10 @@
 import * as twgl from 'twgl.js';
+import { useAnimationLoop } from '../utils/canvas/useAnimationLoop';
+import { useCanvas } from '../utils/canvas/useCanvas';
+import { useWindowEvent } from '../utils/canvas/useWindowEvent';
 import { ceilMultiple, clamp, lerp, mod } from '../utils/mathUtils';
 import { Vector2, Vector3 } from '../utils/vec';
-import createCanvasComponent from './CanvasComponent';
+import { useEffect, useRef, useState } from 'react';
 import { Pane } from 'tweakpane';
 
 // Credit to: https://webglfundamentals.org/webgl/lessons/webgl-qna-the-fastest-way-to-draw-many-circles.html
@@ -197,235 +200,263 @@ const fs = /* glsl */ `
   }
   `;
 
-export default createCanvasComponent({
-  props: {
-    style: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      width: '100%',
-      height: '100%',
+function newStarPlane(options: Options, canvas: HTMLCanvasElement) {
+  const margin = 50;
+  const offset = ceilMultiple(120, margin);
+  const count = Math.floor(
+    (canvas.width * canvas.height * options.density) / 1000,
+  );
+  return new StarPlane(
+    new Vector2(-offset, -offset),
+    ceilMultiple(canvas.width, margin) + offset * 2,
+    ceilMultiple(canvas.height, margin) + offset * 2,
+    count,
+  );
+}
+
+function StarsCanvas({ options }: { options: Options }) {
+  const [starPlane, setStarPlane] = useState<StarPlane | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const mousePosRef = useRef(new Vector2(0, 0));
+  const [targetMousePos, setTargetMousePos] = useState(new Vector2(0, 0));
+  const [programInfo, setProgramInfo] = useState<twgl.ProgramInfo | null>(null);
+  const [gl, canvas, setCanvas] = useCanvas({
+    autoResize: true,
+    contextId: 'webgl2',
+    setup(gl: WebGLRenderingContext, canvas: HTMLCanvasElement) {
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+      setProgramInfo(twgl.createProgramInfo(gl, [vs, fs]));
+
+      setStarPlane(newStarPlane(defaultOptions, canvas));
     },
-  },
-  autoResize: true,
-  setup(canvas) {
-    const gl = canvas.getContext('webgl');
-    if (!gl) {
-      throw new Error('WebGL not supported');
-    }
 
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    resize(gl: WebGLRenderingContext, canvas: HTMLCanvasElement) {
+      setStarPlane(newStarPlane(options, canvas));
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    },
+  });
 
-    const ext = gl.getExtension('ANGLE_instanced_arrays');
-    if (!ext) {
-      throw new Error('ANGLE_instanced_arrays not supported');
-    }
-    twgl.addExtensionsToContext(gl);
+  useAnimationLoop((dt, t) => {
+    if (!gl || !canvas || !programInfo || !starPlane) return;
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
 
-    const programInfo = twgl.createProgramInfo(gl, [vs, fs]);
+    const rect = canvas.getBoundingClientRect();
+    const scrollY = window.scrollY;
+    const percentY = scrollY / rect.height;
 
-    function newStarPlane(options: Options) {
-      const margin = 50;
-      const offset = ceilMultiple(120, margin);
-      const count = Math.floor(
-        (canvas.width * canvas.height * options.density) / 1000,
-      );
-      return new StarPlane(
-        new Vector2(-offset, -offset),
-        ceilMultiple(canvas.width, margin) + offset * 2,
-        ceilMultiple(canvas.height, margin) + offset * 2,
-        count,
-      );
-    }
-    let isMobile = false;
+    const lerpFactor = Math.pow(
+      isMobile ? options.mobileEase : options.mouseEase,
+      dt,
+    );
+    mousePosRef.current = mousePosRef.current.lerp(targetMousePos, lerpFactor);
 
-    let starPlane = newStarPlane(defaultOptions);
+    starPlane.physics(
+      t / 1000,
+      percentY,
+      -rect.top,
+      mousePosRef.current.div(rect.width, rect.height),
+      options,
+      isMobile,
+    );
+    const drawPoints = starPlane.getDrawPoints(
+      canvas,
+      t / 1000,
+      percentY,
+      options,
+    );
 
-    const options = { ...defaultOptions };
+    const maxSize = Math.max(options.minSize, options.maxSize);
+    const x = (maxSize / canvas.width) * 2;
+    const y = (maxSize / canvas.height) * 2;
 
-    let mousePos = new Vector2(0, 0);
-    let targetMousePos = new Vector2(0, 0);
-
-    {
-      const pane = new Pane({
-        title: 'Stars',
-        expanded: false,
-        container: document.getElementById('tl-pane')!,
-      });
-
-      pane
-        .addBinding(options, 'density', {
-          label: 'Density',
-          min: 0.1,
-          max: 1,
-        })
-        .on('change', () => {
-          starPlane = newStarPlane(options);
-        });
-      pane.addBinding(options, 'minSize', {
-        label: 'Min Size',
-        min: 0,
-        max: 10,
-      });
-      pane.addBinding(options, 'maxSize', {
-        label: 'Max Size',
-        min: 0.1,
-        max: 10,
-      });
-      pane.addBinding(options, 'zAmount', {
-        label: 'Z Amount',
-        min: 0.5,
-        max: 2,
-      });
-      pane.addBinding(options, 'scrollAmount', {
-        label: 'Scroll Amount',
-        min: 0,
-        max: 2,
-      });
-      pane.addBinding(options, 'shiftSpeedX', {
-        label: 'Shift Speed X',
-        min: 0,
-        max: 4,
-      });
-      pane.addBinding(options, 'shiftAmountX', {
-        label: 'Shift Amount X',
-        min: 0,
-        max: 100,
-      });
-      pane.addBinding(options, 'shiftAmountY', {
-        label: 'Shift Amount Y',
-        min: 0,
-        max: 500,
-      });
-      pane.addBinding(options, 'mouseShiftAmountX', {
-        label: 'Mouse Shift Amount X',
-        min: -100,
-        max: 100,
-      });
-      pane.addBinding(options, 'mouseShiftAmountY', {
-        label: 'Mouse Shift Amount Y',
-        min: -100,
-        max: 100,
-      });
-      pane.addBinding(options, 'touchShiftAmountX', {
-        label: 'Touch Shift Amount X',
-        min: -100,
-        max: 100,
-      });
-      pane.addBinding(options, 'touchShiftAmountY', {
-        label: 'Touch Shift Amount Y',
-        min: -100,
-        max: 100,
-      });
-      pane.addBinding(options, 'minVanishSpeed', {
-        label: 'Min Vanish Speed',
-        min: 0,
-        max: 4,
-      });
-      pane.addBinding(options, 'maxVanishSpeed', {
-        label: 'Max Vanish Speed',
-        min: 0,
-        max: 4,
-      });
-      pane.addBinding(options, 'vanishOffset', {
-        label: 'Vanish Offset',
-        min: 1,
-        max: 4,
-      });
-      pane.addBinding(options, 'vanishScrollSpeed', {
-        label: 'Vanish Scroll Speed',
-        min: 0,
-        max: 2,
-      });
-      pane.addBinding(options, 'mouseEase', {
-        label: 'Mouse Ease',
-        min: 0,
-        max: 1,
-      });
-      pane.addBinding(options, 'mobileEase', {
-        label: 'Mobile Ease',
-        min: 0,
-        max: 1,
-      });
-    }
-
-    return {
-      update(dt, t) {
-        gl.clearColor(0, 0, 0, 0);
-        gl.clear(gl.COLOR_BUFFER_BIT);
-
-        const rect = canvas.getBoundingClientRect();
-        const scrollY = window.scrollY;
-        const percentY = scrollY / rect.height;
-
-        const lerpFactor = Math.pow(isMobile ? options.mobileEase : options.mouseEase, dt);
-        mousePos = mousePos.lerp(targetMousePos, lerpFactor);
-
-        starPlane.physics(
-          t / 1000,
-          percentY,
-          -rect.top,
-          mousePos.divide(rect.width, rect.height),
-          options,
-          isMobile,
-        );
-        const drawPoints = starPlane.getDrawPoints(
-          canvas,
-          t / 1000,
-          percentY,
-          options,
-        );
-
-        const maxSize = Math.max(options.minSize, options.maxSize);
-        const x = (maxSize / canvas.width) * 2;
-        const y = (maxSize / canvas.height) * 2;
-
-        const bufferInfo = twgl.createBufferInfoFromArrays(gl, {
-          position: {
-            numComponents: 2,
-            data: [-x, -y, x, -y, -x, y, -x, y, x, -y, x, y],
-          },
-          texcoord: {
-            numComponents: 2,
-            data: [0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0],
-          },
-          color: {
-            numComponents: 4,
-            data: drawPoints.map(p => [p.r, p.g, p.b, p.alpha]).flat(),
-            divisor: 1,
-          },
-          pos: {
-            numComponents: 3,
-            data: drawPoints
-              .map(p => [p.x / canvas.width, p.y / canvas.height, p.z])
-              .flat(),
-            divisor: 1,
-          },
-        });
-        twgl.setBuffersAndAttributes(gl, programInfo, bufferInfo);
-
-        gl.useProgram(programInfo.program);
-
-        ext.drawArraysInstancedANGLE(gl.TRIANGLES, 0, 6, drawPoints.length);
+    const bufferInfo = twgl.createBufferInfoFromArrays(gl, {
+      position: {
+        numComponents: 2,
+        data: [-x, -y, x, -y, -x, y, -x, y, x, -y, x, y],
       },
-
-      mouseMove(_e, x, y) {
-        targetMousePos = new Vector2(x, y);
+      texcoord: {
+        numComponents: 2,
+        data: [0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0],
       },
-
-      touchStart() {
-        isMobile = true;
+      color: {
+        numComponents: 4,
+        data: drawPoints.map(p => [p.r, p.g, p.b, p.alpha]).flat(),
+        divisor: 1,
       },
-
-      touchMove(_e, x, y) {
-        targetMousePos = new Vector2(x, y);
+      pos: {
+        numComponents: 3,
+        data: drawPoints
+          .map(p => [p.x / canvas.width, p.y / canvas.height, p.z])
+          .flat(),
+        divisor: 1,
       },
+    });
+    twgl.setBuffersAndAttributes(gl, programInfo, bufferInfo);
 
-      resize() {
-        starPlane = newStarPlane(options);
-        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-      },
+    gl.useProgram(programInfo.program);
+
+    gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, drawPoints.length);
+  });
+
+  useEffect(() => {
+    if (!canvas) return;
+    setStarPlane(newStarPlane(options, canvas));
+  }, [canvas, options, options.density]);
+
+  useWindowEvent('mousemove', e => {
+    const rect = canvas?.getBoundingClientRect();
+    if (!rect) return;
+    setTargetMousePos(new Vector2(e.clientX - rect.left, e.clientY - rect.top));
+  });
+  useWindowEvent('touchstart', e => {
+    setIsMobile(true);
+  });
+  useWindowEvent('touchmove', e => {
+    const rect = canvas?.getBoundingClientRect();
+    if (!rect) return;
+    setTargetMousePos(
+      new Vector2(
+        e.touches[0].clientX - rect.left,
+        e.touches[0].clientY - rect.top,
+      ),
+    );
+  });
+
+  return (
+    <canvas
+      ref={setCanvas}
+      style={{
+        width: '100%',
+        height: '100%',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        zIndex: -1,
+      }}
+    />
+  );
+}
+
+export default function StarsCanvasWrapper() {
+  const [options] = useState<Options>({
+    ...defaultOptions,
+  });
+
+  useEffect(() => {
+    const pane = new Pane({
+      title: 'Stars',
+      expanded: false,
+      container: document.getElementById('tl-pane')!,
+    });
+
+    pane.addBinding(options, 'density', {
+      label: 'Density',
+      min: 0.1,
+      max: 1,
+    });
+    pane.addBinding(options, 'minSize', {
+      label: 'Min Size',
+      min: 0,
+      max: 10,
+    });
+    pane.addBinding(options, 'maxSize', {
+      label: 'Max Size',
+      min: 0.1,
+      max: 10,
+    });
+    pane.addBinding(options, 'zAmount', {
+      label: 'Z Amount',
+      min: 0.5,
+      max: 2,
+    });
+    pane.addBinding(options, 'scrollAmount', {
+      label: 'Scroll Amount',
+      min: 0,
+      max: 2,
+    });
+    pane.addBinding(options, 'shiftSpeedX', {
+      label: 'Shift Speed X',
+      min: 0,
+      max: 4,
+    });
+    pane.addBinding(options, 'shiftAmountX', {
+      label: 'Shift Amount X',
+      min: 0,
+      max: 100,
+    });
+    pane.addBinding(options, 'shiftAmountY', {
+      label: 'Shift Amount Y',
+      min: 0,
+      max: 500,
+    });
+    pane.addBinding(options, 'mouseShiftAmountX', {
+      label: 'Mouse Shift Amount X',
+      min: -100,
+      max: 100,
+    });
+    pane.addBinding(options, 'mouseShiftAmountY', {
+      label: 'Mouse Shift Amount Y',
+      min: -100,
+      max: 100,
+    });
+    pane.addBinding(options, 'touchShiftAmountX', {
+      label: 'Touch Shift Amount X',
+      min: -100,
+      max: 100,
+    });
+    pane.addBinding(options, 'touchShiftAmountY', {
+      label: 'Touch Shift Amount Y',
+      min: -100,
+      max: 100,
+    });
+    pane.addBinding(options, 'minVanishSpeed', {
+      label: 'Min Vanish Speed',
+      min: 0,
+      max: 4,
+    });
+    pane.addBinding(options, 'maxVanishSpeed', {
+      label: 'Max Vanish Speed',
+      min: 0,
+      max: 4,
+    });
+    pane.addBinding(options, 'vanishOffset', {
+      label: 'Vanish Offset',
+      min: 1,
+      max: 4,
+    });
+    pane.addBinding(options, 'vanishScrollSpeed', {
+      label: 'Vanish Scroll Speed',
+      min: 0,
+      max: 2,
+    });
+    pane.addBinding(options, 'mouseEase', {
+      label: 'Mouse Ease',
+      min: 0,
+      max: 1,
+    });
+    pane.addBinding(options, 'mobileEase', {
+      label: 'Mobile Ease',
+      min: 0,
+      max: 1,
+    });
+    pane
+      .addButton({
+        title: 'Reset',
+      })
+      .on('click', () => {
+        Object.assign(options, defaultOptions);
+        pane.refresh();
+      });
+
+    return () => {
+      pane.dispose();
     };
-  },
-});
+  }, [options]);
+
+  return <StarsCanvas options={options} />;
+}

@@ -3,10 +3,11 @@ import { useEffect, useRef } from 'react';
 /**
  * A custom hook that provides an animation loop using `requestAnimationFrame`.
  * It repeatedly calls the provided callback function with the time delta (`dt`)
- * between the current and the previous frame.
+ * between the current and the previous frame and the current time (`t`).
  *
  * @param callback - A function that is called on each animation frame. It receives
- *                   the time delta (`dt`) in milliseconds as its argument.
+ *                   the time delta (`dt`) in milliseconds as its argument and the
+ *                   current time (`t`) in milliseconds since the page load.
  *
  * @example
  * ```tsx
@@ -21,7 +22,7 @@ import { useEffect, useRef } from 'react';
  * - Make sure to memoize the `callback` function if it depends on external variables
  *   to avoid unnecessary re-renders or restarts of the animation loop.
  */
-export function useAnimationLoop(callback: (dt: number) => void) {
+export function useAnimationLoop(callback: (dt: number, t: number) => void) {
   const lastTimeRef = useRef<number>(performance.now());
   useEffect(() => {
     let animationFrameId: number;
@@ -30,7 +31,7 @@ export function useAnimationLoop(callback: (dt: number) => void) {
       const dt = time - lastTimeRef.current;
       lastTimeRef.current = time;
 
-      callback(dt);
+      callback(dt, time);
 
       animationFrameId = requestAnimationFrame(loop);
     };

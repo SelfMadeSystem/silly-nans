@@ -1,7 +1,10 @@
 import * as twgl from 'twgl.js';
+import { useAnimationLoop } from '../utils/canvas/useAnimationLoop';
+import { useCanvas } from '../utils/canvas/useCanvas';
+import { useWindowEvent } from '../utils/canvas/useWindowEvent';
 import { approxEquals, ceilMultiple } from '../utils/mathUtils';
 import { Vector2, Vector3 } from '../utils/vec';
-import createCanvasComponent from './CanvasComponent';
+import { useEffect, useState } from 'react';
 import { Pane } from 'tweakpane';
 
 // Credit to: https://webglfundamentals.org/webgl/lessons/webgl-qna-the-fastest-way-to-draw-many-circles.html
@@ -128,6 +131,8 @@ class Lattice {
 
       if (options.mouseGradient === 'inward') {
         z = 1 - z;
+      } else if (options.mouseGradient === 'none') {
+        z = 0;
       }
 
       result.push({
@@ -405,208 +410,232 @@ const fs = /* glsl */ `
   }
   `;
 
-export default createCanvasComponent({
-  props: {
-    style: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      width: '100%',
-      height: '100%',
+function newLattice(options: Options, canvas: HTMLCanvasElement) {
+  const offset = ceilMultiple(120, options.spacing);
+  return new Lattice(
+    new Vector2(-offset, -offset),
+    ceilMultiple(canvas.width, options.spacing) + offset * 2,
+    ceilMultiple(canvas.height, options.spacing) + offset * 2,
+    options.spacing,
+  );
+}
+
+function LatticeCanvas({ options }: { options: Options }) {
+  const [lattice, setLattice] = useState<Lattice | null>(null);
+  const [programInfo, setProgramInfo] = useState<twgl.ProgramInfo | null>(null);
+  const [mousePos, setMousePos] = useState<Vector2>(new Vector2(-9999, -9999));
+  const [gl, canvas, setCanvas] = useCanvas({
+    autoResize: true,
+    contextId: 'webgl2',
+    setup(gl: WebGLRenderingContext, canvas: HTMLCanvasElement) {
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+      setProgramInfo(twgl.createProgramInfo(gl, [vs, fs]));
+
+      setLattice(newLattice(defaultOptions, canvas));
     },
-  },
-  autoResize: true,
-  setup(canvas) {
-    const gl = canvas.getContext('webgl');
-    if (!gl) {
-      throw new Error('WebGL not supported');
-    }
+    resize(gl: WebGLRenderingContext, canvas: HTMLCanvasElement) {
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      gl.clearColor(0.0, 0.0, 0.0, 1.0);
+      setLattice(newLattice(options, canvas));
+    },
+  });
 
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  useEffect(() => {
+    if (!canvas) return;
+    setLattice(newLattice(options, canvas));
+  }, [canvas, options, options.spacing]);
 
-    const ext = gl.getExtension('ANGLE_instanced_arrays');
-    if (!ext) {
-      throw new Error('ANGLE_instanced_arrays not supported');
-    }
-    twgl.addExtensionsToContext(gl);
+  useAnimationLoop(dt => {
+    if (!lattice || !programInfo || !gl || !canvas) return;
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
 
-    const programInfo = twgl.createProgramInfo(gl, [vs, fs]);
+    lattice.physics(Math.min(1 / 30, dt / 1000), mousePos, options);
+    const drawPoints = lattice.getDrawPoints(canvas, options);
 
-    function newLattice(options: Options) {
-      const offset = ceilMultiple(120, options.spacing);
-      return new Lattice(
-        new Vector2(-offset, -offset),
-        ceilMultiple(canvas.width, options.spacing) + offset * 2,
-        ceilMultiple(canvas.height, options.spacing) + offset * 2,
-        options.spacing,
-      );
-    }
+    const x = (5 / canvas.width) * 2;
+    const y = (5 / canvas.height) * 2;
 
-    let lattice = newLattice(defaultOptions);
+    const bufferInfo = twgl.createBufferInfoFromArrays(gl, {
+      position: {
+        numComponents: 2,
+        data: [-x, -y, x, -y, -x, y, -x, y, x, -y, x, y],
+      },
+      texcoord: {
+        numComponents: 2,
+        data: [0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0],
+      },
+      color: {
+        numComponents: 4,
+        data: drawPoints.map(p => [p.r, p.g, p.b, p.alpha]).flat(),
+        divisor: 1,
+      },
+      pos: {
+        numComponents: 3,
+        data: drawPoints
+          .map(p => [p.x / canvas.width, p.y / canvas.height, p.z])
+          .flat(),
+        divisor: 1,
+      },
+    });
+    twgl.setBuffersAndAttributes(gl, programInfo, bufferInfo);
 
-    const options = { ...defaultOptions };
+    gl.useProgram(programInfo.program);
 
-    let mousePos = new Vector2(-99999, -99999);
+    gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, drawPoints.length);
+  });
+
+  useWindowEvent('mousemove', (e: MouseEvent) => {
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    setMousePos(new Vector2(e.clientX - rect.left, e.clientY - rect.top));
+  });
+
+  useWindowEvent('mouseleave', () => {
+    setMousePos(new Vector2(-9999, -9999));
+  });
+
+  return (
+    <canvas
+      ref={setCanvas}
+      style={{
+        width: '100%',
+        height: '100%',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        zIndex: -1,
+      }}
+    />
+  );
+}
+
+export default function LatticeCanvasWrapper() {
+  const [options] = useState<Options>({
+    ...defaultOptions,
+  });
+
+  useEffect(() => {
+    const pane = new Pane();
 
     {
-      const pane = new Pane();
-
-      {
-        const optionsFolder = pane.addFolder({
-          title: 'Options',
-          expanded: false,
-        });
-        optionsFolder.addBinding(options, 'mouseGradient', {
-          options: {
-            Inward: 'inward',
-            Outward: 'outward',
-            None: 'none',
-          },
-        });
-        optionsFolder
-          .addBinding(options, 'spacing', {
-            min: 10,
-            max: 100,
-            step: 1,
-          })
-          .on('change', () => {
-            lattice = newLattice(options);
-          });
-        optionsFolder.addBinding(options, 'mouseRepel');
-        optionsFolder.addBinding(options, 'mouseDistance', {
-          min: 0,
-          max: 1000,
-        });
-        optionsFolder.addBinding(options, 'mouseStrength', {
-          min: 0,
-          max: 3,
-        });
-        optionsFolder.addBinding(options, 'mouseZ', {
-          min: 0,
-          max: 100,
-        });
-        optionsFolder.addBinding(options, 'moveStrength', {
-          min: 0,
-          max: 10,
-        });
-        optionsFolder.addBinding(options, 'xSpeed', {
-          min: -100,
-          max: 100,
-        });
-        optionsFolder.addBinding(options, 'ySpeed', {
-          min: -100,
-          max: 100,
-        });
-        optionsFolder.addBinding(options, 'accStrength', {
-          min: 0,
-          max: 1,
-        });
-        optionsFolder.addBinding(options, 'drawColored');
-      }
-
-      const presetsFolder = pane.addFolder({
-        title: 'Presets',
+      const optionsFolder = pane.addFolder({
+        title: 'Options',
         expanded: false,
       });
+      optionsFolder.addBinding(options, 'mouseGradient', {
+        options: {
+          Inward: 'inward',
+          Outward: 'outward',
+          None: 'none',
+        },
+      });
+      optionsFolder.addBinding(options, 'spacing', {
+        min: 10,
+        max: 100,
+        step: 1,
+      });
+      optionsFolder.addBinding(options, 'mouseRepel');
+      optionsFolder.addBinding(options, 'mouseDistance', {
+        min: 0,
+        max: 1000,
+      });
+      optionsFolder.addBinding(options, 'mouseStrength', {
+        min: 0,
+        max: 3,
+      });
+      optionsFolder.addBinding(options, 'mouseZ', {
+        min: 0,
+        max: 100,
+      });
+      optionsFolder.addBinding(options, 'moveStrength', {
+        min: 0,
+        max: 10,
+      });
+      optionsFolder.addBinding(options, 'xSpeed', {
+        min: -100,
+        max: 100,
+      });
+      optionsFolder.addBinding(options, 'ySpeed', {
+        min: -100,
+        max: 100,
+      });
+      optionsFolder.addBinding(options, 'accStrength', {
+        min: 0,
+        max: 1,
+      });
+      optionsFolder.addBinding(options, 'drawColored');
 
-      presetsFolder
+      optionsFolder
         .addButton({
-          title: 'Outward',
+          title: 'Reset to Defaults',
         })
         .on('click', () => {
-          Object.assign(options, {
-            mouseGradient: 'outward',
-            mouseRepel: true,
-          });
-          pane.refresh();
-        });
-
-      presetsFolder
-        .addButton({
-          title: 'Inward',
-        })
-        .on('click', () => {
-          Object.assign(options, {
-            mouseGradient: 'inward',
-            mouseRepel: false,
-          });
-          pane.refresh();
-        });
-
-      presetsFolder
-        .addButton({
-          title: 'Wobbly',
-        })
-        .on('click', () => {
-          Object.assign(options, {
-            moveStrength: 2,
-            accStrength: 0.5,
-          });
-          pane.refresh();
-        });
-
-      presetsFolder
-        .addButton({
-          title: 'No Wobbly',
-        })
-        .on('click', () => {
-          Object.assign(options, {
-            moveStrength: 4,
-            accStrength: 0,
-          });
+          Object.assign(options, defaultOptions);
           pane.refresh();
         });
     }
 
-    return {
-      update(dt) {
-        gl.clearColor(0, 0, 0, 0);
-        gl.clear(gl.COLOR_BUFFER_BIT);
+    const presetsFolder = pane.addFolder({
+      title: 'Presets',
+      expanded: false,
+    });
 
-        lattice.physics(Math.min(1 / 30, dt / 1000), mousePos, options);
-        const drawPoints = lattice.getDrawPoints(canvas, options);
-
-        const x = (5 / canvas.width) * 2;
-        const y = (5 / canvas.height) * 2;
-
-        const bufferInfo = twgl.createBufferInfoFromArrays(gl, {
-          position: {
-            numComponents: 2,
-            data: [-x, -y, x, -y, -x, y, -x, y, x, -y, x, y],
-          },
-          texcoord: {
-            numComponents: 2,
-            data: [0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0],
-          },
-          color: {
-            numComponents: 4,
-            data: drawPoints.map(p => [p.r, p.g, p.b, p.alpha]).flat(),
-            divisor: 1,
-          },
-          pos: {
-            numComponents: 3,
-            data: drawPoints
-              .map(p => [p.x / canvas.width, p.y / canvas.height, p.z])
-              .flat(),
-            divisor: 1,
-          },
+    presetsFolder
+      .addButton({
+        title: 'Outward',
+      })
+      .on('click', () => {
+        Object.assign(options, {
+          mouseGradient: 'outward',
+          mouseRepel: true,
         });
-        twgl.setBuffersAndAttributes(gl, programInfo, bufferInfo);
+        pane.refresh();
+      });
 
-        gl.useProgram(programInfo.program);
+    presetsFolder
+      .addButton({
+        title: 'Inward',
+      })
+      .on('click', () => {
+        Object.assign(options, {
+          mouseGradient: 'inward',
+          mouseRepel: false,
+        });
+        pane.refresh();
+      });
 
-        ext.drawArraysInstancedANGLE(gl.TRIANGLES, 0, 6, drawPoints.length);
-      },
+    presetsFolder
+      .addButton({
+        title: 'Wobbly',
+      })
+      .on('click', () => {
+        Object.assign(options, {
+          moveStrength: 2,
+          accStrength: 0.5,
+        });
+        pane.refresh();
+      });
 
-      mouseMove(_e, x, y) {
-        mousePos = new Vector2(x, y);
-      },
+    presetsFolder
+      .addButton({
+        title: 'No Wobbly',
+      })
+      .on('click', () => {
+        Object.assign(options, {
+          moveStrength: 4,
+          accStrength: 0,
+        });
+        pane.refresh();
+      });
 
-      resize() {
-        lattice = newLattice(options);
-        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-      },
+    return () => {
+      pane.dispose();
     };
-  },
-});
+  }, [options]);
+
+  return <LatticeCanvas options={options} />;
+}
