@@ -304,8 +304,6 @@ function TextCanvas({ options }: { options: Options }) {
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-      twgl.addExtensionsToContext(gl);
-
       setProgramInfo(twgl.createProgramInfo(gl, [vs, fs]));
 
       setLattice(newLattice(defaultOptions, canvas.width, canvas.height));
