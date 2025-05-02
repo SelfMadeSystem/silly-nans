@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { type LegacyRef, useEffect, useRef, useState } from 'react';
 
 type Contexts = {
   '2d': CanvasRenderingContext2D;
@@ -29,11 +29,13 @@ type UseCanvasProps<CID extends ContextId> = {
 /**
  * A utility function to manage and configure a canvas element.
  *
- * @param canvas - The HTMLCanvasElement to be used. Pass `null` if no canvas is available.
  * @param props - Configuration options for the canvas. It can either be:
  *   - An object with `width` and `height` properties to set the canvas dimensions.
  *   - An object with `autoResize` set to `true` to enable automatic resizing.
- * @returns The 2D rendering context of the canvas if available, otherwise `null`.
+ * @returns An array containing:
+ * - The rendering context of the canvas (or null if not available).
+ * - The canvas element (or null if not available).
+ * - A function to set the canvas element. Pass this function to the `ref` prop of the canvas element.
  *
  * @example
  *
@@ -41,8 +43,7 @@ type UseCanvasProps<CID extends ContextId> = {
  * import { useCanvas } from './useCanvas';
  *
  * function MyComponent() {
- *   const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
- *   const context = useCanvas(canvas, { width: 800, height: 600 });
+ *   const [context, canvas, setCanvas] = useCanvas(canvas, { width: 800, height: 600 });
  *
  *   useEffect(() => {
  *     if (context) {
@@ -68,7 +69,6 @@ type UseCanvasProps<CID extends ContextId> = {
  * - The `autoResize` option allows the canvas to automatically resize to fit its container.
  */
 export function useCanvas(
-  canvas: HTMLCanvasElement | null,
   props:
     | {
         width: number;
@@ -77,15 +77,26 @@ export function useCanvas(
     | {
         autoResize: true;
       },
-): CanvasRenderingContext2D | null;
+): [
+  CanvasRenderingContext2D | null,
+  HTMLCanvasElement | null,
+  React.Dispatch<React.SetStateAction<HTMLCanvasElement | null>>,
+];
 export function useCanvas<CID extends ContextId>(
-  canvas: HTMLCanvasElement | null,
   props: UseCanvasProps<CID>,
-): Contexts[CID] | null;
+): [
+  Contexts[CID] | null,
+  HTMLCanvasElement | null,
+  React.Dispatch<React.SetStateAction<HTMLCanvasElement | null>>,
+];
 export function useCanvas<CID extends ContextId>(
-  canvas: HTMLCanvasElement | null,
   props: UseCanvasProps<CID>,
-): Contexts[CID] | null {
+): [
+  Contexts[CID] | null,
+  HTMLCanvasElement | null,
+  React.Dispatch<React.SetStateAction<HTMLCanvasElement | null>>,
+] {
+  const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
   const contextRef = useRef<Contexts[CID] | null>(null);
 
   useEffect(() => {
@@ -111,6 +122,9 @@ export function useCanvas<CID extends ContextId>(
             cleanup?.();
           };
         }
+      } else {
+        console.error(`Failed to get context: ${contextId}`);
+        contextRef.current = null;
       }
     } else {
       contextRef.current = null;
@@ -118,5 +132,5 @@ export function useCanvas<CID extends ContextId>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canvas]);
 
-  return contextRef.current;
+  return [contextRef.current, canvas, setCanvas] as const;
 }

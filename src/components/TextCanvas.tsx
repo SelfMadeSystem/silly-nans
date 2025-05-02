@@ -289,13 +289,12 @@ function newLattice(options: Options, width: number, height: number) {
 }
 
 function TextCanvas({ options }: { options: Options }) {
-  const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
   const [mousePos, setMousePos] = useState<Vector2 | null>(null);
   const prevMousePosRef = useRef<Vector2 | null>(null);
   const [lattice, setLattice] = useState<PointsManager | null>(null);
   const [programInfo, setProgramInfo] = useState<twgl.ProgramInfo | null>(null);
 
-  const gl = useCanvas(canvas, {
+  const [gl, canvas, setCanvas] = useCanvas({
     autoResize: true,
     contextId: 'webgl2',
     setup: (gl: WebGL2RenderingContext) => {
@@ -406,7 +405,7 @@ function TextCanvas({ options }: { options: Options }) {
 }
 
 export default function TextCanvasWrapper() {
-  const [options] = useState<Options>(defaultOptions);
+  const [options] = useState<Options>({ ...defaultOptions });
 
   useEffect(() => {
     const pane = new Pane();
