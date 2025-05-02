@@ -27,7 +27,45 @@ type UseCanvasProps<CID extends ContextId> = {
 );
 
 /**
- * Custom hook to create a canvas context.
+ * A utility function to manage and configure a canvas element.
+ *
+ * @param canvas - The HTMLCanvasElement to be used. Pass `null` if no canvas is available.
+ * @param props - Configuration options for the canvas. It can either be:
+ *   - An object with `width` and `height` properties to set the canvas dimensions.
+ *   - An object with `autoResize` set to `true` to enable automatic resizing.
+ * @returns The 2D rendering context of the canvas if available, otherwise `null`.
+ *
+ * @example
+ *
+ * ```tsx
+ * import { useCanvas } from './useCanvas';
+ *
+ * function MyComponent() {
+ *   const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
+ *   const context = useCanvas(canvas, { width: 800, height: 600 });
+ *
+ *   useEffect(() => {
+ *     if (context) {
+ *       context.fillStyle = 'red';
+ *       context.fillRect(0, 0, 100, 100);
+ *     }
+ *   }, [context]);
+ *
+ *   return <canvas ref={setCanvas} />;
+ * }
+ * ```
+ *
+ * @remarks
+ * - The `setup` function is called after the context is created and can be used to perform
+ *   additional setup tasks. It can return a cleanup function that will be called when the
+ *   component unmounts or when the canvas changes.
+ * - The `resize` function is called when the canvas is resized if `autoResize` is enabled.
+ * - The `contextId` property allows you to specify the type of rendering context you want to use.
+ *   The default is `'2d'`, but you can also use `'bitmaprenderer'`, `'webgl'`, or `'webgl2'`.
+ * - The `width` and `height` properties are used to set the canvas dimensions when the
+ *   `autoResize` option is not enabled. If both `width` and `height` are provided, the canvas
+ *   will be resized to those dimensions.
+ * - The `autoResize` option allows the canvas to automatically resize to fit its container.
  */
 export function useCanvas(
   canvas: HTMLCanvasElement | null,

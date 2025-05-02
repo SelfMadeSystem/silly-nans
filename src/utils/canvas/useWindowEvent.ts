@@ -1,32 +1,45 @@
 import { useEffect } from 'react';
 
+// Yoinked from:
+// https://github.com/mantinedev/mantine/blob/ac3b2922e7d3a2026a44c1b3fd549886d5a2174d/packages/%40mantine/hooks/src/use-window-event/use-window-event.ts
+
 /**
- * useWindowEvent is a custom hook that allows you to add and remove event listeners
- * to the window object. It takes an event type, a callback function, and an optional
- * dependency array.
+ * A custom React hook for adding and cleaning up event listeners on the `window` object.
  *
- * @param {string} eventType - The type of the event to listen for (e.g., 'resize', 'scroll').
- * @param {Function} callback - The function to call when the event is triggered.
+ * @template K - The type of the event name. It can be a key from `WindowEventMap` or a custom string.
+ *
+ * @param type - The name of the event to listen for. If it matches a key in `WindowEventMap`,
+ *               the listener will be strongly typed to the corresponding event type.
+ * @param listener - The callback function to handle the event. If the event type is a key in
+ *                   `WindowEventMap`, the listener will receive the corresponding event object.
+ *                   Otherwise, it will receive a `CustomEvent`.
+ * @param options - Optional options for the event listener. Can be a boolean or an object of type
+ *                  `AddEventListenerOptions`.
+ *
+ * @remarks
+ * This hook automatically adds the event listener when the component mounts and removes it when
+ * the component unmounts or when any of the dependencies (`type`, `listener`, `options`) change.
+ *
+ * @example
+ * ```tsx
+ * useWindowEvent('resize', (event) => {
+ *   console.log('Window resized:', event);
+ * });
+ *
+ * useWindowEvent('custom-event', (event) => {
+ *   console.log('Custom event triggered:', event.detail);
+ * });
+ * ```
  */
-export const useWindowEvent = <T extends keyof WindowEventMap>(
-  eventType: T,
-  callback: (event: WindowEventMap[T]) => void,
-) => {
+export function useWindowEvent<K extends string>(
+  type: K,
+  listener: K extends keyof WindowEventMap
+    ? (this: Window, ev: WindowEventMap[K]) => void
+    : (this: Window, ev: CustomEvent) => void,
+  options?: boolean | AddEventListenerOptions,
+) {
   useEffect(() => {
-    // Check if the event type is valid
-    if (typeof window !== 'undefined' && window.addEventListener) {
-      // Define the event handler
-      const eventHandler = (event: WindowEventMap[T]) => {
-        callback(event);
-      };
-
-      // Add the event listener to the window object
-      window.addEventListener(eventType, eventHandler);
-
-      // Cleanup function to remove the event listener
-      return () => {
-        window.removeEventListener(eventType, eventHandler);
-      };
-    }
-  }, [eventType, callback]);
-};
+    window.addEventListener(type as any, listener, options);
+    return () => window.removeEventListener(type as any, listener, options);
+  }, [type, listener, options]);
+}
