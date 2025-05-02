@@ -141,11 +141,12 @@ class PointsManager {
 
   physics(
     dt: number,
-    mousePos: Vector2,
-    mouseVelocity: Vector2,
+    mousePos: Vector2 | null,
+    mouseVelocity: Vector2 | null,
     options: Options,
   ) {
-    this.accelFromMouse(dt, mousePos, mouseVelocity, options);
+    if (mousePos && mouseVelocity)
+      this.accelFromMouse(dt, mousePos, mouseVelocity, options);
     this.accelerate(dt, options);
     this.move(dt, options);
   }
@@ -290,6 +291,7 @@ function newLattice(options: Options, width: number, height: number) {
 
 function TextCanvas({ options }: { options: Options }) {
   const [mousePos, setMousePos] = useState<Vector2 | null>(null);
+  const mouseVelocity = useRef<Vector2 | null>(null);
   const prevMousePosRef = useRef<Vector2 | null>(null);
   const [lattice, setLattice] = useState<PointsManager | null>(null);
   const [programInfo, setProgramInfo] = useState<twgl.ProgramInfo | null>(null);
@@ -331,18 +333,15 @@ function TextCanvas({ options }: { options: Options }) {
 
     const prevMousePos = prevMousePosRef.current;
 
-    if (mousePos && prevMousePos) {
-      const mouseVelocity = mousePos.sub(prevMousePos).mult(1 / dt);
-
-      lattice.physics(
-        Math.min(1 / 30, dt / 1000),
-        mousePos,
-        mouseVelocity,
-        options,
-      );
-
-      prevMousePosRef.current = mousePos;
+    let velo = mouseVelocity.current?.mult(1 / dt) ?? null;
+    if (!velo && mousePos && prevMousePos) {
+      velo = mousePos.sub(prevMousePos).mult(1 / dt);
     }
+
+    lattice.physics(Math.min(1 / 30, dt / 1000), mousePos, velo, options);
+
+    prevMousePosRef.current = mousePos;
+    mouseVelocity.current = null;
 
     const drawPoints = lattice.getDrawPoints(canvas, options);
 
@@ -381,11 +380,14 @@ function TextCanvas({ options }: { options: Options }) {
     gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, drawPoints.length);
   });
 
-  const handleMove = (e: MouseEvent | TouchEvent) => {
+  const disableMouseEvents = useRef(false);
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (disableMouseEvents.current) return;
     const rect = canvas?.getBoundingClientRect();
     if (!rect) return;
-    const x = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const y = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    const x = e.clientX;
+    const y = e.clientY;
     const newMousePos = new Vector2(x - rect.left, y - rect.top);
     setMousePos(newMousePos);
     if (!prevMousePosRef.current) {
@@ -393,8 +395,39 @@ function TextCanvas({ options }: { options: Options }) {
     }
   };
 
-  useWindowEvent('mousemove', handleMove);
-  useWindowEvent('touchmove', handleMove);
+  const prevTouchPosRef = useRef<Vector2 | null>(null);
+
+  const handleTouchMove = (e: TouchEvent) => {
+    disableMouseEvents.current = true;
+    const rect = canvas?.getBoundingClientRect();
+    if (!rect) return;
+    const x = e.touches[0].clientX;
+    const y = e.touches[0].clientY;
+    const touchPos = new Vector2(x, y);
+    const newMousePos = new Vector2(x - rect.left, y - rect.top);
+    setMousePos(newMousePos);
+    if (!prevMousePosRef.current) {
+      prevMousePosRef.current = newMousePos;
+    }
+    if (!prevTouchPosRef.current) {
+      prevTouchPosRef.current = touchPos;
+    } else {
+      const delta = touchPos.sub(prevTouchPosRef.current);
+      mouseVelocity.current = (mouseVelocity.current || new Vector2(0, 0)).add(
+        delta,
+      );
+      prevTouchPosRef.current = touchPos;
+    }
+  };
+
+  useWindowEvent('mousemove', handleMouseMove);
+  useWindowEvent('touchstart', handleTouchMove);
+  useWindowEvent('touchmove', handleTouchMove);
+  useWindowEvent('touchend', () => {
+    prevTouchPosRef.current = null;
+    mouseVelocity.current = null;
+    setMousePos(null);
+  });
 
   return (
     <canvas
