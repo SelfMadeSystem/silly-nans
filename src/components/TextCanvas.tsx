@@ -1,6 +1,7 @@
 import * as twgl from 'twgl.js';
 import { useAnimationLoop } from '../utils/canvas/useAnimationLoop';
 import { useCanvas } from '../utils/canvas/useCanvas';
+import { useWindowEvent } from '../utils/canvas/useWindowEvent';
 import { Vector2, Vector3 } from '../utils/vec';
 import { useEffect, useRef, useState } from 'react';
 import { Pane } from 'tweakpane';
@@ -381,7 +382,7 @@ function TextCanvas({ options }: { options: Options }) {
     gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, drawPoints.length);
   });
 
-  const handleMove = (e: React.MouseEvent | React.TouchEvent) => {
+  const handleMove = (e: MouseEvent | TouchEvent) => {
     const rect = canvas?.getBoundingClientRect();
     if (!rect) return;
     const x = 'touches' in e ? e.touches[0].clientX : e.clientX;
@@ -393,13 +394,13 @@ function TextCanvas({ options }: { options: Options }) {
     }
   };
 
+  useWindowEvent('mousemove', handleMove);
+  useWindowEvent('touchmove', handleMove);
+
   return (
     <canvas
       ref={setCanvas}
-      className="absolute top-0 left-0 h-full w-full"
-      style={{ touchAction: 'none' }}
-      onMouseMove={handleMove}
-      onTouchMove={handleMove}
+      className="absolute top-0 left-0 -z-10 h-full w-full"
     />
   );
 }
