@@ -313,7 +313,7 @@ function StarsCanvas({ options }: { options: Options }) {
     if (!rect) return;
     setTargetMousePos(new Vector2(e.clientX - rect.left, e.clientY - rect.top));
   });
-  useWindowEvent('touchstart', e => {
+  useWindowEvent('touchstart', () => {
     setIsMobile(true);
   });
   useWindowEvent('touchmove', e => {
