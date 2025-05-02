@@ -1,6 +1,8 @@
 import * as twgl from 'twgl.js';
+import { useAnimationLoop } from '../utils/canvas/useAnimationLoop';
+import { useCanvas } from '../utils/canvas/useCanvas';
 import { Vector2, Vector3 } from '../utils/vec';
-import createCanvasComponent from './CanvasComponent';
+import { useEffect, useRef, useState } from 'react';
 import { Pane } from 'tweakpane';
 
 // Credit to: https://webglfundamentals.org/webgl/lessons/webgl-qna-the-fastest-way-to-draw-many-circles.html
@@ -281,120 +283,194 @@ const fs = /* glsl */ `
   }
   `;
 
-export default createCanvasComponent({
-  props: {
-    style: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      width: '100%',
-      height: '100%',
+function newLattice(options: Options, width: number, height: number) {
+  return new PointsManager(options, width, height);
+}
+
+function TextCanvas({ options }: { options: Options }) {
+  const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
+  const [mousePos, setMousePos] = useState<Vector2 | null>(null);
+  const prevMousePosRef = useRef<Vector2 | null>(null);
+  const [lattice, setLattice] = useState<PointsManager | null>(null);
+  const [programInfo, setProgramInfo] = useState<twgl.ProgramInfo | null>(null);
+
+  const gl = useCanvas(canvas, {
+    autoResize: true,
+    contextId: 'webgl2',
+    setup: (gl: WebGL2RenderingContext) => {
+      const { canvas } = gl;
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+      twgl.addExtensionsToContext(gl);
+
+      setProgramInfo(twgl.createProgramInfo(gl, [vs, fs]));
+
+      setLattice(newLattice(defaultOptions, canvas.width, canvas.height));
     },
-  },
-  autoResize: true,
-  setup(canvas) {
-    const gl = canvas.getContext('webgl');
-    if (!gl) {
-      throw new Error('WebGL not supported');
+
+    resize(gl: WebGL2RenderingContext) {
+      const {
+        canvas: { width, height },
+      } = gl;
+      setLattice(newLattice(options, width, height));
+      gl.viewport(0, 0, width, height);
+    },
+  });
+
+  useEffect(() => {
+    if (!lattice || !gl) return;
+    lattice.rethingOptions(options, gl.canvas.width, gl.canvas.height);
+  }, [options.text, options.maxPoints, lattice, gl, options]);
+
+  useAnimationLoop(dt => {
+    if (!gl || !lattice || !programInfo) return;
+    const { canvas } = gl;
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    const prevMousePos = prevMousePosRef.current;
+
+    if (mousePos && prevMousePos) {
+      const mouseVelocity = mousePos.sub(prevMousePos).mult(1 / dt);
+
+      lattice.physics(
+        Math.min(1 / 30, dt / 1000),
+        mousePos,
+        mouseVelocity,
+        options,
+      );
+
+      prevMousePosRef.current = mousePos;
     }
 
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    const drawPoints = lattice.getDrawPoints(canvas, options);
 
-    const ext = gl.getExtension('ANGLE_instanced_arrays');
-    if (!ext) {
-      throw new Error('ANGLE_instanced_arrays not supported');
+    const x = (5 / canvas.width) * 2;
+    const y = (5 / canvas.height) * 2;
+
+    const bufferInfo = twgl.createBufferInfoFromArrays(gl, {
+      position: {
+        numComponents: 2,
+        data: [-x, -y, x, -y, -x, y, -x, y, x, -y, x, y],
+      },
+      texcoord: {
+        numComponents: 2,
+        data: [0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0],
+      },
+      color: {
+        numComponents: 4,
+        data: drawPoints.map(p => [p.r, p.g, p.b, p.alpha]).flat(),
+        divisor: 1,
+      },
+      pos: {
+        numComponents: 3,
+        data: drawPoints
+          .map(p => [p.x / canvas.width, p.y / canvas.height, p.z])
+          .flat(),
+        divisor: 1,
+      },
+    });
+    twgl.setBuffersAndAttributes(gl, programInfo, bufferInfo);
+
+    gl.useProgram(programInfo.program);
+    twgl.setUniforms(programInfo, {
+      u_resolution: [gl.canvas.width, gl.canvas.height],
+    });
+
+    gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, drawPoints.length);
+  });
+
+  const handleMove = (e: React.MouseEvent | React.TouchEvent) => {
+    const rect = canvas?.getBoundingClientRect();
+    if (!rect) return;
+    const x = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const y = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    const newMousePos = new Vector2(x - rect.left, y - rect.top);
+    setMousePos(newMousePos);
+    if (!prevMousePosRef.current) {
+      prevMousePosRef.current = newMousePos;
     }
-    twgl.addExtensionsToContext(gl);
+  };
 
-    const programInfo = twgl.createProgramInfo(gl, [vs, fs]);
+  return (
+    <canvas
+      ref={setCanvas}
+      className="absolute top-0 left-0 h-full w-full"
+      style={{ touchAction: 'none' }}
+      onMouseMove={handleMove}
+      onTouchMove={handleMove}
+    />
+  );
+}
 
-    function newLattice(options: Options) {
-      return new PointsManager(options, canvas.width, canvas.height);
-    }
+export default function TextCanvasWrapper() {
+  const [options] = useState<Options>(defaultOptions);
 
-    let lattice = newLattice(defaultOptions);
-
-    const options = { ...defaultOptions };
-
-    let mousePos: Vector2 | null = null;
-    let prevMousePos: Vector2 | null = null;
-    let mouseVelocity = new Vector2(0, 0);
+  useEffect(() => {
+    const pane = new Pane();
 
     {
-      const pane = new Pane();
+      const optionsFolder = pane.addFolder({
+        title: 'Options',
+        expanded: false,
+      });
 
-      {
-        const optionsFolder = pane.addFolder({
-          title: 'Options',
-          expanded: false,
-        });
+      optionsFolder.addBinding(options, 'text', {
+        label: 'Text',
+      });
+      optionsFolder.addBinding(options, 'maxPoints', {
+        min: 1000,
+        max: 50000,
+        step: 1,
+        label: 'Max Points',
+      });
+      optionsFolder.addBinding(options, 'mouseRepel', {
+        min: 0,
+        max: 1000,
+        step: 1,
+        label: 'Mouse Repel',
+      });
+      optionsFolder.addBinding(options, 'mouseRepelDistance', {
+        min: 0,
+        max: 1000,
+        step: 1,
+        label: 'Mouse Repel Distance',
+      });
+      optionsFolder.addBinding(options, 'velocityInfluence', {
+        min: 0,
+        max: 30000,
+        step: 1,
+        label: 'Velocity Influence',
+      });
+      optionsFolder.addBinding(options, 'randomInfluence', {
+        min: 0,
+        max: 2,
+        step: 0.01,
+        label: 'Random Influence',
+      });
+      optionsFolder.addBinding(options, 'accel', {
+        min: 0,
+        max: 1000,
+        step: 1,
+        label: 'Acceleration',
+      });
+      optionsFolder.addBinding(options, 'velocityDamp', {
+        min: 0.01,
+        max: 0.999,
+        step: 0.001,
+        label: 'Velocity Damp',
+      });
 
-        optionsFolder
-          .addBinding(options, 'text', {
-            label: 'Text',
-          })
-          .on('change', () => {
-            lattice.rethingOptions(options, canvas.width, canvas.height);
-            pane.refresh();
-          });
-        optionsFolder
-          .addBinding(options, 'maxPoints', {
-            min: 1000,
-            max: 50000,
-            step: 1,
-            label: 'Max Points',
-          })
-          .on('change', () => {
-            lattice.rethingOptions(options, canvas.width, canvas.height);
-            pane.refresh();
-          });
-        optionsFolder.addBinding(options, 'mouseRepel', {
-          min: 0,
-          max: 1000,
-          step: 1,
-          label: 'Mouse Repel',
+      // Add button to reset to defaults
+      optionsFolder
+        .addButton({ title: 'Reset to Defaults' })
+        .on('click', () => {
+          Object.assign(options, defaultOptions);
+          pane.refresh();
         });
-        optionsFolder.addBinding(options, 'mouseRepelDistance', {
-          min: 0,
-          max: 1000,
-          step: 1,
-          label: 'Mouse Repel Distance',
-        });
-        optionsFolder.addBinding(options, 'velocityInfluence', {
-          min: 0,
-          max: 30000,
-          step: 1,
-          label: 'Velocity Influence',
-        });
-        optionsFolder.addBinding(options, 'randomInfluence', {
-          min: 0,
-          max: 2,
-          step: 0.01,
-          label: 'Random Influence',
-        });
-        optionsFolder.addBinding(options, 'accel', {
-          min: 0,
-          max: 1000,
-          step: 1,
-          label: 'Acceleration',
-        });
-        optionsFolder.addBinding(options, 'velocityDamp', {
-          min: 0.01,
-          max: 0.999,
-          step: 0.001,
-          label: 'Velocity Damp',
-        });
-
-        // Add button to reset to defaults
-        optionsFolder
-          .addButton({ title: 'Reset to Defaults' })
-          .on('click', () => {
-            Object.assign(options, defaultOptions);
-            pane.refresh();
-          });
-      }
-
+    }
+    {
       const presetsFolder = pane.addFolder({
         title: 'Presets',
         expanded: false,
@@ -446,78 +522,10 @@ export default createCanvasComponent({
       });
     }
 
-    return {
-      update(dt) {
-        gl.clearColor(0, 0, 0, 0);
-        gl.clear(gl.COLOR_BUFFER_BIT);
-
-        if (mousePos && prevMousePos) {
-          mouseVelocity = mousePos.sub(prevMousePos).mult(1 / dt);
-          prevMousePos = mousePos.clone();
-
-          lattice.physics(
-            Math.min(1 / 30, dt / 1000),
-            mousePos,
-            mouseVelocity,
-            options,
-          );
-        }
-
-        const drawPoints = lattice.getDrawPoints(canvas, options);
-
-        const x = (5 / canvas.width) * 2;
-        const y = (5 / canvas.height) * 2;
-
-        const bufferInfo = twgl.createBufferInfoFromArrays(gl, {
-          position: {
-            numComponents: 2,
-            data: [-x, -y, x, -y, -x, y, -x, y, x, -y, x, y],
-          },
-          texcoord: {
-            numComponents: 2,
-            data: [0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0],
-          },
-          color: {
-            numComponents: 4,
-            data: drawPoints.map(p => [p.r, p.g, p.b, p.alpha]).flat(),
-            divisor: 1,
-          },
-          pos: {
-            numComponents: 3,
-            data: drawPoints
-              .map(p => [p.x / canvas.width, p.y / canvas.height, p.z])
-              .flat(),
-            divisor: 1,
-          },
-        });
-        twgl.setBuffersAndAttributes(gl, programInfo, bufferInfo);
-
-        gl.useProgram(programInfo.program);
-        twgl.setUniforms(programInfo, {
-          u_resolution: [gl.canvas.width, gl.canvas.height],
-        });
-
-        ext.drawArraysInstancedANGLE(gl.TRIANGLES, 0, 6, drawPoints.length);
-      },
-
-      mouseMove(_e, x, y) {
-        mousePos = new Vector2(x, y);
-        if (!prevMousePos) {
-          prevMousePos = mousePos.clone();
-        }
-      },
-
-      touchMove(_e, x, y) {
-        mousePos = new Vector2(x, y);
-        if (!prevMousePos) {
-          prevMousePos = mousePos.clone();
-        }
-      },
-
-      resize() {
-        lattice = newLattice(options);
-        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-      },
+    return () => {
+      pane.dispose();
     };
-  },
-});
+  }, [options]);
+
+  return <TextCanvas options={options} />;
+}
