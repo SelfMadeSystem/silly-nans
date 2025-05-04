@@ -574,6 +574,14 @@ export default function TextCanvasWrapper() {
         });
         pane.refresh();
       });
+
+      presetsFolder.addButton({ title: 'Cat' }).on('click', () => {
+        Object.assign(options, {
+          text: '',
+          maxPoints: 50000,
+        });
+        pane.refresh();
+      });
     }
 
     return () => {
