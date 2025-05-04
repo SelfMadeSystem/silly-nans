@@ -3,11 +3,15 @@ import { useAnimationLoop } from '../utils/canvas/useAnimationLoop';
 import { useCanvas } from '../utils/canvas/useCanvas';
 import { useWindowEvent } from '../utils/canvas/useWindowEvent';
 import { Vector2, Vector3 } from '../utils/vec';
+import image from './image.png';
 import { useEffect, useRef, useState } from 'react';
 import { Pane } from 'tweakpane';
 
 // Credit to: https://webglfundamentals.org/webgl/lessons/webgl-qna-the-fastest-way-to-draw-many-circles.html
 // for the concept behind how to draw thousands of circles in WebGL without a performance hit
+
+const img = 'Image' in globalThis && new Image();
+if (img) img.src = image.src;
 
 const defaultOptions = {
   text: 'Hello World',
@@ -36,22 +40,34 @@ class PointsManager {
   public points: Array<Vector3>;
   public velocity: Array<Vector3>;
   public ogPoints: Array<Vector3>;
+  public color: Array<Vector3>;
 
   constructor(options: Options, width: number, height: number) {
     this.points = [];
     this.velocity = [];
     this.ogPoints = [];
+    this.color = [];
     this.rethingOptions(options, width, height);
   }
 
   rethingOptions(options: Options, width: number, height: number) {
     this.populateFromPath(
       ctx => {
-        ctx.font = '160px Arial';
-        ctx.fillStyle = 'white';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(options.text, width / 2, height / 2);
+        if (options.text) {
+          ctx.font = '160px Arial';
+          ctx.fillStyle = 'white';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(options.text, width / 2, height / 2);
+        } else if (img) {
+          ctx.drawImage(
+            img,
+            width / 2 - img.width / 2,
+            height / 2 - img.height / 2,
+            img.width,
+            img.height,
+          );
+        }
       },
       width,
       height,
@@ -86,10 +102,13 @@ class PointsManager {
     for (let i = 0; i < len; i += 4) {
       const x = (i / 4) % width;
       const y = Math.floor(i / 4 / width);
+      const r = data[i] / 255;
+      const g = data[i + 1] / 255;
+      const b = data[i + 2] / 255;
       const alpha = data[i + 3] / 255;
 
       if (alpha > 0) {
-        points.push(new Vector3(x, y, 1));
+        points.push([new Vector3(x, y, 1), new Vector3(r, g, b)] as const);
       }
     }
 
@@ -104,8 +123,9 @@ class PointsManager {
       points.length = maxPoints;
     }
 
-    this.points = [...points];
-    this.ogPoints = [...points];
+    this.points = [...points].map(([p]) => p);
+    this.ogPoints = [...this.points];
+    this.color = points.map(([, c]) => c);
     this.velocity = points.map(() => new Vector3(0, 0, 0));
   }
 
@@ -123,6 +143,7 @@ class PointsManager {
     for (let i = 0; i < this.points.length; i++) {
       const point = this.points[i];
       const ogPoint = this.ogPoints[i];
+      const color = this.color[i];
       const velocity = this.velocity[i];
       const dist = point.sub(ogPoint).length();
       result.push({
@@ -130,9 +151,9 @@ class PointsManager {
         y: point.y,
         z: 1,
         alpha: 1,
-        r: 1 - dist / 400,
-        g: 1 - velocity.length() / 800,
-        b: 1,
+        r: color.x,
+        g: color.y,
+        b: color.z,
       });
     }
 
