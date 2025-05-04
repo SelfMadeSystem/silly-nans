@@ -201,8 +201,18 @@ class PointsManager {
         const force = Math.min(1, 1 - dist / mouseRepelDistance);
 
         // Basic repulsion from mouse position
-        let forceX = (dx / dist) * force * mouseRepel * dt;
-        let forceY = (dy / dist) * force * mouseRepel * dt;
+        let forceX =
+          (dx / dist) *
+          force *
+          mouseRepel *
+          dt *
+          (1 + randomInfluence - Math.random() * randomInfluence * 2);
+        let forceY =
+          (dy / dist) *
+          force *
+          mouseRepel *
+          dt *
+          (1 + randomInfluence - Math.random() * randomInfluence * 2);
 
         // Add influence from mouse velocity direction
         if (velocityMag > 1) {
@@ -511,7 +521,7 @@ export default function TextCanvasWrapper() {
       });
       optionsFolder.addBinding(options, 'velocityDamp', {
         min: 0.01,
-        max: 0.999,
+        max: 1,
         step: 0.001,
         label: 'Velocity Damp',
       });
@@ -582,6 +592,24 @@ export default function TextCanvasWrapper() {
         });
         pane.refresh();
       });
+
+      presetsFolder
+        .addButton({
+          title: 'Cool Effect that I have no fking clue how to replicate',
+        })
+        .on('click', () => {
+          Object.assign(options, {
+            text: '██',
+            maxPoints: 50000,
+            mouseRepel: 18,
+            mouseRepelDistance: 650,
+            velocityInfluence: 0,
+            randomInfluence: 0,
+            accel: 2,
+            velocityDamp: 0.95,
+          });
+          pane.refresh();
+        });
     }
 
     return () => {
