@@ -391,13 +391,13 @@ export default function TransformFeedbackWrapper() {
     folder
       .addBinding(options, 'particleCount', {
         min: 1000,
-        max: 1000000,
+        max: 5000000,
         step: 1000,
         label: 'Particle Count',
       })
       .on('change', () => setForceUpdate({}));
     folder.addBinding(options, 'particleSize', {
-      min: 1,
+      min: 0.1,
       max: 10,
       step: 0.1,
       label: 'Particle Size',
@@ -487,6 +487,19 @@ export default function TransformFeedbackWrapper() {
         options.maxSpeed = 1.0;
         options.accel = 0.0;
         options.friction = 1.0;
+
+        setOptions({ ...options });
+        setForceUpdate({});
+        pane.refresh();
+      });
+
+    folder
+      .addButton({
+        title: 'Max dots',
+      })
+      .on('click', () => {
+        options.particleCount = 5000000;
+        options.particleSize = 0.7;
 
         setOptions({ ...options });
         setForceUpdate({});
