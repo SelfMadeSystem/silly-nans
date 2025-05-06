@@ -73,7 +73,7 @@ void main() {
 
   // Repel from mouse position
   if (distance < mouseDistance) {
-    vec2 mouseRepelForce = normalize(direction) * distanceFactor * mouseRepel;
+    vec2 mouseRepelForce = normalize(direction) * distanceFactor * mouseRepel * 0.002;
     newVelocity = velocity - mouseRepelForce;
   } else {
     newVelocity = rotateVector(sign(randomDirection) * randomWalk, velocity);
@@ -124,10 +124,8 @@ void main() {
   // Convert to clip space
   vec2 pos = (position / resolution) * 2.0 - 1.0;
   gl_Position = vec4(pos, 0, 1);
-  
-  // Size based on velocity
-  float speed = length(velocity) * 100.0;
-  gl_PointSize = particleSize * (1.0 + speed);
+
+  gl_PointSize = particleSize;
 }
 `;
 
@@ -385,7 +383,12 @@ export default function TransformFeedbackWrapper() {
     const pane = new Pane();
     paneRef.current = pane;
 
-    pane
+    const folder = pane.addFolder({
+      title: 'Options',
+      expanded: true,
+    });
+
+    folder
       .addBinding(options, 'particleCount', {
         min: 1000,
         max: 1000000,
@@ -393,49 +396,49 @@ export default function TransformFeedbackWrapper() {
         label: 'Particle Count',
       })
       .on('change', () => setForceUpdate({}));
-    pane.addBinding(options, 'particleSize', {
+    folder.addBinding(options, 'particleSize', {
       min: 1,
       max: 10,
       step: 0.1,
       label: 'Particle Size',
     });
-    pane.addBinding(options, 'mouseDistance', {
+    folder.addBinding(options, 'mouseDistance', {
       min: 0,
-      max: 1,
+      max: 3,
       step: 0.01,
       label: 'Mouse Distance',
     });
-    pane.addBinding(options, 'mouseRepel', {
+    folder.addBinding(options, 'mouseRepel', {
       min: 0,
       max: 1,
       step: 0.01,
       label: 'Mouse Repel',
     });
-    pane.addBinding(options, 'randomWalk', {
+    folder.addBinding(options, 'randomWalk', {
       min: 0,
       max: 0.1,
       step: 0.001,
       label: 'Random Walk',
     });
-    pane.addBinding(options, 'maxSpeed', {
+    folder.addBinding(options, 'maxSpeed', {
       min: 0,
       max: 1,
       step: 0.01,
       label: 'Max Speed',
     });
-    pane.addBinding(options, 'accel', {
+    folder.addBinding(options, 'accel', {
       min: 0,
       max: 0.1,
       step: 0.001,
       label: 'Acceleration',
     });
-    pane.addBinding(options, 'friction', {
+    folder.addBinding(options, 'friction', {
       min: 0.8,
       max: 1,
       step: 0.01,
       label: 'Friction',
     });
-    pane.addBinding(options, 'color', {
+    folder.addBinding(options, 'color', {
       label: 'Color',
       view: 'color',
       target: {
@@ -444,7 +447,7 @@ export default function TransformFeedbackWrapper() {
         b: 'b',
       },
     });
-    pane
+    folder
       .addButton({
         title: 'Reset',
       })
@@ -452,8 +455,46 @@ export default function TransformFeedbackWrapper() {
         setOptions({ ...defaultOptions, color: { ...defaultOptions.color } });
       });
 
+    folder
+      .addButton({
+        title: 'Put ur cursor in the corners',
+      })
+      .on('click', () => {
+        options.particleCount = 500000;
+        options.particleSize = 1.0;
+        options.mouseDistance = 999.0;
+        options.mouseRepel = 1.0;
+        options.randomWalk = 0.0;
+        options.maxSpeed = 1.0;
+        options.accel = 0.0;
+        options.friction = 1.0;
+
+        setOptions({ ...options });
+        setForceUpdate({});
+        pane.refresh();
+      });
+
+    folder
+      .addButton({
+        title: 'Crazy patterns',
+      })
+      .on('click', () => {
+        options.particleCount = 500000;
+        options.particleSize = 1.0;
+        options.mouseDistance = 999.0;
+        options.mouseRepel = 0.05;
+        options.randomWalk = 0.0;
+        options.maxSpeed = 1.0;
+        options.accel = 0.0;
+        options.friction = 1.0;
+
+        setOptions({ ...options });
+        setForceUpdate({});
+        pane.refresh();
+      });
+
     return () => {
-      pane.dispose();
+      folder.dispose();
     };
   }, [options]);
 
