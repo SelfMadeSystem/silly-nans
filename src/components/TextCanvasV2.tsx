@@ -3,7 +3,7 @@ import { useAnimationLoop } from '../utils/canvas/useAnimationLoop';
 import { useCanvas } from '../utils/canvas/useCanvas';
 import { useWindowEvent } from '../utils/canvas/useWindowEvent';
 import { Vector2 } from '../utils/vec';
-import image from './image.png';
+import image from './cat.png';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import { Pane } from 'tweakpane';
@@ -86,7 +86,7 @@ void main() {
     
     // Add influence from mouse velocity
     float velocityMag = length(mouseVelocity);
-    if (velocityMag > 1.0) {
+    if (velocityMag > 0.01) {
       vec2 normVelocity = mouseVelocity / velocityMag;
       normVelocity.y = -normVelocity.y; // Flip Y coordinate
       vec2 velocityForce = normVelocity * force * velocityInfluence * dt * sqrt(velocityMag) * 
@@ -160,6 +160,7 @@ void main() {
 
 function genParticles(options: Options, width: number, height: number) {
   return populateFromPath(
+    options.text === '',
     (ctx, scale) => {
       const { width, height } = ctx.canvas;
       if (options.text) {
@@ -184,20 +185,22 @@ function genParticles(options: Options, width: number, height: number) {
   );
 }
 
-function getScale(maxPoints: number) {
-  if (maxPoints < 125000) {
+function getScale(cat: boolean, maxPoints: number) {
+  const c = cat ? 3.84 : 1;
+  if (maxPoints < 125000 * c) {
     return 1;
   }
-  return Math.floor(maxPoints / 125000);
+  return Math.floor(maxPoints / (125000 * c));
 }
 
 function populateFromPath(
+  cat: boolean,
   drawFn: (ctx: CanvasRenderingContext2D, scale: number) => void,
   width: number,
   height: number,
   maxPoints: number,
 ): [Vector2, [number, number, number]][] {
-  const scale = getScale(maxPoints);
+  const scale = getScale(cat, maxPoints);
   width = Math.floor(width * scale);
   height = Math.floor(height * scale);
   const points: [Vector2, [number, number, number]][] = [];
@@ -355,7 +358,7 @@ function TextCanvas({
     if (gl && canvas) {
       initializeParticles(gl, canvas);
     }
-  }, [gl, canvas, initializeParticles, options.maxPoints]);
+  }, [gl, canvas, initializeParticles, options.maxPoints, options.text]);
 
   useAnimationLoop(dt => {
     if (!gl || !programInfo || !bufferInfo || !tfRef.current) return;
@@ -452,36 +455,21 @@ function TextCanvas({
   const prevTouchPosRef = useRef<Vector2 | null>(null);
 
   const handleTouchMove = (e: TouchEvent) => {
-    disableMouseEvents.current = true;
+    if (disableMouseEvents.current) return;
     const rect = canvas?.getBoundingClientRect();
     if (!rect) return;
     const x = e.touches[0].clientX;
     const y = e.touches[0].clientY;
-    const touchPos = new Vector2(x, y);
     const newMousePos = new Vector2(x - rect.left, y - rect.top);
     mousePosRef.current = newMousePos;
     if (!prevMousePosRef.current) {
       prevMousePosRef.current = newMousePos;
-    }
-    if (!prevTouchPosRef.current) {
-      prevTouchPosRef.current = touchPos;
-    } else {
-      const delta = touchPos.sub(prevTouchPosRef.current);
-      mouseVelocityRef.current = (
-        mouseVelocityRef.current || new Vector2(0, 0)
-      ).add(delta);
-      prevTouchPosRef.current = touchPos;
     }
   };
 
   useWindowEvent('mousemove', handleMouseMove);
   useWindowEvent('touchstart', handleTouchMove);
   useWindowEvent('touchmove', handleTouchMove);
-  useWindowEvent('touchend', () => {
-    prevTouchPosRef.current = null;
-    mouseVelocityRef.current = null;
-    mousePosRef.current = null;
-  });
 
   return (
     <canvas
@@ -647,9 +635,10 @@ export default function TextCanvasWrapper() {
       presetsFolder.addButton({ title: 'Cat' }).on('click', () => {
         Object.assign(options, {
           text: '',
-          maxPoints: 50000,
+          maxPoints: 500000,
         });
         pane.refresh();
+        setForceUpdate({});
       });
     }
 

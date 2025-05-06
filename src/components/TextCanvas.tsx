@@ -215,7 +215,7 @@ class PointsManager {
           (1 + randomInfluence - Math.random() * randomInfluence * 2);
 
         // Add influence from mouse velocity direction
-        if (velocityMag > 1) {
+        if (velocityMag > 0.01) {
           // Only consider significant movements
           const normVelocity = mouseVelocity.normalize();
           forceX +=
