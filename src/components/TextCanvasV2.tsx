@@ -398,7 +398,7 @@ function TextCanvas({
       randomInfluence: options.randomInfluence,
       accel: options.accel,
       velocityDamp: options.velocityDamp,
-      dt: dt / 1000, // Make sure to pass the actual dt value
+      dt: Math.min(dt / 1000, 0.01), // Clamp dt to avoid large time steps
     });
 
     gl.enable(gl.RASTERIZER_DISCARD);
