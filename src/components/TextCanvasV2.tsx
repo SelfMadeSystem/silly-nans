@@ -200,54 +200,60 @@ function populateFromPath(
   height: number,
   maxPoints: number,
 ): [Vector2, [number, number, number]][] {
-  const scale = getScale(cat, maxPoints);
-  width = Math.floor(width * scale);
-  height = Math.floor(height * scale);
-  const points: [Vector2, [number, number, number]][] = [];
+  try {
+    const scale = getScale(cat, maxPoints);
+    width = Math.floor(width * scale);
+    height = Math.floor(height * scale);
+    const points: [Vector2, [number, number, number]][] = [];
 
-  const offscreenCanvas = document.createElement('canvas');
-  offscreenCanvas.width = width;
-  offscreenCanvas.height = height;
-  const ctx = offscreenCanvas.getContext('2d');
-  if (!ctx) {
-    throw new Error('2D context not supported');
-  }
-
-  ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = 'red';
-  drawFn(ctx, scale);
-
-  const imageData = ctx.getImageData(0, 0, width, height);
-  const data = imageData.data;
-  const len = data.length;
-
-  for (let i = 0; i < len; i += 4) {
-    const x = ((i / 4) % width) / scale;
-    let y = Math.floor(i / 4 / width);
-    y = height - y; // Flip Y coordinate
-    y /= scale;
-    const r = data[i] / 255;
-    const g = data[i + 1] / 255;
-    const b = data[i + 2] / 255;
-    const alpha = data[i + 3] / 255;
-
-    if (alpha > 0) {
-      points.push([new Vector2(x, y), [r, g, b]]);
+    const offscreenCanvas = document.createElement('canvas');
+    offscreenCanvas.width = width;
+    offscreenCanvas.height = height;
+    const ctx = offscreenCanvas.getContext('2d');
+    if (!ctx) {
+      throw new Error('2D context not supported');
     }
-  }
 
-  if (points.length > maxPoints) {
-    // Fisher-Yates shuffle and take first maxPoints elements
-    // (random selection without replacement)
-    for (let i = points.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [points[i], points[j]] = [points[j], points[i]];
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = 'red';
+    drawFn(ctx, scale);
+
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+    const len = data.length;
+
+    for (let i = 0; i < len; i += 4) {
+      const x = ((i / 4) % width) / scale;
+      let y = Math.floor(i / 4 / width);
+      y = height - y; // Flip Y coordinate
+      y /= scale;
+      const r = data[i] / 255;
+      const g = data[i + 1] / 255;
+      const b = data[i + 2] / 255;
+      const alpha = data[i + 3] / 255;
+
+      if (alpha > 0) {
+        points.push([new Vector2(x, y), [r, g, b]]);
+      }
     }
-    // Truncate to keep only the first maxPoints elements
-    points.length = maxPoints;
-  }
 
-  return points;
+    if (points.length > maxPoints) {
+      // Fisher-Yates shuffle and take first maxPoints elements
+      // (random selection without replacement)
+      for (let i = points.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [points[i], points[j]] = [points[j], points[i]];
+      }
+      // Truncate to keep only the first maxPoints elements
+      points.length = maxPoints;
+    }
+
+    return points;
+  } catch (error) {
+    toast.error('Likely out of memory. Try reducing the number of points.');
+    console.error('Error populating from path:', error);
+    return [];
+  }
 }
 
 function TextCanvas({
@@ -314,7 +320,7 @@ function TextCanvas({
       // Initialize buffers for position and velocity
       const particles = genParticles(options, canvas.width, canvas.height);
       const particleCount = particles.length;
-      console.log('particleCount', particleCount);
+
       const colors = new Float32Array(particleCount * 4);
       const positions = new Float32Array(particleCount * 2);
       const ogPositions = new Float32Array(particleCount * 2);
@@ -577,7 +583,7 @@ export default function TextCanvasWrapper() {
             gudPcBtn.dispose();
             pane.refresh();
           } else {
-            toast.info('You already have 5 million points!');
+            toast.info('You already have 2 million points!');
           }
         });
     }
