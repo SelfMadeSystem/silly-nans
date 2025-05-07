@@ -13,6 +13,7 @@ const defaultOptions = {
   minStrokeWidth: 1,
   maxStrokeWidth: 8,
   strokeMouseDistance: 300,
+  linecap: 'butt' as 'butt' | 'round',
 };
 
 type Options = typeof defaultOptions;
@@ -34,6 +35,7 @@ function CurvedMouseLine({
     minStrokeWidth,
     maxStrokeWidth,
     strokeMouseDistance,
+    linecap,
   } = options;
   const pos = iPos.mult(size);
   const distance = pos.dist(mousePos);
@@ -56,6 +58,7 @@ function CurvedMouseLine({
       d={path}
       stroke={strokeColor}
       fill="none"
+      strokeLinecap={linecap}
       strokeWidth={lerp(
         maxStrokeWidth,
         minStrokeWidth,
@@ -130,7 +133,7 @@ function CurvedMouseLines({ options }: { options: Options }) {
 }
 
 export default function CurvedMouseLinesWrapper() {
-  const [options, setOptions] = useState<Options>({ ...defaultOptions });
+  const [options] = useState<Options>({ ...defaultOptions });
 
   useEffect(() => {
     const pane = new Pane();
@@ -187,6 +190,13 @@ export default function CurvedMouseLinesWrapper() {
       min: 0,
       max: 1000,
       step: 1,
+    });
+    folder.addBinding(options, 'linecap', {
+      label: 'Line Cap',
+      options: {
+        Butt: 'butt',
+        Round: 'round',
+      },
     });
 
     const presets = pane.addFolder({
