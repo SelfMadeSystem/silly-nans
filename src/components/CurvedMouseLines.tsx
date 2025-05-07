@@ -1,3 +1,4 @@
+import { clamp, lerp } from '../utils/mathUtils';
 import { Vector2 } from '../utils/vec';
 import { useEffect, useRef, useState } from 'react';
 import { Pane } from 'tweakpane';
@@ -8,6 +9,10 @@ const defaultOptions = {
   cols: 20,
   size: 50,
   lineSize: 0.8,
+  strokeColor: '#ffffff',
+  minStrokeWidth: 1,
+  maxStrokeWidth: 8,
+  strokeMouseDistance: 300,
 };
 
 type Options = typeof defaultOptions;
@@ -21,7 +26,15 @@ function CurvedMouseLine({
   mousePos: Vector2;
   options: Options;
 }) {
-  const { lineSize, size, curved } = options;
+  const {
+    lineSize,
+    size,
+    curved,
+    strokeColor,
+    minStrokeWidth,
+    maxStrokeWidth,
+    strokeMouseDistance,
+  } = options;
   const pos = iPos.mult(size);
   const distance = pos.dist(mousePos);
   const angled = Vector2.fromAngle(
@@ -41,9 +54,13 @@ function CurvedMouseLine({
   return (
     <path
       d={path}
-      stroke="white"
+      stroke={strokeColor}
       fill="none"
-      strokeWidth={64 / (Math.sqrt(distance) + 4)}
+      strokeWidth={lerp(
+        maxStrokeWidth,
+        minStrokeWidth,
+        clamp((distance / strokeMouseDistance) * 2 - 1, 0, 1),
+      )}
     />
   );
 }
@@ -117,33 +134,85 @@ export default function CurvedMouseLinesWrapper() {
 
   useEffect(() => {
     const pane = new Pane();
-    pane.addBinding(options, 'curved', {
+
+    const folder = pane.addFolder({
+      title: 'Options',
+      expanded: true,
+    });
+
+    folder.addBinding(options, 'curved', {
       label: 'Curved',
     });
-    pane.addBinding(options, 'rows', {
+    folder.addBinding(options, 'rows', {
       label: 'Rows',
       min: 1,
       max: 50,
       step: 1,
     });
-    pane.addBinding(options, 'cols', {
+    folder.addBinding(options, 'cols', {
       label: 'Cols',
       min: 1,
       max: 50,
       step: 1,
     });
-    pane.addBinding(options, 'size', {
+    folder.addBinding(options, 'size', {
       label: 'Size',
       min: 1,
       max: 200,
       step: 1,
     });
-    pane.addBinding(options, 'lineSize', {
+    folder.addBinding(options, 'lineSize', {
       label: 'Line Size',
       min: 0,
       max: 1,
       step: 0.01,
     });
+    folder.addBinding(options, 'strokeColor', {
+      label: 'Line Color',
+    });
+    folder.addBinding(options, 'minStrokeWidth', {
+      label: 'Min Stroke Width',
+      min: 0.1,
+      max: 10,
+      step: 0.1,
+    });
+    folder.addBinding(options, 'maxStrokeWidth', {
+      label: 'Max Stroke Width',
+      min: 0.1,
+      max: 20,
+      step: 0.1,
+    });
+    folder.addBinding(options, 'strokeMouseDistance', {
+      label: 'Stroke Mouse Distance',
+      min: 0,
+      max: 1000,
+      step: 1,
+    });
+
+    const presets = pane.addFolder({
+      title: 'Presets',
+      expanded: false,
+    });
+    presets
+      .addButton({
+        title: 'Default',
+      })
+      .on('click', () => {
+        Object.assign(options, defaultOptions);
+        pane.refresh();
+      });
+    presets
+      .addButton({
+        title: 'Inverted Width',
+      })
+      .on('click', () => {
+        Object.assign(options, {
+          ...defaultOptions,
+          maxStrokeWidth: defaultOptions.minStrokeWidth,
+          minStrokeWidth: defaultOptions.maxStrokeWidth,
+        });
+        pane.refresh();
+      });
 
     return () => {
       pane.dispose();
