@@ -217,7 +217,6 @@ export default function CurvedMouseLinesWrapper() {
       })
       .on('click', () => {
         Object.assign(options, {
-          ...defaultOptions,
           maxStrokeWidth: defaultOptions.minStrokeWidth,
           minStrokeWidth: defaultOptions.maxStrokeWidth,
         });
