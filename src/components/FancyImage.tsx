@@ -115,8 +115,7 @@ export default function FancyImage({ src, alt, className }: FancyImageProps) {
   const programInfoRef = useRef<twgl.ProgramInfo | null>(null);
   const bufferInfoRef = useRef<twgl.BufferInfo | null>(null);
   const textureRef = useRef<WebGLTexture | null>(null);
-  const [scrollY, setScrollY] = useState(0);
-  const springScrollY = useSpringValue(scrollY, {
+  const springScrollY = useSpringValue(0, {
     config: {
       mass: 1,
       tension: 170,
@@ -180,6 +179,7 @@ export default function FancyImage({ src, alt, className }: FancyImageProps) {
       programInfoRef.current,
       bufferInfoRef.current,
     );
+    springScrollY.start(window.scrollY);
 
     const scrollDiff = springScrollY.get() - scrollY;
 
@@ -196,7 +196,6 @@ export default function FancyImage({ src, alt, className }: FancyImageProps) {
 
   useEffect(() => {
     if (!gl || !imgRef.current) return;
-    setScrollY(window.scrollY);
     springScrollY.set(window.scrollY);
 
     const loadTexture = () => {
@@ -223,11 +222,6 @@ export default function FancyImage({ src, alt, className }: FancyImageProps) {
       }
     };
   }, [gl, src, render, springScrollY]);
-
-  useWindowEvent('scroll', () => {
-    setScrollY(window.scrollY);
-    springScrollY.start(window.scrollY);
-  });
 
   return (
     <div className={`relative ${className}`}>
