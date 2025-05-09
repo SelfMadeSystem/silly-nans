@@ -1,10 +1,9 @@
 import * as twgl from 'twgl.js';
 import { useAnimationLoop } from '../utils/canvas/useAnimationLoop';
 import { useCanvas } from '../utils/canvas/useCanvas';
-import { useWindowEvent } from '../utils/canvas/useWindowEvent';
 import { clamp } from '../utils/mathUtils';
-import { useSpringValue } from '@react-spring/web';
-import { useEffect, useRef, useState } from 'react';
+import { fancyImageOptions, fancyImageSpringOptions } from './FancyImageStore';
+import { useEffect, useRef } from 'react';
 
 export interface FancyImageProps {
   src: string;
@@ -31,6 +30,7 @@ const fragmentShaderSource = /*glsl*/ `
   uniform vec2 u_resolution;
   uniform vec2 u_imageSize;
   uniform float u_scrollSpeed;
+  uniform float u_rgbDiff;
 
   vec2 rescaleTexCoords(vec2 texCoord, vec2 imageSize, vec2 resolution) {
     // Rescale texture coordinates to scaled to image size
@@ -90,10 +90,9 @@ const fragmentShaderSource = /*glsl*/ `
   
   void main() {
     vec2 texCoord = rescaleTexCoords(v_texcoord, u_imageSize, u_resolution);
-    float diff = 0.7;
-    vec2 rTexCoord = transformTexCoords(texCoord, u_scrollSpeed * diff);
+    vec2 rTexCoord = transformTexCoords(texCoord, u_scrollSpeed * (1.0 - u_rgbDiff));
     vec2 gTexCoord = transformTexCoords(texCoord, u_scrollSpeed);
-    vec2 bTexCoord = transformTexCoords(texCoord, u_scrollSpeed / diff);
+    vec2 bTexCoord = transformTexCoords(texCoord, u_scrollSpeed / (1.0 - u_rgbDiff));
     
     // Discard fragments if all coords outside the [0,1] range
     if ((rTexCoord.x < 0.0 && gTexCoord.x < 0.0 && bTexCoord.x < 0.0) ||
@@ -115,13 +114,8 @@ export default function FancyImage({ src, alt, className }: FancyImageProps) {
   const programInfoRef = useRef<twgl.ProgramInfo | null>(null);
   const bufferInfoRef = useRef<twgl.BufferInfo | null>(null);
   const textureRef = useRef<WebGLTexture | null>(null);
-  const springScrollY = useSpringValue(0, {
-    config: {
-      mass: 1,
-      tension: 170,
-      friction: 26,
-    },
-  });
+  const springScrollVeloRef = useRef(0);
+  const springScrollYRef = useRef(0);
 
   const [gl, , setCanvas] = useCanvas({
     contextId: 'webgl',
@@ -135,7 +129,7 @@ export default function FancyImage({ src, alt, className }: FancyImageProps) {
 
       gl.viewport(0, 0, canvas.width, canvas.height);
     },
-    setup(gl: WebGLRenderingContext, canvas: HTMLCanvasElement) {
+    setup(gl: WebGLRenderingContext) {
       if (!gl) return;
 
       // Enable alpha in context (usually default, but can be explicit)
@@ -161,7 +155,7 @@ export default function FancyImage({ src, alt, className }: FancyImageProps) {
   });
 
   // Animation render function
-  const render = useAnimationLoop((dt, t) => {
+  const render = useAnimationLoop(dt => {
     if (
       !gl ||
       !programInfoRef.current ||
@@ -179,15 +173,39 @@ export default function FancyImage({ src, alt, className }: FancyImageProps) {
       programInfoRef.current,
       bufferInfoRef.current,
     );
-    springScrollY.start(window.scrollY);
 
-    const scrollDiff = springScrollY.get() - scrollY;
+    const springOptions = fancyImageSpringOptions.value;
+    const options = fancyImageOptions.value;
+
+    // Update the spring scroll position
+    const scrollY = window.scrollY;
+
+    // Apply spring physics
+    const springForce =
+      (scrollY - springScrollYRef.current) * springOptions.tension;
+    springScrollVeloRef.current += springForce;
+    springScrollVeloRef.current *= springOptions.friction;
+    const sign1 = Math.sign(springScrollYRef.current - scrollY);
+    springScrollYRef.current += (springScrollVeloRef.current * dt) / 1000;
+    const sign2 = Math.sign(springScrollYRef.current - scrollY);
+    if (sign1 !== 0 && sign1 !== sign2 && springOptions.bounce > 0) {
+      springScrollYRef.current = scrollY;
+      springScrollVeloRef.current *= -springOptions.bounce;
+    }
+    springScrollYRef.current = clamp(
+      springScrollYRef.current,
+      scrollY - springOptions.maxScrollSpeed,
+      scrollY + springOptions.maxScrollSpeed,
+    );
+
+    const scrollDiff = springScrollYRef.current - scrollY;
 
     const uniforms = {
       u_texture: textureRef.current,
       u_resolution: [canvas.width, canvas.height],
       u_imageSize: [imgRef.current.width, imgRef.current.height],
-      u_scrollSpeed: clamp(scrollDiff / 1000, -0.25, 0.25),
+      u_scrollSpeed: (scrollDiff / 1000) * options.scrollSpeed,
+      u_rgbDiff: options.rgbDiff,
     };
 
     twgl.setUniforms(programInfoRef.current, uniforms);
@@ -196,7 +214,7 @@ export default function FancyImage({ src, alt, className }: FancyImageProps) {
 
   useEffect(() => {
     if (!gl || !imgRef.current) return;
-    springScrollY.set(window.scrollY);
+    springScrollYRef.current = window.scrollY;
 
     const loadTexture = () => {
       if (!gl || !imgRef.current || !bufferInfoRef.current) return;
@@ -221,7 +239,7 @@ export default function FancyImage({ src, alt, className }: FancyImageProps) {
         gl.deleteTexture(textureRef.current);
       }
     };
-  }, [gl, src, render, springScrollY]);
+  }, [gl, src, render]);
 
   return (
     <div className={`relative ${className}`}>
