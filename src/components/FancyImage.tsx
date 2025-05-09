@@ -49,7 +49,7 @@ const fragmentShaderSource = /*glsl*/ `
   vec2 transformTexCoords(vec2 texCoord, float scrollSpeed) {
     // Closer to the vertical center line, the more the image is distorted
     float distFromCenter = abs(texCoord.x - 0.5);
-    float distortion = 0.5 - pow(distFromCenter - 0.1, 2.0) * 5.0;
+    float distortion = 0.5 - pow(distFromCenter, 2.0) * 3.0;
     float scrollOffset = distortion * scrollSpeed;
     texCoord.y += scrollOffset;
     return texCoord;
