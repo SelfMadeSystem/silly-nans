@@ -6,7 +6,7 @@ const defaultImageOptions = {
 };
 const defaultSpringConfig = {
   tension: 10,
-  friction: 0.9,
+  friction: 0.5,
   bounce: 0,
   maxScrollSpeed: 200,
 };

@@ -16,7 +16,7 @@ const createFancyImagePane = () => {
   });
   folder.addBinding(fancyImageOptions.value, 'rgbDiff', {
     min: 0,
-    max: 1,
+    max: 0.8,
     step: 0.01,
     label: 'RGB Diff',
   });
