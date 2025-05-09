@@ -9,8 +9,15 @@ type Contexts = {
 
 type ContextId = keyof Contexts;
 
+type ContextAttributes =
+  | CanvasRenderingContext2DSettings
+  | WebGLContextAttributes
+  | ImageBitmapRenderingContextSettings
+  | undefined;
+
 type UseCanvasProps<CID extends ContextId> = {
   contextId?: CID;
+  contextAttributes?: ContextAttributes;
   setup?: (
     context: Contexts[CID],
     canvas: HTMLCanvasElement,
@@ -63,6 +70,7 @@ type UseCanvasProps<CID extends ContextId> = {
  * - The `resize` function is called when the canvas is resized if `autoResize` is enabled.
  * - The `contextId` property allows you to specify the type of rendering context you want to use.
  *   The default is `'2d'`, but you can also use `'bitmaprenderer'`, `'webgl'`, or `'webgl2'`.
+ * - The `contextAttributes` property allows you to specify attributes for the rendering context.
  * - The `width` and `height` properties are used to set the canvas dimensions when the
  *   `autoResize` option is not enabled. If both `width` and `height` are provided, the canvas
  *   will be resized to those dimensions.
@@ -97,14 +105,21 @@ export function useCanvas<CID extends ContextId>(
   React.Dispatch<React.SetStateAction<HTMLCanvasElement | null>>,
 ] {
   const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
-  const contextRef = useRef<Contexts[CID] | null>(null);
+  const [ctx, setCtx] = useState<Contexts[CID] | null>(null);
 
   useEffect(() => {
     if (canvas) {
       const contextId = props.contextId || '2d';
-      const context = canvas.getContext(contextId) as Contexts[CID];
+      // Pass contextAttributes if provided
+      const context =
+        props.contextAttributes !== undefined
+          ? (canvas.getContext(
+              contextId,
+              props.contextAttributes,
+            ) as Contexts[CID])
+          : (canvas.getContext(contextId) as Contexts[CID]);
       if (context) {
-        contextRef.current = context;
+        setCtx(context);
         if ('width' in props && 'height' in props) {
           canvas.width = props.width;
           canvas.height = props.height;
@@ -124,13 +139,13 @@ export function useCanvas<CID extends ContextId>(
         }
       } else {
         console.error(`Failed to get context: ${contextId}`);
-        contextRef.current = null;
+        setCtx(null);
       }
     } else {
-      contextRef.current = null;
+      setCtx(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canvas]);
+  }, [canvas, props.contextAttributes]);
 
-  return [contextRef.current, canvas, setCanvas] as const;
+  return [ctx, canvas, setCanvas] as const;
 }

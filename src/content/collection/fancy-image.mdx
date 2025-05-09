@@ -1,0 +1,48 @@
+---
+title: 'Fancy Images'
+description: 'Fancy image effect whilst scrolling.'
+pubDate: '2025-05-08'
+heroImage: '/fancyimage.png'
+source: 'https://github.com/SelfMadeSystem/silly-nans/blob/main/src/components/FancyImage.tsx'
+fullWidth: true
+isBackground: true
+darkMode: false
+headerClasses: 'before:backdrop-blur-lg before:backdrop-brightness-400 before:animate-backdrop-hue-rotate before:fade-b'
+contentClasses: 'before:backdrop-blur-lg before:backdrop-brightness-400 before:animate-backdrop-hue-rotate before:fade-y'
+footerClasses: 'before:backdrop-blur-[3px] before:backdrop-brightness-200 before:fade-t-xl'
+---
+
+import FancyImage from '../../components/FancyImage';
+
+<div class="flex flex-row flex-wrap justify-center gap-8">
+  <FancyImage
+    className="mx-auto my-8 w-1/2 rounded-xl text-white"
+    src="/public/images/image1.jpg"
+    alt="Fancy image effect whilst scrolling."
+    client:load
+  />
+  <FancyImage
+    className="mx-auto my-8 w-fit max-w-xl rounded-xl text-white"
+    src="/public/images/image1.jpg"
+    alt="Fancy image effect whilst scrolling."
+    client:load
+  />
+  <FancyImage
+    className="mx-auto my-8 w-fit max-w-sm rounded-xl text-white"
+    src="/public/images/image1.jpg"
+    alt="Fancy image effect whilst scrolling."
+    client:load
+  />
+  <FancyImage
+    className="mx-auto my-8 w-fit max-w-xl rounded-xl text-white"
+    src="/public/images/image1.jpg"
+    alt="Fancy image effect whilst scrolling."
+    client:load
+  />
+  <FancyImage
+    className="mx-auto my-8 w-fit max-w-xl rounded-xl text-white"
+    src="/public/images/image1.jpg"
+    alt="Fancy image effect whilst scrolling."
+    client:load
+  />
+</div>
