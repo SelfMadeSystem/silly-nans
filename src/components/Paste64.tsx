@@ -31,11 +31,32 @@ export default function Paste64() {
 
   const handlePaste = (event: React.ClipboardEvent<HTMLDivElement>) => {
     const items = event.clipboardData.items;
+
+    // First check for image files
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
       if (item.type.startsWith('image/')) {
         const file = item.getAsFile();
         changeFile(file);
+        return;
+      }
+    }
+
+    // Then check for text that might be SVG
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type === 'text/plain') {
+        item.getAsString(text => {
+          const trimmedText = text.trim();
+          if (
+            trimmedText.startsWith('<svg') &&
+            trimmedText.includes('</svg>')
+          ) {
+            // It's likely an SVG, convert to data URL
+            const svgDataUrl = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(trimmedText)))}`;
+            setImage(svgDataUrl);
+          }
+        });
         return;
       }
     }
