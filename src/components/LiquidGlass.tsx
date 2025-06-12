@@ -152,8 +152,23 @@ function LiquidGlass({
     }
   };
 
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (glassRef.current && e.touches.length > 0) {
+      setIsDragging(true);
+      const rect = glassRef.current.getBoundingClientRect();
+      const touch = e.touches[0];
+      setDragOffset(
+        new Vector2(touch.clientX - rect.left, touch.clientY - rect.top),
+      );
+    }
+  };
+
   useEffect(() => {
     const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    const handleTouchEnd = () => {
       setIsDragging(false);
     };
 
@@ -165,16 +180,38 @@ function LiquidGlass({
       }
     };
 
-    // Add global mouse event listeners when dragging
+    const handleTouchMove = (e: TouchEvent) => {
+      if (isDragging && e.touches.length > 0) {
+        const touch = e.touches[0];
+        setPosition(
+          new Vector2(
+            touch.clientX - dragOffset.x,
+            touch.clientY - dragOffset.y,
+          ),
+        );
+        // Prevent scrolling while dragging
+        e.preventDefault();
+      }
+    };
+
+    // Add global mouse and touch event listeners when dragging
     if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove as any);
+      document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('touchmove', handleTouchMove, {
+        passive: false,
+      });
+      document.addEventListener('touchend', handleTouchEnd);
+      document.addEventListener('touchcancel', handleTouchEnd);
     }
 
     // Cleanup
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove as any);
+      document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+      document.removeEventListener('touchcancel', handleTouchEnd);
     };
   }, [isDragging, dragOffset]);
 
@@ -193,6 +230,7 @@ function LiquidGlass({
         borderRadius: options.rounded,
       }}
       onMouseDown={handleMouseDown}
+      onTouchStart={handleTouchStart}
     >
       {displacementImage && (
         <>
