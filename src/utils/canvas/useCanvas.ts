@@ -1,4 +1,4 @@
-import { type LegacyRef, useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 type Contexts = {
   '2d': CanvasRenderingContext2D;
