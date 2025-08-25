@@ -2,7 +2,8 @@ import { useAnimationLoop } from '../utils/canvas/useAnimationLoop';
 import { useCanvas } from '../utils/canvas/useCanvas';
 import { useWindowEvent } from '../utils/canvas/useWindowEvent';
 import { Vector2 } from '../utils/vec';
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Pane } from 'tweakpane';
 
 const characters = ' .-:=+*#%@'.split('');
 
@@ -56,7 +57,17 @@ function noiseFunction(x: number, y: number, t: number) {
   );
 }
 
-export default function Lighthouse() {
+const defaultOptions = {
+  gridSize: 15,
+  fromBottom: 5,
+  textSize: 1.2,
+  drawText: true,
+  fireColor: false,
+};
+
+type LighthouseOptions = typeof defaultOptions;
+
+function Lighthouse({ options }: { options: LighthouseOptions }) {
   const [ctx, canvas, setCanvas] = useCanvas({
     autoResize: true,
   });
@@ -65,8 +76,8 @@ export default function Lighthouse() {
   useAnimationLoop((_dt, t) => {
     if (!ctx || !canvas) return;
 
-    const gridSize = 15;
-    const fromBottom = 5;
+    const { gridSize, fromBottom, textSize, drawText, fireColor } = options;
+
     const fromBottomPixels = fromBottom * gridSize;
 
     const center = new Vector2(
@@ -98,18 +109,44 @@ export default function Lighthouse() {
 
         const animatedIntensity =
           baseIntensity *
-          (0.1 * noiseFunction(0.2 * x, 0.2 * y, t * 0.001) + 0.95);
+          (0.1 * noiseFunction(0.2 * x, 0.2 * y, t * 0.005) + 0.95);
 
-        const color = `rgba(255, 255, 255, ${animatedIntensity})`;
+        let color: string;
+
+        if (fireColor) {
+          // Create smooth fire gradient: red -> orange -> yellow -> white
+          const intensity = Math.min(1, Math.max(0, animatedIntensity));
+
+          // Define color stops for fire gradient
+          const r = 255;
+          const g = Math.floor(255 * Math.min(1, intensity * 1.25)); // Ramp up green quickly
+          const b = Math.floor(255 * Math.max(0, (intensity - 0.6) * 2.5)); // Add blue for white at high intensity
+          const alpha = Math.min(1, intensity * 1.2); // Fade in with intensity
+
+          color = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        } else {
+          color = `rgba(255, 255, 255, ${animatedIntensity})`;
+        }
         ctx.fillStyle = color;
 
+        if (!drawText) {
+          ctx.fillRect(
+            canvas.width / 2 + x * gridSize - gridSize / 2,
+            canvas.height - (y + fromBottom) * gridSize - gridSize / 2,
+            gridSize,
+            gridSize,
+          );
+          continue;
+        }
+
+        // Draw character
         const charIndex = Math.min(
           characters.length - 1,
           Math.floor(animatedIntensity * characters.length),
         );
         const char = characters[charIndex];
 
-        ctx.font = `${gridSize * 1.2}px monospace`;
+        ctx.font = `${gridSize * textSize}px monospace`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(
@@ -142,4 +179,59 @@ export default function Lighthouse() {
   return (
     <canvas className="fixed inset-0 -z-10 h-full w-full" ref={setCanvas} />
   );
+}
+
+export default function LighthouseWrapper() {
+  const [options] = useState<LighthouseOptions>({
+    ...defaultOptions,
+  });
+
+  useEffect(() => {
+    const pane = new Pane();
+
+    {
+      const optionsFolder = pane.addFolder({
+        title: 'Options',
+        expanded: true,
+      });
+      optionsFolder.addBinding(options, 'gridSize', {
+        min: 5,
+        max: 50,
+        step: 1,
+      });
+      optionsFolder.addBinding(options, 'fromBottom', {
+        min: 0,
+        max: 20,
+        step: 1,
+      });
+      optionsFolder.addBinding(options, 'textSize', {
+        min: 0.1,
+        max: 3,
+        step: 0.1,
+      });
+      optionsFolder.addBinding(options, 'drawText');
+      optionsFolder.addBinding(options, 'fireColor');
+    }
+
+    {
+      const presetsFolder = pane.addFolder({
+        title: 'Presets',
+        expanded: false,
+      });
+      presetsFolder.addButton({ title: 'Default' }).on('click', () => {
+        Object.assign(options, defaultOptions);
+        pane.refresh();
+      });
+      presetsFolder.addButton({ title: 'No Text' }).on('click', () => {
+        Object.assign(options, { ...defaultOptions, drawText: false });
+        pane.refresh();
+      });
+    }
+
+    return () => {
+      pane.dispose();
+    };
+  }, [options]);
+
+  return <Lighthouse options={options} />;
 }
