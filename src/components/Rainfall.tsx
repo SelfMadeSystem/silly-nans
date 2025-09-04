@@ -17,8 +17,13 @@ class Drop {
   opacity: number = 0;
   speed: Vector2 = new Vector2(0);
   done: boolean = false;
+  canvas: HTMLCanvasElement | null = null;
+  ctx: CanvasRenderingContext2D | null = null;
 
   constructor(canvasSize: Vector2) {
+    this.canvas = document.createElement('canvas');
+    this.ctx = this.canvas.getContext('2d');
+    this.position = new Vector2(Math.random() * canvasSize.x, 0);
     this.reset(canvasSize);
   }
 
@@ -26,35 +31,59 @@ class Drop {
     this.size = Math.random() * 0.8;
     if (this.size < 0.3) {
       this.position = new Vector2(
-        Math.random() * canvasSize.x,
+        this.position.x,
         Math.random() * canvasSize.y * 0.9, // top 90% of the canvas height
       );
     } else {
       this.position = new Vector2(
-        Math.random() * canvasSize.x,
+        this.position.x,
         Math.random() * canvasSize.y * 0.1, // top 10% of the canvas height
       );
     }
     this.prevPos = this.position;
     this.ogPos = this.position;
     this.opacity = 0.2 + Math.random() * 0.5;
-    this.speed = new Vector2(2.5 - Math.random() * 5, 5 + Math.random() * 10);
+    this.speed = new Vector2(0.5 - Math.random() * 1, 1 + Math.random() * 1);
   }
 
   update(dt: number, canvasSize: Vector2) {
     this.prevPos = this.position;
     this.position = this.position.add(this.speed.mult(dt));
 
-    if (Math.random() < 0.1) {
-      this.speed = new Vector2(2.5 - Math.random() * 5, 5 + Math.random() * 10);
-    }
-
     if (this.position.dist(this.ogPos) > 1000 * this.size) {
-      this.reset(canvasSize);
+      if (Math.random() < 0.01) this.reset(canvasSize);
+    } else if (Math.random() < 0.1) {
+      this.speed = new Vector2(0.5 - Math.random() * 1, 1 + Math.random() * 1);
     }
   }
 
-  draw(ctx: CanvasRenderingContext2D, dropImg: HTMLImageElement) {
+  draw(
+    rCtx: CanvasRenderingContext2D,
+    dCtx: CanvasRenderingContext2D,
+    dropImg: HTMLImageElement,
+  ) {
+    if (!this.ctx || !this.canvas) return;
+    this.canvas.width = rCtx.canvas.width;
+    this.canvas.height = rCtx.canvas.height;
+
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.save();
+    // this.ctx.globalAlpha = this.opacity;
+    this.ctx.drawImage(
+      dropImg,
+      this.position.x - (dropImg.width * this.size) / 2,
+      this.position.y - (dropImg.height * this.size) / 2,
+      dropImg.width * this.size,
+      dropImg.height * this.size,
+    );
+    this.ctx.restore();
+
+    this.clearRain(rCtx, dropImg);
+
+    dCtx.drawImage(this.canvas, 0, 0);
+  }
+
+  private clearRain(ctx: CanvasRenderingContext2D, dropImg: HTMLImageElement) {
     ctx.save();
     ctx.globalCompositeOperation = 'destination-out';
     ctx.beginPath();
@@ -130,6 +159,10 @@ function Rainfall() {
       gl.clearColor(0.0, 0.0, 0.0, 1.0);
     },
   });
+  // Rain (small) canvas
+  const [rCtx, rCanvas, setRCanvas] = useCanvas({
+    autoResize: true,
+  });
   // Displacement canvas
   const [dCtx, dCanvas, setDCanvas] = useCanvas({
     autoResize: true,
@@ -137,28 +170,38 @@ function Rainfall() {
   const mouseRef = useRef<Vector2 | null>(null);
 
   useAnimationLoop((_dt, t) => {
-    if (!gl || !canvas || !dCtx || !dCanvas || !dropImg || !imageImg) return;
+    if (
+      !gl ||
+      !canvas ||
+      !rCtx ||
+      !rCanvas ||
+      !dCtx ||
+      !dCanvas ||
+      !dropImg ||
+      !imageImg
+    )
+      return;
     const drops = dropsRef.current;
 
-    while (drops.length < 1) {
+    while (drops.length < 20) {
       drops.push(new Drop(new Vector2(dCanvas.width, dCanvas.height)));
     }
 
     const drawDrop = (pos: Vector2, size: Vector2, opacity: number) => {
       if (!dropImg) return;
-      dCtx.save();
-      dCtx.globalAlpha = opacity;
-      dCtx.drawImage(
+      rCtx.save();
+      rCtx.globalAlpha = opacity;
+      rCtx.drawImage(
         dropImg,
         pos.x - (dropImg.width * size.x) / 2,
         pos.y - (dropImg.height * size.y) / 2,
         dropImg.width * size.x,
         dropImg.height * size.y,
       );
-      dCtx.restore();
+      rCtx.restore();
     };
 
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 20; i++) {
       const x = Math.random() * dCanvas.width;
       const y = (Math.random() * dCanvas.height + t * 100) % dCanvas.height;
       const size = new Vector2(Math.random() * 0.2);
@@ -166,9 +209,12 @@ function Rainfall() {
       drawDrop(new Vector2(x, y), size, opacity);
     }
 
+    dCtx.clearRect(0, 0, dCanvas.width, dCanvas.height);
+    dCtx.drawImage(rCanvas, 0, 0);
+
     for (const drop of drops) {
       drop.update(_dt, new Vector2(dCanvas.width, dCanvas.height));
-      drop.draw(dCtx, dropImg);
+      drop.draw(rCtx, dCtx, dropImg);
     }
 
     // dropsRef.current = drops.filter(
@@ -237,6 +283,10 @@ function Rainfall() {
   return (
     <>
       <canvas className="fixed inset-0 -z-10 h-full w-full" ref={setCanvas} />
+      <canvas
+        className="invisible fixed inset-0 -z-10 h-full w-full"
+        ref={setRCanvas}
+      />
       <canvas
         className="invisible fixed inset-0 -z-10 h-full w-full"
         ref={setDCanvas}
