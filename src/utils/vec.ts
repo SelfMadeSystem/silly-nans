@@ -123,8 +123,18 @@ export class Vector2 {
   public readonly y: number;
 
   constructor(
-    ...args: [number] | [number, number] | [{ x: number; y: number }]
+    ...args:
+      | [number]
+      | [number, number]
+      | [{ x: number; y: number }]
+      | [(i: 0 | 1) => number]
   ) {
+    if (args[0] instanceof Function) {
+      this.x = args[0](0);
+      this.y = args[0](1);
+      return;
+    }
+
     if (args[0] instanceof Object) {
       this.x = args[0].x;
       this.y = args[0].y;
