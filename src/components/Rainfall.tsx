@@ -3,6 +3,7 @@ import { useAnimationLoop } from '../utils/canvas/useAnimationLoop';
 import { useCanvas } from '../utils/canvas/useCanvas';
 import { useImage } from '../utils/canvas/useImage';
 import { useWindowEvent } from '../utils/canvas/useWindowEvent';
+import { random, wrapNumber } from '../utils/mathUtils';
 import { Vector2 } from '../utils/vec';
 import dropSrc from './drop.png';
 import imageSrc from './image.png';
@@ -15,45 +16,61 @@ class Drop {
   position: Vector2 = new Vector2(0);
   size: number = 0;
   opacity: number = 0;
-  speed: Vector2 = new Vector2(0);
-  done: boolean = false;
+  speed: number = 0;
+  angle: number = 0;
+  jumped: boolean = false;
   canvas: HTMLCanvasElement | null = null;
   ctx: CanvasRenderingContext2D | null = null;
 
-  constructor(canvasSize: Vector2) {
-    this.canvas = document.createElement('canvas');
-    this.ctx = this.canvas.getContext('2d');
-    this.position = new Vector2(Math.random() * canvasSize.x, 0);
-    this.reset(canvasSize);
+  get velocity(): Vector2 {
+    return Vector2.fromAngle(this.angle, this.speed);
   }
 
-  reset(canvasSize: Vector2) {
-    this.size = Math.random() * 0.8;
+  constructor(canvasSize: Vector2, options: RainfallOptions) {
+    this.canvas = document.createElement('canvas');
+    this.ctx = this.canvas.getContext('2d');
+    this.position = new Vector2(random(0, canvasSize.x), 0);
+    this.reset(canvasSize, options);
+  }
+
+  reset(canvasSize: Vector2, options: RainfallOptions) {
+    this.size = random(options.minDropSize, options.maxDropSize);
     if (this.size < 0.3) {
       this.position = new Vector2(
         this.position.x,
-        Math.random() * canvasSize.y * 0.9, // top 90% of the canvas height
+        random(0, canvasSize.y * 0.9), // top 90% of the canvas height
       );
     } else {
       this.position = new Vector2(
         this.position.x,
-        Math.random() * canvasSize.y * 0.1, // top 10% of the canvas height
+        random(0, canvasSize.y * 0.1), // top 10% of the canvas height
       );
     }
     this.prevPos = this.position;
     this.ogPos = this.position;
-    this.opacity = 0.2 + Math.random() * 0.5;
-    this.speed = new Vector2(0.5 - Math.random() * 1, 1 + Math.random() * 1);
+    this.opacity = random(options.minOpacity, options.maxOpacity);
+    this.speed = random(options.minSpeed, options.maxSpeed);
+    this.angle =
+      options.angleDownward +
+      random(-options.angleVariation, options.angleVariation); // ±angleVariation rad around downward direction
   }
 
-  update(dt: number, canvasSize: Vector2) {
+  update(dt: number, canvasSize: Vector2, options: RainfallOptions) {
     this.prevPos = this.position;
-    this.position = this.position.add(this.speed.mult(dt));
+    this.position = this.position.add(this.velocity.mult(dt));
 
-    if (this.position.dist(this.ogPos) > 1000 * this.size) {
-      if (Math.random() < 0.01) this.reset(canvasSize);
-    } else if (Math.random() < 0.1) {
-      this.speed = new Vector2(0.5 - Math.random() * 1, 1 + Math.random() * 1);
+    const x = wrapNumber(this.position.x, -50, canvasSize.x + 50);
+    this.position = new Vector2(x, this.position.y);
+    this.jumped = x !== this.prevPos.x;
+
+    if (this.position.y > canvasSize.y + 50) {
+      if (random(0, 1) < options.resetProbability)
+        this.reset(canvasSize, options);
+    } else if (random(0, 1) < options.speedChangeProbability) {
+      this.speed = random(options.minSpeed, options.maxSpeed);
+      this.angle =
+        options.angleDownward +
+        random(-options.angleVariation, options.angleVariation); // ±angleVariation rad around downward direction
     }
   }
 
@@ -97,12 +114,14 @@ class Drop {
       Math.PI * 2,
     );
     ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(this.prevPos.x, this.prevPos.y);
-    ctx.lineTo(this.position.x, this.position.y);
-    ctx.lineWidth = dropImg.width * this.size;
-    ctx.lineCap = 'round';
-    ctx.stroke();
+    if (!this.jumped) {
+      ctx.beginPath();
+      ctx.moveTo(this.prevPos.x, this.prevPos.y);
+      ctx.lineTo(this.position.x, this.position.y);
+      ctx.lineWidth = dropImg.width * this.size;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    }
     ctx.restore();
   }
 }
@@ -124,18 +143,39 @@ const fragmentShaderSource = /* glsl */ `
   uniform sampler2D u_image;
   uniform sampler2D u_displacement;
   uniform float u_time;
+  uniform float u_displacementStrength;
   varying vec2 v_texCoord;
 
   void main() {
     // gl_FragColor = texture2D(u_displacement, v_texCoord);
     vec3 displacement = texture2D(u_displacement, v_texCoord).rga;
-    displacement = (displacement - 0.5) * 0.5 * displacement.b;
+    displacement = (displacement - 0.5) * u_displacementStrength * displacement.b;
     vec2 uv = v_texCoord + displacement.xy;
     gl_FragColor = texture2D(u_image, uv);
   }
 `;
 
-function Rainfall() {
+const defaultOptions = {
+  dropCount: 20,
+  smallRainCount: 20,
+  minDropSize: 0.0,
+  maxDropSize: 0.8,
+  minSpeed: 1.0,
+  maxSpeed: 2.0,
+  minOpacity: 0.2,
+  maxOpacity: 0.7,
+  angleVariation: Math.PI / 12,
+  angleDownward: Math.PI / 2,
+  displacementStrength: 0.5,
+  smallRainMinSize: 0.0,
+  smallRainMaxSize: 0.2,
+  resetProbability: 0.01,
+  speedChangeProbability: 0.1,
+};
+
+type RainfallOptions = typeof defaultOptions;
+
+function Rainfall({ options }: { options: RainfallOptions }) {
   const dropsRef = useRef<Drop[]>([]);
   const [dropImg] = useImage(dropSrc.src);
   const [imageImg] = useImage(imageSrc.src);
@@ -183,8 +223,11 @@ function Rainfall() {
       return;
     const drops = dropsRef.current;
 
-    while (drops.length < 20) {
-      drops.push(new Drop(new Vector2(dCanvas.width, dCanvas.height)));
+    while (drops.length < options.dropCount) {
+      drops.push(new Drop(new Vector2(dCanvas.width, dCanvas.height), options));
+    }
+    while (drops.length > options.dropCount) {
+      drops.pop();
     }
 
     const drawDrop = (pos: Vector2, size: Vector2, opacity: number) => {
@@ -201,11 +244,13 @@ function Rainfall() {
       rCtx.restore();
     };
 
-    for (let i = 0; i < 20; i++) {
-      const x = Math.random() * dCanvas.width;
-      const y = (Math.random() * dCanvas.height + t * 100) % dCanvas.height;
-      const size = new Vector2(Math.random() * 0.2);
-      const opacity = 0.2 + Math.random() * 0.5;
+    for (let i = 0; i < options.smallRainCount; i++) {
+      const x = random(0, dCanvas.width);
+      const y = random(0, dCanvas.height);
+      const size = new Vector2(
+        random(options.smallRainMinSize, options.smallRainMaxSize),
+      );
+      const opacity = random(options.minOpacity, options.maxOpacity);
       drawDrop(new Vector2(x, y), size, opacity);
     }
 
@@ -213,7 +258,7 @@ function Rainfall() {
     dCtx.drawImage(rCanvas, 0, 0);
 
     for (const drop of drops) {
-      drop.update(_dt, new Vector2(dCanvas.width, dCanvas.height));
+      drop.update(_dt, new Vector2(dCanvas.width, dCanvas.height), options);
       drop.draw(rCtx, dCtx, dropImg);
     }
 
@@ -257,6 +302,7 @@ function Rainfall() {
         u_image: imageTex,
         u_displacement: displacementTex,
         u_time: t,
+        u_displacementStrength: options.displacementStrength,
       });
       twgl.drawBufferInfo(gl, bufferInfo);
     }
@@ -296,5 +342,178 @@ function Rainfall() {
 }
 
 export default function RainfallWrapper() {
-  return <Rainfall />;
+  const [options] = useState<RainfallOptions>({
+    ...defaultOptions,
+  });
+
+  useEffect(() => {
+    const pane = new Pane();
+
+    {
+      const dropsFolder = pane.addFolder({
+        title: 'Drops',
+        expanded: true,
+      });
+      dropsFolder.addBinding(options, 'dropCount', {
+        min: 0,
+        max: 100,
+        step: 1,
+      });
+      dropsFolder.addBinding(options, 'minDropSize', {
+        min: 0,
+        max: 2,
+        step: 0.1,
+      });
+      dropsFolder.addBinding(options, 'maxDropSize', {
+        min: 0,
+        max: 2,
+        step: 0.1,
+      });
+    }
+
+    {
+      const motionFolder = pane.addFolder({
+        title: 'Motion',
+        expanded: true,
+      });
+      motionFolder.addBinding(options, 'minSpeed', {
+        min: 0.1,
+        max: 10,
+        step: 0.1,
+      });
+      motionFolder.addBinding(options, 'maxSpeed', {
+        min: 0.1,
+        max: 10,
+        step: 0.1,
+      });
+      motionFolder.addBinding(options, 'angleVariation', {
+        min: 0,
+        max: Math.PI / 2,
+        step: 0.01,
+        format: (v: number) => (v * (180 / Math.PI)).toFixed(1) + '°',
+      });
+      motionFolder.addBinding(options, 'angleDownward', {
+        min: 0,
+        max: Math.PI,
+        step: 0.01,
+        format: (v: number) => (v * (180 / Math.PI)).toFixed(1) + '°',
+      });
+    }
+
+    {
+      const rainFolder = pane.addFolder({
+        title: 'Background Rain',
+        expanded: false,
+      });
+      rainFolder.addBinding(options, 'smallRainCount', {
+        min: 0,
+        max: 200,
+        step: 1,
+      });
+      rainFolder.addBinding(options, 'smallRainMinSize', {
+        min: 0,
+        max: 1,
+        step: 0.01,
+      });
+      rainFolder.addBinding(options, 'smallRainMaxSize', {
+        min: 0,
+        max: 1,
+        step: 0.01,
+      });
+    }
+
+    {
+      const appearanceFolder = pane.addFolder({
+        title: 'Appearance',
+        expanded: false,
+      });
+      appearanceFolder.addBinding(options, 'minOpacity', {
+        min: 0,
+        max: 1,
+        step: 0.01,
+      });
+      appearanceFolder.addBinding(options, 'maxOpacity', {
+        min: 0,
+        max: 1,
+        step: 0.01,
+      });
+      appearanceFolder.addBinding(options, 'displacementStrength', {
+        min: 0,
+        max: 2,
+        step: 0.01,
+      });
+    }
+
+    {
+      const behaviorFolder = pane.addFolder({
+        title: 'Behavior',
+        expanded: false,
+      });
+      behaviorFolder.addBinding(options, 'resetProbability', {
+        min: 0,
+        max: 0.1,
+        step: 0.001,
+      });
+      behaviorFolder.addBinding(options, 'speedChangeProbability', {
+        min: 0,
+        max: 1,
+        step: 0.01,
+      });
+    }
+
+    {
+      const presetsFolder = pane.addFolder({
+        title: 'Presets',
+        expanded: false,
+      });
+      presetsFolder.addButton({ title: 'Default' }).on('click', () => {
+        Object.assign(options, defaultOptions);
+        pane.refresh();
+      });
+      presetsFolder.addButton({ title: 'Heavy Rain' }).on('click', () => {
+        Object.assign(options, {
+          ...defaultOptions,
+          dropCount: 50,
+          smallRainCount: 80,
+          maxDropSize: 0.8,
+          minSpeed: 1.0,
+          maxSpeed: 3.0,
+        });
+        pane.refresh();
+      });
+      presetsFolder.addButton({ title: 'Light Drizzle' }).on('click', () => {
+        Object.assign(options, {
+          ...defaultOptions,
+          dropCount: 10,
+          smallRainCount: 30,
+          maxDropSize: 0.4,
+          maxOpacity: 0.4,
+          minSpeed: 0.5,
+          maxSpeed: 1.5,
+        });
+        pane.refresh();
+      });
+      presetsFolder
+        .addButton({ title: 'Heavy Slanting Rain' })
+        .on('click', () => {
+          Object.assign(options, {
+            ...defaultOptions,
+            dropCount: 75,
+            smallRainCount: 180,
+            maxDropSize: 0.8,
+            minSpeed: 2.0,
+            maxSpeed: 4.0,
+            angleDownward: (3 * Math.PI) / 4,
+            angleVariation: Math.PI / 12,
+          });
+          pane.refresh();
+        });
+    }
+
+    return () => {
+      pane.dispose();
+    };
+  }, [options]);
+
+  return <Rainfall options={options} />;
 }
