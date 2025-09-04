@@ -485,7 +485,7 @@ export default function RainfallWrapper() {
         Object.assign(options, {
           ...defaultOptions,
           dropCount: 10,
-          smallRainCount: 30,
+          smallRainCount: 1,
           maxDropSize: 0.4,
           maxOpacity: 0.4,
           minSpeed: 0.5,
