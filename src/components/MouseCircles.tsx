@@ -39,6 +39,7 @@ function MouseCircles({ options }: { options: MouseCirclesOptions }) {
       const newMouses = prev;
       if (options.replaceInstead) {
         newMouses.unshift(mouse);
+        if (newMouses.length > maxCircles) newMouses.pop();
       }
       if (
         newMouses.length > maxCircles ||
@@ -216,6 +217,21 @@ export default function MouseCirclesWrapper() {
           endFollowSpeed: 0.01,
           strokeColor: '#ff4500ff',
           fillColor: '#ff450000',
+        });
+        pane.refresh();
+      });
+      presetsFolder.addButton({ title: 'Slinky' }).on('click', () => {
+        Object.assign(options, {
+          initialSize: 210,
+          sizeIncrement: 0.3,
+          maxCircles: 100,
+          strokeOpacity: 0.5,
+          strokeWidth: 1,
+          replaceInstead: true,
+          startFollowSpeed: 0.05,
+          endFollowSpeed: 0,
+          strokeColor: '#ffffffff',
+          fillColor: '#00000000',
         });
         pane.refresh();
       });
