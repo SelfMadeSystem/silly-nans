@@ -91,3 +91,12 @@
 .scrollbar-hidden::-webkit-scrollbar {
   display: none;
 }
+
+.tp-btnv_b.btn-danger {
+  background: #ff6d6d;
+}
+
+.tp-btnv_b.btn-danger:hover,
+.tp-btnv_b.btn-danger:focus {
+  background: #ff7c7c;
+}
