@@ -15,6 +15,19 @@ export function usePointerPosition(element: RefObject<HTMLElement>) {
     setPos(new Vector2(e.clientX - rect.left, e.clientY - rect.top));
   });
 
+  useWindowEvent('touchmove', e => {
+    if (!element.current) return;
+    const rect = element.current.getBoundingClientRect();
+    if (e.touches.length > 0) {
+      setPos(
+        new Vector2(
+          e.touches[0].clientX - rect.left,
+          e.touches[0].clientY - rect.top,
+        ),
+      );
+    }
+  });
+
   useWindowEvent('pointerleave', () => {
     setPos(null);
   });
