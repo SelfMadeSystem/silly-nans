@@ -1,7 +1,5 @@
 @import 'tailwindcss';
 
-@config '../../tailwind.config.ts';
-
 @theme {
   --animation-backdrop-hue-rotate: backdrop-hue-rotate 20s linear infinite;
 
