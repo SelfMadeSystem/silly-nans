@@ -1,5 +1,5 @@
-import { useAnimationLoop } from '../utils/canvas/useAnimationLoop';
-import { useWindowEvent } from '../utils/canvas/useWindowEvent';
+import { useAnimationLoop } from '../utils/hooks/useAnimationLoop';
+import { useWindowEvent } from '../utils/hooks/useWindowEvent';
 import { Vector2 } from '../utils/vec';
 import { useEffect, useState } from 'react';
 import { Pane } from 'tweakpane';

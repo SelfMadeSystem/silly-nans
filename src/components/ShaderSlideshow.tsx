@@ -1,4 +1,4 @@
-import { useEffectIfFalsey } from '../utils/hooks';
+import { useEffectIfFalsey } from '../utils/hooks/hooks';
 import { loopAnimationFrame } from '../utils/loopAnimationFrame';
 import { Vector2 } from '../utils/vec';
 import { useEffect, useRef, useState } from 'react';

@@ -1,5 +1,5 @@
-import { useAnimationLoop } from '../utils/canvas/useAnimationLoop';
-import { useCanvas } from '../utils/canvas/useCanvas';
+import { useAnimationLoop } from '../utils/hooks/useAnimationLoop';
+import { useCanvas } from '../utils/hooks/useCanvas';
 import { mod, random, randomBool } from '../utils/mathUtils';
 import { useEffect, useState } from 'react';
 import { Pane } from 'tweakpane';

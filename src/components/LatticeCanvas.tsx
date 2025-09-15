@@ -1,7 +1,7 @@
 import * as twgl from 'twgl.js';
-import { useAnimationLoop } from '../utils/canvas/useAnimationLoop';
-import { useCanvas } from '../utils/canvas/useCanvas';
-import { useWindowEvent } from '../utils/canvas/useWindowEvent';
+import { useAnimationLoop } from '../utils/hooks/useAnimationLoop';
+import { useCanvas } from '../utils/hooks/useCanvas';
+import { useWindowEvent } from '../utils/hooks/useWindowEvent';
 import { approxEquals, ceilMultiple } from '../utils/mathUtils';
 import { Vector2, Vector3 } from '../utils/vec';
 import { useEffect, useState } from 'react';

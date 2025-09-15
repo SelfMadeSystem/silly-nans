@@ -1,5 +1,5 @@
-import { useAnimationLoop } from '../utils/canvas/useAnimationLoop';
-import { useCanvas } from '../utils/canvas/useCanvas';
+import { useAnimationLoop } from '../utils/hooks/useAnimationLoop';
+import { useCanvas } from '../utils/hooks/useCanvas';
 import { useEffect, useRef, useState } from 'react';
 
 function AudioVisualizer({ audio }: { audio: ArrayBuffer | null }) {

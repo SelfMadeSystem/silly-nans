@@ -1,8 +1,8 @@
 import * as twgl from 'twgl.js';
-import { useAnimationLoop } from '../utils/canvas/useAnimationLoop';
-import { useCanvas } from '../utils/canvas/useCanvas';
-import { useImage } from '../utils/canvas/useImage';
-import { useWindowEvent } from '../utils/canvas/useWindowEvent';
+import { useAnimationLoop } from '../utils/hooks/useAnimationLoop';
+import { useCanvas } from '../utils/hooks/useCanvas';
+import { useImage } from '../utils/hooks/useImage';
+import { useWindowEvent } from '../utils/hooks/useWindowEvent';
 import { random, wrapNumber } from '../utils/mathUtils';
 import { Vector2 } from '../utils/vec';
 import dropSrc from './drop.png';

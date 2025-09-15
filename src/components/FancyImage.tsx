@@ -1,6 +1,6 @@
 import * as twgl from 'twgl.js';
-import { useAnimationLoop } from '../utils/canvas/useAnimationLoop';
-import { useCanvas } from '../utils/canvas/useCanvas';
+import { useAnimationLoop } from '../utils/hooks/useAnimationLoop';
+import { useCanvas } from '../utils/hooks/useCanvas';
 import { clamp } from '../utils/mathUtils';
 import { fancyImageOptions, fancyImageSpringOptions } from './FancyImageStore';
 import { useEffect, useRef } from 'react';
