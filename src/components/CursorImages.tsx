@@ -208,7 +208,7 @@ export default function CursorImagesWrapper() {
     {
       const animationFolder = pane.addFolder({
         title: 'Animation',
-        expanded: true,
+        expanded: false,
       });
       animationFolder.addBinding(options, 'velocityMultiplier', {
         min: 1,
@@ -240,7 +240,7 @@ export default function CursorImagesWrapper() {
     {
       const presetsFolder = pane.addFolder({
         title: 'Presets',
-        expanded: false,
+        expanded: true,
       });
       presetsFolder.addButton({ title: 'Default' }).on('click', () => {
         Object.assign(options, defaultOptions);
