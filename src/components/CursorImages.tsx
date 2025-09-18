@@ -167,7 +167,7 @@ export default function CursorImagesWrapper() {
     {
       const appearanceFolder = pane.addFolder({
         title: 'Appearance',
-        expanded: true,
+        expanded: false,
       });
       appearanceFolder.addBinding(options, 'imageSize', {
         min: 50,
@@ -179,7 +179,7 @@ export default function CursorImagesWrapper() {
     {
       const behaviorFolder = pane.addFolder({
         title: 'Behavior',
-        expanded: true,
+        expanded: false,
       });
       behaviorFolder.addBinding(options, 'velocityThreshold', {
         min: 10,
