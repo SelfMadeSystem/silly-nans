@@ -1,10 +1,109 @@
+import * as twgl from 'twgl.js';
 import { useAnimationLoop } from '../utils/hooks/useAnimationLoop';
 import { useCanvas } from '../utils/hooks/useCanvas';
 import { useEffect, useRef, useState } from 'react';
 
+const vs = /* glsl */ `#version 300 es
+in vec2 a_position;
+in vec2 a_texCoord;
+out vec2 v_texCoord;
+void main() {
+  gl_Position = vec4(a_position, 0.0, 1.0);
+  v_texCoord = vec2(a_texCoord.x, 1.0 - a_texCoord.y);
+}
+`;
+
+const fs = /* glsl */ `
+#version 300 es
+// Yoinked from https://www.shadertoy.com/view/ldsBRs
+precision highp float;
+in vec2 v_texCoord;
+out vec4 outColor;
+
+uniform sampler2D u_audioData;
+uniform float u_time;
+uniform vec2 u_resolution;
+uniform vec2 u_mouse; // Optional, if you want mouse input
+
+#define PI 3.141592654
+#define HASHSCALE1 .1031
+#define HASHSCALE3 vec3(.1031, .1030, .0973)
+#define HASHSCALE4 vec4(1031, .1030, .0973, .1099)
+
+float hash11(float p) {
+    vec3 p3  = fract(vec3(p) * HASHSCALE1);
+    p3 += dot(p3, p3.yzx + 19.19);
+    return fract((p3.x + p3.y) * p3.z);
+}
+vec2 hash21(float p) {
+    vec3 p3 = fract(vec3(p) * HASHSCALE3);
+    p3 += dot(p3, p3.yzx + 19.19);
+    return fract((p3.xx+p3.yz)*p3.zy);
+}
+vec3 hash33(vec3 p3) {
+    p3 = fract(p3 * HASHSCALE3);
+    p3 += dot(p3, p3.yxz+19.19);
+    return fract((p3.xxy + p3.yxx)*p3.zyx);
+}
+vec3 hash31(float p) {
+    vec3 p3 = fract(vec3(p) * HASHSCALE3);
+    p3 += dot(p3, p3.yzx+19.19);
+    return fract((p3.xxy+p3.yzz)*p3.zyx); 
+}
+
+vec3 decode(vec2 n) {
+    float z = .5 - dot(n, n);
+    return vec3(n * sqrt(z + .5), z) * 2.;
+}
+
+vec2 encode(vec3 n) {
+    return n.xy / sqrt(n.z * 2.0 + 2.0);
+}
+
+vec3 r(vec3 v, vec2 r) {
+    vec4 t = sin(vec4(r, r + PI*0.5));
+    vec4 g = vec4(v, dot(v.yz, t.yw));
+    return vec3(
+        g.x * t.z - g.w * t.x,
+        g.y * t.w - g.z * t.y,
+        g.x * t.x + g.w * t.z
+    );
+}
+
+void main() {
+    vec2 i = gl_FragCoord.xy;
+    vec2 size = u_resolution * 0.5;
+    vec2 uv = (i - size) / size.y;
+    vec3 s = decode(uv);
+    // If you want mouse input, pass it as u_mouse
+    vec2 m = 2.0 * (u_mouse - size) / size.y;
+    float a = atan(uv.x, uv.y) / PI;
+    float g = hash11(floor(a * 10.0));
+    float f1 = texture(u_audioData, vec2(hash11(floor(a * 30.0)), 0.2)).r;
+    float f = texture(u_audioData, vec2(length(uv) * 0.3 + max(f1, 0.5) * (g + 0.5) * 0.1, 0.2)).r;
+    s = r(s, vec2(0.05, -0.1) + vec2(f * pow(2.0 - length(uv), 2.0)));
+    vec2 nuv = encode(s);
+    // outColor = texture(u_channel0, nuv * 0.5 + 0.5); // If you want to sample another texture
+    outColor = vec4((nuv - uv).yxy, 1.0);
+}
+`;
+
 function AudioVisualizer({ audio }: { audio: ArrayBuffer | null }) {
+  const [programInfo, setProgramInfo] = useState<twgl.ProgramInfo | null>(null);
   const [ctx, canvas, setCanvas] = useCanvas({
+    contextId: 'webgl2',
     autoResize: true,
+    setup(gl: WebGLRenderingContext, canvas: HTMLCanvasElement) {
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+      setProgramInfo(twgl.createProgramInfo(gl, [vs, fs]));
+    },
+    resize(gl: WebGLRenderingContext, canvas: HTMLCanvasElement) {
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    },
   });
 
   const [audioContext] = useState<AudioContext | null>(() => {
@@ -17,7 +116,9 @@ function AudioVisualizer({ audio }: { audio: ArrayBuffer | null }) {
   const [audioSource, setAudioSource] = useState<AudioBufferSourceNode | null>(
     null,
   );
-  const [dataArray, setDataArray] = useState<Uint8Array | null>(null);
+  const [dataArray, setDataArray] = useState<Uint8Array<ArrayBuffer>>(
+    new Uint8Array(),
+  );
   const [bufferLength, setBufferLength] = useState<number>(0);
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
 
@@ -71,28 +172,66 @@ function AudioVisualizer({ audio }: { audio: ArrayBuffer | null }) {
   }, [audioContext, audio, audioSource]);
 
   useAnimationLoop(() => {
-    if (!ctx || !canvas || !analyser || !dataArray) return;
+    if (!ctx || !canvas || !programInfo) return;
 
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Get frequency data
-    analyser.getByteFrequencyData(dataArray);
+    if (analyser && dataArray) {
+      // Get frequency data
+      analyser.getByteFrequencyData(dataArray);
+    }
 
     // Draw visualizer
-    ctx.beginPath();
-    const barWidth = (canvas.width / bufferLength) * 2.5;
+    ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
+    ctx.clearColor(0.0, 0.0, 0.0, 1.0);
+    ctx.viewport(0, 0, canvas.width, canvas.height);
 
-    for (let i = 0; i < bufferLength; i++) {
-      const audioSample = dataArray[i] / 256; // Normalize to 0-1
-      const barHeight = canvas.height * audioSample;
+    // Create a texture from the audio data
+    const audioTexture = twgl.createTexture(ctx, {
+      src: dataArray,
+      width: bufferLength,
+      height: 1,
+      min: ctx.LINEAR,
+      mag: ctx.LINEAR,
+      wrap: ctx.CLAMP_TO_EDGE,
+      format: ctx.LUMINANCE,
+      type: ctx.UNSIGNED_BYTE,
+    });
 
-      const x = i * barWidth + barWidth / 2;
-      const y = canvas.height - barHeight;
+    ctx.useProgram(programInfo.program);
+    twgl.setBuffersAndAttributes(
+      ctx,
+      programInfo,
+      twgl.createBufferInfoFromArrays(ctx, {
+        a_position: {
+          numComponents: 2,
+          data: [-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1],
+        },
+        a_texCoord: {
+          numComponents: 2,
+          data: [0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1],
+        },
+      }),
+    );
+    twgl.setUniforms(programInfo, {
+      u_time: performance.now() / 1000,
+      u_resolution: [canvas.width, canvas.height],
+      u_audioData: audioTexture,
+    });
+    twgl.drawBufferInfo(
+      ctx,
+      twgl.createBufferInfoFromArrays(ctx, {
+        a_position: {
+          numComponents: 2,
+          data: [-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1],
+        },
+        a_texCoord: {
+          numComponents: 2,
+          data: [0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1],
+        },
+      }),
+    );
 
-      ctx.fillStyle = `rgb(${audioSample * 126 + 100},50,50)`;
-      ctx.fillRect(x, y, barWidth, barHeight);
-    }
+    // Clean up
+    ctx.deleteTexture(audioTexture);
   });
 
   return (
