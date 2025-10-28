@@ -129,13 +129,31 @@ void main() {
   vec2 fragCoord = getCharPos(uv);
   float dist = 500.0 - (getAvgHeight(uv) * 500.0);
   float maxThreshold = 400.0;
-  float minThreshold = 300.0;
+  float minThreshold = 000.0;
   vec4 textTexel = texture2D(textTex, uv);
   vec4 randTexel = texture2D(randTex, uv);
   vec4 rippleTexel = texture2D(rippleTex, uv);
+
+  // Get the velocity/direction from ripple data
+  // rippleTexel.y contains the previous height
+  float currentHeight = rippleTexel.x;
+  float prevHeight = rippleTexel.y;
+  float velocity = currentHeight - prevHeight;
+
   vec4 color;
   if (dist < maxThreshold) {
-    color = mix(randTexel, textTexel, smoothstep(minThreshold, maxThreshold, dist));
+    // Create a value that goes 0->1->0 over [minThreshold, maxThreshold]
+    float midThreshold = (minThreshold + maxThreshold) / 2.0;
+    float mixAmount = 1.0 - abs(dist - midThreshold) / (midThreshold - minThreshold);
+    mixAmount = clamp(mixAmount, 0.0, 1.0);
+    
+    // Only show random characters when the wave is moving in the positive direction (expanding)
+    float isExpanding = step(0.0, velocity);
+    float randomness = mixAmount * isExpanding;
+    
+    color = mix(textTexel, randTexel, randomness);
+
+    color.rgb += vec3(0.2, 0.2, 0.5) * (1.0 - (dist / maxThreshold));
   } else {
     color = textTexel;
   }
