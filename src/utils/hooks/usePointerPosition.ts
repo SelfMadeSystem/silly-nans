@@ -2,12 +2,19 @@ import { Vector2 } from '../vec';
 import { useWindowEvent } from './useWindowEvent';
 import { type RefObject, useState } from 'react';
 
+function getEl(element: RefObject<HTMLElement | null> | HTMLElement | null) {
+  if (element && 'current' in element) {
+    return element.current;
+  }
+  return element;
+}
+
 /**
  * Custom React hook that tracks the current pointer (mouse or touch) position
  * on the screen relative to a given element.
  */
 export function usePointerPosition(
-  element: RefObject<HTMLElement | null>,
+  element: RefObject<HTMLElement | null> | HTMLElement | null,
   options?: {
     onlyInside?: boolean;
     keepLast?: boolean;
@@ -17,8 +24,9 @@ export function usePointerPosition(
   const [pos, setPos] = useState<Vector2 | null>(null);
 
   useWindowEvent('pointermove', e => {
-    if (!element.current) return;
-    const rect = element.current.getBoundingClientRect();
+    const el = getEl(element);
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
     if (
       onlyInside &&
       (e.clientX < rect.left ||
@@ -34,8 +42,9 @@ export function usePointerPosition(
   });
 
   useWindowEvent('touchmove', e => {
-    if (!element.current) return;
-    const rect = element.current.getBoundingClientRect();
+    const el = getEl(element);
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
     if (onlyInside) {
       let inside = false;
       for (let i = 0; i < e.touches.length; i++) {
