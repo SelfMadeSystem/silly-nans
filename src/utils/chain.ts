@@ -94,7 +94,7 @@ export class Chain {
 
   resetAngles() {
     for (let i = 1; i < this.joints.length; i++) {
-      this.angles[i] = this.joints[i - 1].sub(this.joints[i]).heading();
+      this.angles[i] = this.joints[i - 1].sub(this.joints[i]).angle();
     }
     this.angles[0] = this.angles[1];
   }
@@ -125,7 +125,7 @@ export class Chain {
     }
 
     const angle = constrainAngle(
-      pos.sub(this.joints[0]).heading(),
+      pos.sub(this.joints[0]).angle(),
       this.angles[0],
       maxAngleDiff * Math.min(distance / accelDistance, 1),
     );
@@ -151,7 +151,7 @@ export class Chain {
   propagateConstraints(startI: number, angle: boolean = true) {
     startI = mod(startI, this.joints.length);
     for (let i = startI + 1; i < this.joints.length; i++) {
-      const curAngle = this.joints[i - 1].sub(this.joints[i]).heading();
+      const curAngle = this.joints[i - 1].sub(this.joints[i]).angle();
       this.angles[i] = angle
         ? constrainAngle(curAngle, this.angles[i - 1], this.angleConstraint)
         : curAngle;
@@ -161,7 +161,7 @@ export class Chain {
     }
 
     for (let i = startI - 1; i >= 0; i--) {
-      const curAngle = this.joints[i + 1].sub(this.joints[i]).heading();
+      const curAngle = this.joints[i + 1].sub(this.joints[i]).angle();
       this.angles[i] = angle
         ? constrainAngle(curAngle, this.angles[i + 1], this.angleConstraint)
         : curAngle;
