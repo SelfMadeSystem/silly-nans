@@ -235,8 +235,13 @@ function LiquidGlass({
       {displacementImage && (
         <>
           <svg
-            style={{ position: 'absolute', width: 0, height: 0 }}
+            style={{
+              position: 'absolute',
+              width: 0,
+              height: 0,
+            }}
             xmlns="http://www.w3.org/2000/svg"
+            colorInterpolationFilters="sRGB"
           >
             <filter
               id="liquidglass-displacement"
