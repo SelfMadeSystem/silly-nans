@@ -5,11 +5,12 @@ import { Pane } from 'tweakpane';
 const defaultOptions = {
   width: 300,
   height: 300,
+  upscale: 0.07,
   rounded: 100,
   bubbleness: 1,
   displacementScale: 1.4,
-  beforeBlur: 0.01,
-  afterBlur: 2,
+  beforeBlur: 0.0,
+  afterBlur: 0.0,
 };
 
 type LiquidGlassOptions = typeof defaultOptions;
@@ -17,7 +18,11 @@ type LiquidGlassOptions = typeof defaultOptions;
 // red: x axis, green: y axis
 
 function getRounded(options: LiquidGlassOptions): number {
-  return Math.min(options.width / 2, options.height / 2, options.rounded);
+  const { upscale } = options;
+  const width = options.width * upscale;
+  const height = options.height * upscale;
+  const rounded = options.rounded * upscale;
+  return Math.min(width / 2, height / 2, rounded);
 }
 
 /**
@@ -25,7 +30,9 @@ function getRounded(options: LiquidGlassOptions): number {
  * for a given position. Includes support for rounded corners.
  */
 function distanceFromEdge(pos: Vector2, options: LiquidGlassOptions): number {
-  const { width, height } = options;
+  const { upscale } = options;
+  const width = options.width * upscale;
+  const height = options.height * upscale;
   const rounded = getRounded(options);
 
   let dx = Math.min(pos.x, width - pos.x);
@@ -68,11 +75,14 @@ function isInsideRoundedRect(
 }
 
 function createDisplacementImage(options: LiquidGlassOptions) {
-  const { width, height, bubbleness } = options;
+  const { upscale } = options;
+  const width = Math.floor(options.width * upscale);
+  const height = Math.floor(options.height * upscale);
+  const bubbleness = options.bubbleness;
 
   const canvas = document.createElement('canvas');
-  canvas.width = options.width;
-  canvas.height = options.height;
+  canvas.width = width;
+  canvas.height = height;
 
   const ctx = canvas.getContext('2d');
   if (!ctx) {
@@ -85,7 +95,7 @@ function createDisplacementImage(options: LiquidGlassOptions) {
     for (let x = 0; x < width; x++) {
       const pos = new Vector2(x, y);
       const distance = distanceFromEdge(pos, options);
-      const maxDistance = Math.min(options.width / 2, options.height / 2);
+      const maxDistance = Math.min(width / 2, height / 2);
 
       // Calculate displacement based on distance and bubbleness
       const displacement = Math.max(
@@ -99,13 +109,15 @@ function createDisplacementImage(options: LiquidGlassOptions) {
 
       const i = (y * width + x) * 4;
 
-      if (!isInsideRoundedRect(pos, options)) {
-        data[i] = 255 / 2;
-        data[i + 1] = 255 / 2;
-        data[i + 2] = 0;
-        data[i + 3] = 255;
-        continue;
-      }
+      // Don't do this because it creates hard edges but the border-radius is
+      // smooth, so we get a mismatch.
+      // if (!isInsideRoundedRect(pos, options)) {
+      //   data[i] = 255 / 2;
+      //   data[i + 1] = 255 / 2;
+      //   data[i + 2] = 0;
+      //   data[i + 3] = 255;
+      //   continue;
+      // }
 
       // Set pixel color based on displacement
       data[i] = 255 / 2 + displacement * rx;
@@ -307,6 +319,13 @@ export default function LiquidGlassWrapper() {
       })
       .on('change', () => setOptions({ ...options }));
     pane
+      .addBinding(options, 'upscale', {
+        min: 0.01,
+        max: 4,
+        step: 0.01,
+      })
+      .on('change', () => setOptions({ ...options }));
+    pane
       .addBinding(options, 'rounded', {
         min: 0,
         max: 400,
@@ -322,16 +341,16 @@ export default function LiquidGlassWrapper() {
       .on('change', () => setOptions({ ...options }));
     pane
       .addBinding(options, 'displacementScale', {
-        min: 0,
-        max: 10,
+        min: -2,
+        max: 2,
         step: 0.1,
       })
       .on('change', () => setOptions({ ...options }));
     pane
       .addBinding(options, 'beforeBlur', {
         min: 0,
-        max: 1,
-        step: 0.01,
+        max: 0.1,
+        step: 0.001,
       })
       .on('change', () => setOptions({ ...options }));
     pane
