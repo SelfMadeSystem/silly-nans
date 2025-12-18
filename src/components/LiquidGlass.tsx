@@ -93,7 +93,7 @@ function createDisplacementImage(options: LiquidGlassOptions) {
   const data = imageData.data;
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
-      const pos = new Vector2(x, y);
+      const pos = new Vector2(x + 0.5, y + 0.5);
       const distance = distanceFromEdge(pos, options);
       const maxDistance = Math.min(width / 2, height / 2);
 
