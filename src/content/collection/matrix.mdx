@@ -20,6 +20,15 @@ import Matrix from '../../components/Matrix';
   website also has a Portal-inspired easter egg. :)
 </div>
 
+<div class="h-[300vh]" />
+
 <div class="absolute inset-0 -z-10 bg-black">
-  <Matrix client:load />
+  <Matrix
+    client:load
+    className="absolute"
+    style={{
+      height: '120vh',
+      top: '-10vh',
+    }}
+  />
 </div>

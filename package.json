@@ -39,6 +39,7 @@
     "monaco-tailwindcss": "^0.6.1",
     "motion": "^12.23.21",
     "nanostores": "^1.0.1",
+    "nans-canvas": "^0.0.2",
     "postcss-safe-parser": "^7.0.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
