@@ -1,0 +1,18 @@
+---
+title: 'Aquarium'
+description: 'An """"improved"""" version of the synthwave mountains I made for a uiverse challenge.'
+pubDate: '2026-10-23'
+heroImage: '/mountains.png'
+source: 'https://github.com/SelfMadeSystem/silly-nans/blob/main/src/components/mountains/Mountain.tsx'
+fullWidth: true
+darkMode: true
+isBackground: true
+footerClasses: 'before:bg-dot-grid before:inset-0 before:absolute before:-z-10 before:backdrop-blur-lg before:backdrop-brightness-150 before:fade-t-xl'
+---
+
+import Aquarium from '../../components/Aquarium';
+
+<div class="absolute inset-0 -z-10 bg-black">
+  <Aquarium client:load />
+</div>
+<div class="h-[400vh] pointer-events-none" />
