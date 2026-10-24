@@ -150,37 +150,20 @@ abstract class BaseFish implements UpdateAndRender {
     ctx.rotate(rotation * DEG2RAD);
     ctx.translate(-12 * size, -12 * size);
 
-    if (this.neon) {
-      const fishNeonCanvas = createColoredFishCanvas(
-        color,
-        size,
-        true,
-        this.neonFillColor,
-        this.neonStrokeWidth,
-      );
-      ctx.drawImage(
-        fishNeonCanvas,
-        0,
-        0,
-        fishNeonCanvas.width / fishUpscale,
-        fishNeonCanvas.height / fishUpscale,
-      );
-    } else {
-      const fishFillCanvas = createColoredFishCanvas(
-        color,
-        size,
-        false,
-        this.neonFillColor,
-        this.neonStrokeWidth,
-      );
-      ctx.drawImage(
-        fishFillCanvas,
-        0,
-        0,
-        fishFillCanvas.width / fishUpscale,
-        fishFillCanvas.height / fishUpscale,
-      );
-    }
+    const fishCanvas = createColoredFishCanvas(
+      color,
+      size,
+      this.neon,
+      this.neonFillColor,
+      this.neonStrokeWidth,
+    );
+    ctx.drawImage(
+      fishCanvas,
+      0,
+      0,
+      fishCanvas.width / fishUpscale,
+      fishCanvas.height / fishUpscale,
+    );
 
     ctx.restore();
   }
