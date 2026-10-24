@@ -334,7 +334,7 @@ const Matrix = ({
       paneRef.current = null;
       pane.dispose();
     };
-  }, [settings]);
+  }, [defaultSettings, settings]);
 
   useEffect(() => {
     if (!options) return;
